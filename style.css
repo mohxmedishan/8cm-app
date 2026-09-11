@@ -861,3 +861,20 @@ h1, h2, h3 {
     transform: none;
   }
 }
+
+
+/* CM. brand mark */
+.brand img {
+  display: block;
+  width: 76px;
+  height: auto;
+  max-height: 34px;
+  object-fit: contain;
+}
+
+@media (max-width: 720px) {
+  .brand img {
+    width: 68px;
+    max-height: 31px;
+  }
+}
