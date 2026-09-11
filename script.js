@@ -83,33 +83,34 @@ function renderStudents(list) {
   resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
 }
 
-let activeFilter = "all";
+let activeFilters = new Set();
 let searchTerm = "";
 
-function matchesFilter(student) {
-  if (activeFilter === "all") return true;
+function matchesFilters(student) {
+  if (activeFilters.size === 0) return true;
 
-  if (activeFilter.startsWith("batch:")) {
-    const batch = activeFilter.slice(6);
-    return (student.batches || []).includes(batch);
-  }
+  return [...activeFilters].every((filter) => {
+    if (filter.startsWith("batch:")) {
+      const batch = filter.slice(6);
+      return (student.batches || []).includes(batch);
+    }
 
-  if (activeFilter.startsWith("transport:")) {
-    const transport = activeFilter.slice(10);
-    return student.transport === transport;
-  }
+    if (filter.startsWith("transport:")) {
+      const transport = filter.slice(10);
+      return student.transport === transport;
+    }
 
-  if (activeFilter.startsWith("house:")) {
-    const house = activeFilter.slice(6);
-    return student.house === house;
-  }
+    if (filter.startsWith("house:")) {
+      const house = filter.slice(6);
+      return student.house === house;
+    }
 
-  // Backward-compatible house filter support.
-  return student.house === activeFilter;
+    return true;
+  });
 }
 
 function applyFilters() {
-  let list = students.filter(matchesFilter);
+  let list = students.filter(matchesFilters);
 
   if (searchTerm.trim() !== "") {
     const q = searchTerm.trim().toLowerCase();
@@ -119,22 +120,57 @@ function applyFilters() {
   renderStudents(list);
 }
 
-function setActiveFilter(filter) {
-  activeFilter = filter;
-
+function syncPillStates() {
   document.querySelectorAll(".pill").forEach((pill) => {
-    pill.classList.toggle("active", pill.dataset.filter === filter);
-  });
+    const isAll = pill.dataset.filter === "all";
+    pill.classList.toggle(
+      "active",
+      isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter)
+    );
 
+    if (pill.dataset.filter === "house:winter") {
+      pill.style.setProperty("--pill-house-color", "var(--house-winter)");
+    } else if (pill.dataset.filter === "house:autumn") {
+      pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
+    } else if (pill.dataset.filter === "house:spring") {
+      pill.style.setProperty("--pill-house-color", "var(--house-spring)");
+    } else if (pill.dataset.filter === "house:summer") {
+      pill.style.setProperty("--pill-house-color", "var(--house-summer)");
+    }
+  });
+}
+
+function setActiveFilter(filter) {
+  if (filter === "all") {
+    activeFilters.clear();
+  } else {
+    activeFilters.add(filter);
+  }
+
+  syncPillStates();
+  applyFilters();
+}
+
+function toggleFilter(filter) {
+  if (filter === "all") {
+    activeFilters.clear();
+  } else if (activeFilters.has(filter)) {
+    activeFilters.delete(filter);
+  } else {
+    activeFilters.add(filter);
+  }
+
+  syncPillStates();
   applyFilters();
 }
 
 renderStudents(students);
+syncPillStates();
 
 // filter pills
 document.querySelectorAll(".pill").forEach((pill) => {
   pill.addEventListener("click", () => {
-    setActiveFilter(pill.dataset.filter);
+    toggleFilter(pill.dataset.filter);
   });
 });
 
@@ -150,7 +186,14 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
 document.querySelectorAll(".house-jump").forEach((card) => {
   const openHouse = () => {
     const house = card.dataset.house;
-    setActiveFilter(`house:${house}`);
+    activeFilters.delete("house:winter");
+    activeFilters.delete("house:autumn");
+    activeFilters.delete("house:spring");
+    activeFilters.delete("house:summer");
+    activeFilters.add(`house:${house}`);
+    syncPillStates();
+    applyFilters();
+
     document.getElementById("students").scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -160,6 +203,48 @@ document.querySelectorAll(".house-jump").forEach((card) => {
   card.addEventListener("click", openHouse);
 
   card.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openHouse();
+    }
+  });
+});
+
+// ============================================
+// Hero bar chart — grow on load + subtle house filter interaction
+// ============================================
+window.addEventListener("DOMContentLoaded", () => {
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll(".bar-fill").forEach((bar) => {
+        const value = parseFloat(bar.dataset.value);
+        const max = parseFloat(bar.dataset.max);
+        bar.style.width = `${(value / max) * 100}%`;
+      });
+    }, 300);
+  });
+});
+
+document.querySelectorAll(".bar-row").forEach((row) => {
+  const openHouse = () => {
+    const house = row.dataset.house;
+    activeFilters.delete("house:winter");
+    activeFilters.delete("house:autumn");
+    activeFilters.delete("house:spring");
+    activeFilters.delete("house:summer");
+    activeFilters.add(`house:${house}`);
+    syncPillStates();
+    applyFilters();
+
+    document.getElementById("students").scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  row.addEventListener("click", openHouse);
+
+  row.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       openHouse();

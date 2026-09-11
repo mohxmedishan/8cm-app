@@ -761,3 +761,103 @@ h1, h2, h3 {
   .controls { flex-direction: column; align-items: stretch; }
   .search-wrap input { width: 100%; }
 }
+
+
+/* ============================================
+   Contextual house interactions
+   ============================================ */
+
+.house-card[data-house="winter"]:hover,
+.house-card[data-house="winter"]:focus-visible {
+  border-color: var(--house-winter);
+  box-shadow: 0 10px 26px rgba(126, 168, 196, 0.14);
+}
+
+.house-card[data-house="autumn"]:hover,
+.house-card[data-house="autumn"]:focus-visible {
+  border-color: var(--house-autumn);
+  box-shadow: 0 10px 26px rgba(193, 114, 58, 0.14);
+}
+
+.house-card[data-house="spring"]:hover,
+.house-card[data-house="spring"]:focus-visible {
+  border-color: var(--house-spring);
+  box-shadow: 0 10px 26px rgba(124, 154, 93, 0.14);
+}
+
+.house-card[data-house="summer"]:hover,
+.house-card[data-house="summer"]:focus-visible {
+  border-color: var(--house-summer);
+  box-shadow: 0 10px 26px rgba(217, 164, 65, 0.14);
+}
+
+/* ============================================
+   Multi-filter state
+   ============================================ */
+
+.filter-pills {
+  align-items: center;
+}
+
+.pill.active {
+  transform: translateY(-1px);
+}
+
+.pill[data-filter^="house:"].active {
+  border-color: var(--pill-house-color, var(--accent));
+  color: var(--pill-house-color, var(--accent-strong));
+  background: color-mix(in srgb, var(--pill-house-color, var(--accent)) 12%, transparent);
+}
+
+.pill[data-filter="transport:OT"].active {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+/* Batch pills remain neutral so the hierarchy stays clean. */
+.pill[data-filter^="batch:"].active {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+/* ============================================
+   Hero chart hover
+   ============================================ */
+
+.bar-row {
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  padding: 5px 6px;
+  margin-left: -6px;
+  margin-right: -6px;
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.bar-row:hover,
+.bar-row:focus-visible {
+  background: var(--bg-elevated-2);
+  transform: translateX(2px);
+  outline: none;
+}
+
+.bar-row:hover .bar-fill,
+.bar-row:focus-visible .bar-fill {
+  filter: brightness(1.08);
+}
+
+.bar-row:hover .bar-count,
+.bar-row:focus-visible .bar-count,
+.bar-row:hover .bar-name,
+.bar-row:focus-visible .bar-name {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-row:hover,
+  .bar-row:focus-visible,
+  .pill.active {
+    transform: none;
+  }
+}
