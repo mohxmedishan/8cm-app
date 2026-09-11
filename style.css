@@ -1,5 +1,5 @@
 /* ============================================
-   8CM — Design tokens
+   CM — Design tokens
    ============================================ */
 :root {
   --bg: #16171a;
@@ -381,6 +381,52 @@ h1, h2, h3 {
 }
 
 /* ============================================
+   Archives
+   ============================================ */
+.archives {
+  padding: 80px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.archive-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.archive-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 22px 20px;
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+
+.archive-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--border);
+}
+
+.archive-kicker {
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+.archive-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+}
+
+.archive-card p:last-child {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* ============================================
    Houses
    ============================================ */
 .houses { padding: 80px 0; border-top: 1px solid var(--border-soft); }
@@ -396,9 +442,17 @@ h1, h2, h3 {
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
   overflow: hidden;
-  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease);
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  cursor: pointer;
 }
-.house-card:hover { transform: translateY(-3px); border-color: var(--border); }
+
+.house-card:hover,
+.house-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  outline: none;
+}
 
 .house-bar { height: 4px; }
 .house-card[data-house="winter"] .house-bar { background: var(--house-winter); }
@@ -486,6 +540,7 @@ h1, h2, h3 {
   transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
   animation: fadeUp 0.4s var(--ease) forwards;
 }
+
 .student-card:hover {
   transform: translateY(-2px);
   border-color: var(--border);
@@ -493,7 +548,7 @@ h1, h2, h3 {
 
 .student-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 8px;
 }
@@ -503,6 +558,7 @@ h1, h2, h3 {
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 5px;
 }
 .house-dot.winter { background: var(--house-winter); }
 .house-dot.autumn { background: var(--house-autumn); }
@@ -512,6 +568,25 @@ h1, h2, h3 {
 .student-name {
   font-size: 0.92rem;
   font-weight: 500;
+}
+
+.student-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0 0 9px 16px;
+}
+
+.batch-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--bg-elevated-2);
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  line-height: 1;
 }
 
 .student-meta {
@@ -536,7 +611,7 @@ h1, h2, h3 {
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 1px;
   background: var(--border-soft);
   border: 1px solid var(--border-soft);
@@ -553,6 +628,10 @@ h1, h2, h3 {
   font-size: clamp(2rem, 4vw, 2.6rem);
   margin: 0 0 6px;
   color: var(--accent-strong);
+}
+
+.stat-text {
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
 }
 
 .stat-label {
@@ -620,12 +699,16 @@ h1, h2, h3 {
 /* ============================================
    Responsive
    ============================================ */
+@media (max-width: 980px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-grid { grid-template-columns: 1fr; }
   .about-lead h2 { position: static; }
+  .archive-grid { grid-template-columns: 1fr; }
   .house-grid { grid-template-columns: repeat(2, 1fr); }
-  .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .gallery-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -646,20 +729,35 @@ h1, h2, h3 {
     pointer-events: none;
     transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
   }
+
   .nav-links.open {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
   }
+
   .nav-link { padding: 10px 0; width: 100%; }
   .burger { display: flex; }
-  .dropdown { position: static; opacity: 1; transform: none; pointer-events: auto; display: none; border: none; padding: 0 0 0 12px; }
+
+  .dropdown {
+    position: static;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    display: none;
+    border: none;
+    padding: 0 0 0 12px;
+  }
+
   .nav-item.open .dropdown { display: flex; }
+
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: repeat(1, 1fr); }
   .gallery-grid { grid-template-columns: repeat(1, 1fr); }
+  .house-grid { grid-template-columns: repeat(1, 1fr); }
   .controls { flex-direction: column; align-items: stretch; }
   .search-wrap input { width: 100%; }
 }
