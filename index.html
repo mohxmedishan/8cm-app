@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8CM — Abu Dhabi Indian School, Al Wathba</title>
+<meta name="description" content="The home of 8CM. Thirty students, four houses, one classroom.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" class="wordmark">8CM<span class="wordmark-dot">.</span></a>
+
+    <nav class="nav-links" id="navLinks">
+      <div class="nav-item has-dropdown">
+        <button class="nav-link nav-dropdown-trigger" id="homeTrigger" aria-expanded="false">
+          Home <span class="tri">▾</span>
+        </button>
+        <div class="dropdown" id="homeDropdown">
+          <a href="#top">Back to top</a>
+          <a href="#about">Class overview</a>
+        </div>
+      </div>
+      <a href="#students" class="nav-link">Students</a>
+      <a href="#houses" class="nav-link">Houses</a>
+      <a href="#stats" class="nav-link">Stats</a>
+      <a href="#events" class="nav-link">Events</a>
+      <a href="#gallery" class="nav-link">Gallery</a>
+      <a href="#updates" class="nav-link">Updates</a>
+      <a href="#achievements" class="nav-link">Achievements</a>
+    </nav>
+
+    <button class="burger" id="burger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="hero-kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
+        <h1 class="hero-title">Thirty desks,<br>four houses,<br>one classroom that's ours.</h1>
+        <p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
+        <div class="hero-actions">
+          <a href="#students" class="btn btn-primary">Meet the class</a>
+          <a href="#houses" class="btn btn-ghost">See the houses</a>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <p class="hero-visual-label">Houses, by headcount</p>
+        <div class="bar-chart" id="heroChart">
+          <div class="bar-row" data-house="autumn">
+            <span class="bar-name">Autumn</span>
+            <div class="bar-track"><div class="bar-fill" data-value="11" data-max="11"></div></div>
+            <span class="bar-count">11</span>
+          </div>
+          <div class="bar-row" data-house="spring">
+            <span class="bar-name">Spring</span>
+            <div class="bar-track"><div class="bar-fill" data-value="9" data-max="11"></div></div>
+            <span class="bar-count">9</span>
+          </div>
+          <div class="bar-row" data-house="winter">
+            <span class="bar-name">Winter</span>
+            <div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div>
+            <span class="bar-count">8</span>
+          </div>
+          <div class="bar-row" data-house="summer">
+            <span class="bar-name">Summer</span>
+            <div class="bar-track"><div class="bar-fill" data-value="2" data-max="11"></div></div>
+            <span class="bar-count">2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="about" id="about">
+    <div class="section-inner about-grid">
+      <div class="about-lead">
+        <h2>What 8CM actually is</h2>
+      </div>
+      <div class="about-body">
+        <p>8CM runs on a school day that starts at 8:00 and ends at 2:30 — except Friday, which lets out around 11:30 and is treated accordingly. Thirty students sit in pairs, three pairs to a row, in front of a projector and whiteboard. Grades 5 through 7 had it easier with LED screens; 8CM made peace with the switch back.</p>
+        <p>The class runs on four houses — Winter, Autumn, Spring, and Summer — plus split groups for Malayalam, Hindi, and French, and shared periods for Islamic Education and Value Education. Sarvesh currently holds the prefect seat, after Khush's multi-year run in the role. On the field, football is the sport everyone actually shows up for.</p>
+        <p class="about-note">Real events, achievements, and photos are added as they happen. Until then, you're looking at the foundation.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOUSES -->
+  <section class="houses" id="houses">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>The four houses</h2>
+        <p class="section-sub">Every student in 8CM belongs to one. Here's how they break down.</p>
+      </div>
+
+      <div class="house-grid">
+        <article class="house-card" data-house="winter">
+          <div class="house-bar"></div>
+          <div class="house-card-body">
+            <h3>Winter</h3>
+            <p class="house-count">8 students</p>
+            <p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
+          </div>
+        </article>
+        <article class="house-card" data-house="autumn">
+          <div class="house-bar"></div>
+          <div class="house-card-body">
+            <h3>Autumn</h3>
+            <p class="house-count">11 students</p>
+            <p class="house-desc">The biggest house in the room, and it acts like it.</p>
+          </div>
+        </article>
+        <article class="house-card" data-house="spring">
+          <div class="house-bar"></div>
+          <div class="house-card-body">
+            <h3>Spring</h3>
+            <p class="house-count">9 students</p>
+            <p class="house-desc">Second-largest, and quietly competitive about it.</p>
+          </div>
+        </article>
+        <article class="house-card" data-house="summer">
+          <div class="house-bar"></div>
+          <div class="house-card-body">
+            <h3>Summer</h3>
+            <p class="house-count">2 students</p>
+            <p class="house-desc">Smallest house in 8CM. Every point counts more.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDENTS -->
+  <section class="students" id="students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Find someone</h2>
+        <p class="section-sub">Filter by house, or search a name directly. Language groups will filter here too, once that data's mapped in.</p>
+      </div>
+
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
+        </div>
+        <div class="filter-pills" id="filterPills">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="winter">Winter</button>
+          <button class="pill" data-filter="autumn">Autumn</button>
+          <button class="pill" data-filter="spring">Spring</button>
+          <button class="pill" data-filter="summer">Summer</button>
+        </div>
+      </div>
+
+      <p class="result-count" id="resultCount">30 students</p>
+
+      <div class="student-grid" id="studentGrid"></div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats" id="stats">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>8CM, in numbers</h2>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-block">
+          <p class="stat-number" data-count="30">0</p>
+          <p class="stat-label">Students</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="4">0</p>
+          <p class="stat-label">Houses</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="3">0</p>
+          <p class="stat-label">Language groups</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="25">0</p>
+          <p class="stat-label">Take the bus</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="5">0</p>
+          <p class="stat-label">Own transport</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="empty-section" id="events">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Events</h2>
+      </div>
+      <div class="empty-state">
+        <p class="empty-title">Nothing scheduled yet.</p>
+        <p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="gallery" id="gallery">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Gallery</h2>
+      </div>
+      <div class="gallery-grid">
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+      </div>
+      <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
+    </div>
+  </section>
+
+  <!-- UPDATES -->
+  <section class="empty-section" id="updates">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Updates</h2>
+      </div>
+      <div class="empty-state">
+        <p class="empty-title">No announcements right now.</p>
+        <p class="empty-body">Anything the class needs to know will be posted here first.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACHIEVEMENTS -->
+  <section class="empty-section" id="achievements">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Achievements</h2>
+      </div>
+      <div class="empty-state">
+        <p class="empty-title">The board is empty. For now.</p>
+        <p class="empty-body">Academic, sport, or competition wins get logged here as they happen.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="section-inner footer-inner">
+    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
