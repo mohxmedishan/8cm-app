@@ -154,6 +154,16 @@ function setActiveFilter(filter) {
 function toggleFilter(filter) {
   if (filter === "all") {
     activeFilters.clear();
+  } else if (filter.startsWith("house:")) {
+    // Houses are mutually exclusive. Cross-category filters such as OT
+    // and batch remain active.
+    const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
+    if (activeFilters.has(filter)) {
+      activeFilters.delete(filter);
+    } else {
+      houseFilters.forEach((house) => activeFilters.delete(house));
+      activeFilters.add(filter);
+    }
   } else if (activeFilters.has(filter)) {
     activeFilters.delete(filter);
   } else {
@@ -186,10 +196,8 @@ document.getElementById("searchInput").addEventListener("input", (e) => {
 document.querySelectorAll(".house-jump").forEach((card) => {
   const openHouse = () => {
     const house = card.dataset.house;
-    activeFilters.delete("house:winter");
-    activeFilters.delete("house:autumn");
-    activeFilters.delete("house:spring");
-    activeFilters.delete("house:summer");
+    // House quick-navigation resets every existing filter first.
+    activeFilters.clear();
     activeFilters.add(`house:${house}`);
     syncPillStates();
     applyFilters();
@@ -228,10 +236,8 @@ window.addEventListener("DOMContentLoaded", () => {
 document.querySelectorAll(".bar-row").forEach((row) => {
   const openHouse = () => {
     const house = row.dataset.house;
-    activeFilters.delete("house:winter");
-    activeFilters.delete("house:autumn");
-    activeFilters.delete("house:spring");
-    activeFilters.delete("house:summer");
+    // House quick-navigation resets every existing filter first.
+    activeFilters.clear();
     activeFilters.add(`house:${house}`);
     syncPillStates();
     applyFilters();
@@ -253,6 +259,12 @@ document.querySelectorAll(".bar-row").forEach((row) => {
 });
 
 // ============================================
+/*
+ * URL fragment policy:
+ * Hash changes stay tied to intentional navigation clicks. Passive
+ * scroll-based hash updates are deliberately not implemented.
+ */
+
 // Nav: scroll shadow + mobile menu + Home dropdown
 // ============================================
 const nav = document.getElementById("nav");
