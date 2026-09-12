@@ -311,12 +311,18 @@ const statObserver = new IntersectionObserver(
 statNumbers.forEach((element) => statObserver.observe(element));
 
 const splash = document.getElementById("splash");
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    splash?.classList.add("hide");
-    setTimeout(() => splash?.remove(), 500);
-  }, 380);
-});
+
+function hideSplash() {
+  if (!splash) return;
+  splash.classList.add("hide");
+  setTimeout(() => splash.remove(), 500);
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", hideSplash);
+} else {
+  hideSplash();
+}
 
 initAuthUI();
 initTasks();
