@@ -3,41 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>8CM.</title>
 <meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba. Students, houses, resources, and what's due today.">
 <meta name="theme-color" content="#16171a">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="8CM.">
+<title>8CM.</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
 
-<link rel="icon" type="image/png" sizes="64x64" href="assets/8cm-favicon.png">
-<link rel="apple-touch-icon" sizes="192x192" href="assets/8cm-icon-192.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
 
-<!-- Mobile / PWA loading splash. Shown briefly on first paint, then fades. -->
+<body>
 <div class="splash" id="splash" aria-hidden="true">
-  <img src="assets/8cm-logo.png" alt="" class="splash-logo">
+  <div class="splash-logo-wrap">
+    <img src="assets/cm-logo.png" alt="" class="splash-logo">
+  </div>
 </div>
 
-<div class="grain"></div>
+<div class="grain" aria-hidden="true"></div>
 
 <header class="nav" id="nav">
   <div class="nav-inner">
     <a href="#top" class="brand" aria-label="8CM home">
-      <img src="assets/8cm-logo.png" alt="8CM">
+      <img src="assets/cm-logo.png" alt="CM." width="112" height="42">
     </a>
 
-    <nav class="nav-links" id="navLinks">
+    <nav class="nav-links" id="navLinks" aria-label="Primary navigation">
       <div class="nav-item has-dropdown">
-        <button class="nav-link nav-dropdown-trigger" id="homeTrigger" aria-expanded="false">
-          Home <span class="tri">▾</span>
+        <button class="nav-link nav-dropdown-trigger" id="homeTrigger" type="button" aria-expanded="false" aria-controls="homeDropdown">
+          Home <span class="tri" aria-hidden="true">▾</span>
         </button>
         <div class="dropdown" id="homeDropdown">
           <a href="#top">Back to top</a>
@@ -45,26 +47,39 @@
           <a href="#archives">Archives</a>
         </div>
       </div>
+
       <a href="#today" class="nav-link">Today</a>
       <a href="#students" class="nav-link">Students</a>
       <a href="#houses" class="nav-link">Houses</a>
-      <a href="#resources" class="nav-link">Resources</a>
-      <a href="#stats" class="nav-link">Stats</a>
-      <a href="#events" class="nav-link">Events</a>
-      <a href="#gallery" class="nav-link">Gallery</a>
-      <a href="#updates" class="nav-link">Updates</a>
-      <a href="#achievements" class="nav-link">Achievements</a>
+
+      <div class="nav-item has-dropdown">
+        <button class="nav-link nav-dropdown-trigger" id="moreTrigger" type="button" aria-expanded="false" aria-controls="moreDropdown">
+          More <span class="tri" aria-hidden="true">▾</span>
+        </button>
+        <div class="dropdown" id="moreDropdown">
+          <a href="#resources">Resources</a>
+          <a href="#stats">Stats</a>
+          <a href="#events">Events</a>
+          <a href="#gallery">Gallery</a>
+          <a href="#updates">Updates</a>
+          <a href="#achievements">Achievements</a>
+        </div>
+      </div>
     </nav>
 
-    <button class="burger" id="burger" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="nav-actions">
+      <div class="auth-slot" id="authSlot" aria-live="polite">
+        <span class="auth-loading" id="authLoading">Checking account…</span>
+      </div>
+
+      <button class="burger" id="burger" type="button" aria-label="Toggle menu" aria-controls="navLinks" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
 </header>
 
 <main id="top">
-
-  <!-- HERO -->
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-text">
@@ -105,7 +120,6 @@
     </div>
   </section>
 
-  <!-- TODAY / TASK HUB -->
   <section class="today" id="today">
     <div class="section-inner">
       <div class="section-head">
@@ -115,20 +129,46 @@
 
       <div class="today-panel">
         <div class="today-panel-head">
-          <span class="today-note">Placeholder data — swap in the real list once it's ready.</span>
-          <button class="btn btn-ghost btn-small admin-only" id="addTaskBtn" hidden>+ Add task</button>
+          <span class="today-note" id="todayNote">Sign in to see the live class task list.</span>
+          <button class="btn btn-primary btn-small admin-only" id="addTaskBtn" type="button" hidden>+ Add task</button>
         </div>
+
+        <form class="task-form" id="taskForm" hidden autocomplete="off">
+          <div class="task-form-grid">
+            <label>
+              <span>Subject</span>
+              <input name="subject" maxlength="120" required>
+            </label>
+            <label>
+              <span>Type</span>
+              <select name="type">
+                <option value="homework">Homework</option>
+                <option value="announcement">Announcement</option>
+              </select>
+            </label>
+            <label>
+              <span>Due</span>
+              <input name="due" maxlength="80" required placeholder="Tomorrow">
+            </label>
+            <label class="task-detail-field">
+              <span>Details</span>
+              <textarea name="detail" maxlength="1000" rows="3" required></textarea>
+            </label>
+          </div>
+          <div class="task-form-actions">
+            <button class="btn btn-primary btn-small" type="submit">Add task</button>
+            <button class="btn btn-ghost btn-small" type="button" data-action="cancel">Cancel</button>
+          </div>
+        </form>
+
         <div class="task-list" id="taskList"></div>
       </div>
     </div>
   </section>
 
-  <!-- ABOUT -->
   <section class="about" id="about">
     <div class="section-inner about-grid">
-      <div class="about-lead">
-        <h2>What 8CM actually is</h2>
-      </div>
+      <div class="about-lead"><h2>What 8CM actually is</h2></div>
       <div class="about-body">
         <p>8CM runs on a school day that starts at 8:00 and ends at 2:30 — except Friday, which lets out around 11:30 and is treated accordingly. Thirty students sit in pairs, three pairs to a row, in front of a projector and whiteboard.</p>
         <p>The class runs on four houses — Winter, Autumn, Spring, and Summer — plus split groups for Malayalam, Hindi, and French, and shared periods for Islamic Education and Value Education. What holds 8CM together is the batch itself: the friendships, the routines, and the culture built around them.</p>
@@ -137,7 +177,6 @@
     </div>
   </section>
 
-  <!-- ARCHIVES -->
   <section class="archives" id="archives">
     <div class="section-inner">
       <div class="section-head">
@@ -164,7 +203,6 @@
     </div>
   </section>
 
-  <!-- HOUSES -->
   <section class="houses" id="houses">
     <div class="section-inner">
       <div class="section-head">
@@ -176,40 +214,31 @@
         <article class="house-card" data-house="winter" tabindex="0" role="button" aria-label="View Winter students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Winter</h3>
-            <p class="house-count">8 students</p>
-            <p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
+            <h3>Winter</h3><p class="house-count">8 students</p><p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
           </div>
         </article>
         <article class="house-card" data-house="autumn" tabindex="0" role="button" aria-label="View Autumn students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Autumn</h3>
-            <p class="house-count">11 students</p>
-            <p class="house-desc">The biggest house in the room, and it acts like it.</p>
+            <h3>Autumn</h3><p class="house-count">11 students</p><p class="house-desc">The biggest house in the room, and it acts like it.</p>
           </div>
         </article>
         <article class="house-card" data-house="spring" tabindex="0" role="button" aria-label="View Spring students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Spring</h3>
-            <p class="house-count">8 students</p>
-            <p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
+            <h3>Spring</h3><p class="house-count">8 students</p><p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
           </div>
         </article>
         <article class="house-card" data-house="summer" tabindex="0" role="button" aria-label="View Summer students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Summer</h3>
-            <p class="house-count">3 students</p>
-            <p class="house-desc">Smallest house in the batch. Every point counts more.</p>
+            <h3>Summer</h3><p class="house-count">3 students</p><p class="house-desc">Smallest house in the batch. Every point counts more.</p>
           </div>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- STUDENTS -->
   <section class="students" id="students">
     <div class="section-inner">
       <div class="section-head">
@@ -218,124 +247,76 @@
       </div>
 
       <div class="controls">
-        <div class="search-wrap">
-          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
-        </div>
+        <div class="search-wrap"><input type="search" id="searchInput" placeholder="Search a name…" autocomplete="off" enterkeyhint="search"></div>
         <div class="filter-pills" id="filterPills">
-          <button class="pill active" data-filter="all">All</button>
-          <button class="pill" data-filter="transport:OT">OT</button>
-          <button class="pill" data-filter="house:winter">Winter</button>
-          <button class="pill" data-filter="house:autumn">Autumn</button>
-          <button class="pill" data-filter="house:spring">Spring</button>
-          <button class="pill" data-filter="house:summer">Summer</button>
+          <button class="pill active" type="button" data-filter="all">All</button>
+          <button class="pill" type="button" data-filter="transport:OT">OT</button>
+          <button class="pill" type="button" data-filter="house:winter">Winter</button>
+          <button class="pill" type="button" data-filter="house:autumn">Autumn</button>
+          <button class="pill" type="button" data-filter="house:spring">Spring</button>
+          <button class="pill" type="button" data-filter="house:summer">Summer</button>
         </div>
       </div>
 
       <p class="result-count" id="resultCount">30 students</p>
-
       <div class="student-grid" id="studentGrid"></div>
     </div>
   </section>
 
-  <!-- RESOURCES -->
   <section class="resources" id="resources">
     <div class="section-inner">
       <div class="section-head">
         <h2>Resources</h2>
-        <p class="section-sub">Quick links to the platforms 8CM actually uses. Real links go in once they're shared.</p>
+        <p class="section-sub">Quick links to the platforms 8CM actually uses.</p>
       </div>
       <div class="resource-grid" id="resourceGrid"></div>
     </div>
   </section>
 
-  <!-- STATS -->
   <section class="stats" id="stats">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>8CM, in numbers</h2>
-      </div>
+      <div class="section-head"><h2>8CM, in numbers</h2></div>
       <div class="stat-grid">
-        <div class="stat-block">
-          <p class="stat-number" data-count="30">0</p>
-          <p class="stat-label">Students</p>
-        </div>
-        <div class="stat-block">
-          <p class="stat-number" data-count="4">0</p>
-          <p class="stat-label">Houses</p>
-        </div>
-        <div class="stat-block">
-          <p class="stat-number" data-count="3">0</p>
-          <p class="stat-label">Language groups</p>
-        </div>
-        <div class="stat-block">
-          <p class="stat-number" data-count="24">0</p>
-          <p class="stat-label">Take the bus</p>
-        </div>
-        <div class="stat-block">
-          <p class="stat-number" data-count="6">0</p>
-          <p class="stat-label">Own transport</p>
-        </div>
+        <div class="stat-block"><p class="stat-number" data-count="30">0</p><p class="stat-label">Students</p></div>
+        <div class="stat-block"><p class="stat-number" data-count="4">0</p><p class="stat-label">Houses</p></div>
+        <div class="stat-block"><p class="stat-number" data-count="3">0</p><p class="stat-label">Language groups</p></div>
+        <div class="stat-block"><p class="stat-number" data-count="24">0</p><p class="stat-label">Take the bus</p></div>
+        <div class="stat-block"><p class="stat-number" data-count="6">0</p><p class="stat-label">Own transport</p></div>
       </div>
     </div>
   </section>
 
-  <!-- EVENTS -->
   <section class="empty-section" id="events">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>Events</h2>
-      </div>
-      <div class="empty-state">
-        <p class="empty-title">Nothing scheduled yet.</p>
-        <p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
-      </div>
+      <div class="section-head"><h2>Events</h2></div>
+      <div class="empty-state"><p class="empty-title">Nothing scheduled yet.</p><p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p></div>
     </div>
   </section>
 
-  <!-- GALLERY -->
   <section class="gallery" id="gallery">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>Gallery</h2>
-      </div>
+      <div class="section-head"><h2>Gallery</h2></div>
       <div class="gallery-grid">
-        <div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div><div class="gallery-placeholder"></div><div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div><div class="gallery-placeholder"></div><div class="gallery-placeholder"></div>
       </div>
       <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
     </div>
   </section>
 
-  <!-- UPDATES -->
   <section class="empty-section" id="updates">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>Updates</h2>
-      </div>
-      <div class="empty-state">
-        <p class="empty-title">No announcements right now.</p>
-        <p class="empty-body">Anything the class needs to know will be posted here first.</p>
-      </div>
+      <div class="section-head"><h2>Updates</h2></div>
+      <div class="empty-state"><p class="empty-title">No announcements right now.</p><p class="empty-body">Anything the class needs to know will be posted here first.</p></div>
     </div>
   </section>
 
-  <!-- ACHIEVEMENTS -->
   <section class="empty-section" id="achievements">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>Achievements</h2>
-      </div>
-      <div class="empty-state">
-        <p class="empty-title">The board is empty. For now.</p>
-        <p class="empty-body">Academic, sport, or competition wins get logged here as they happen.</p>
-      </div>
+      <div class="section-head"><h2>Achievements</h2></div>
+      <div class="empty-state"><p class="empty-title">The board is empty. For now.</p><p class="empty-body">Academic, sport, or competition wins get logged here as they happen.</p></div>
     </div>
   </section>
-
 </main>
 
 <footer class="footer">
@@ -345,6 +326,69 @@
   </div>
 </footer>
 
-<script src="script.js"></script>
+<div class="modal-overlay" id="authOverlay" hidden>
+  <section class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <button class="modal-close" id="authClose" type="button" aria-label="Close">×</button>
+    <p class="modal-kicker">8CM account</p>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="modal-sub">Sign in to access your class profile and live task list.</p>
+
+    <div class="auth-tabs" role="tablist" aria-label="Authentication">
+      <button class="auth-tab active" type="button" data-mode="signin">Sign in</button>
+      <button class="auth-tab" type="button" data-mode="signup">Create account</button>
+    </div>
+
+    <form id="authForm" class="auth-form" novalidate>
+      <label>
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="email" required>
+      </label>
+
+      <label data-field="displayName" hidden>
+        <span>Display name</span>
+        <input name="displayName" type="text" maxlength="80" autocomplete="name">
+      </label>
+
+      <label data-field="password">
+        <span>Password</span>
+        <input name="password" type="password" minlength="6" autocomplete="current-password">
+      </label>
+
+      <p class="auth-error" id="authError" hidden></p>
+      <p class="auth-reset-note" id="authResetNote" hidden></p>
+
+      <div class="auth-actions">
+        <button class="btn btn-primary" id="authSubmitBtn" type="submit">Sign in</button>
+        <button class="btn btn-google" id="googleSignInBtn" type="button">Continue with Google</button>
+        <button class="text-button" id="forgotPasswordBtn" type="button">Forgot password?</button>
+      </div>
+    </form>
+
+    <div class="auth-divider"><span>or</span></div>
+  </section>
+</div>
+
+<div class="modal-overlay" id="claimOverlay" hidden>
+  <section class="modal claim-modal" role="dialog" aria-modal="true" aria-labelledby="claimTitle">
+    <button class="modal-close" id="claimClose" type="button" aria-label="Close">×</button>
+    <p class="modal-kicker">Profile setup</p>
+    <h2 id="claimTitle">Link your class identity</h2>
+    <p class="modal-sub">Choose your directory entry so your account maps to the correct 8CM profile. Each student identity can only be claimed once.</p>
+
+    <label class="claim-label">
+      <span>Your name</span>
+      <select id="claimSelect"></select>
+    </label>
+
+    <p class="claim-error" id="claimError" hidden></p>
+
+    <div class="claim-actions">
+      <button class="btn btn-primary" id="claimConfirmBtn" type="button">Link profile</button>
+      <button class="btn btn-ghost" id="claimSkipBtn" type="button">Do this later</button>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="script.js"></script>
 </body>
 </html>
