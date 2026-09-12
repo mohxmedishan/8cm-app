@@ -34,6 +34,10 @@ import { auth, db } from "./firebase-config.js";
 export const ADMIN_EMAIL = "mohamedishankunnummal@gmail.com";
 
 const googleProvider = new GoogleAuthProvider();
+// Forces the account chooser every time instead of silently reusing
+// whatever Google session is cached, which is what produced confusing
+// "something went wrong" retries after a first failed popup.
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 // ------------------------------------------------
 // Friendly error messages
@@ -48,6 +52,9 @@ const ERROR_MESSAGES = {
   "auth/missing-password": "Enter a password.",
   "auth/popup-closed-by-user": "Sign-in was closed before finishing — try again.",
   "auth/cancelled-popup-request": "Sign-in was interrupted — try again.",
+  "auth/popup-blocked": "Your browser blocked the sign-in popup — allow popups for this site and try again.",
+  "auth/unauthorized-domain": "This domain isn't authorized for Google sign-in yet — an admin needs to add it in the Firebase console (Authentication → Settings → Authorized domains).",
+  "auth/operation-not-allowed": "Google sign-in isn't enabled for this project yet — an admin needs to turn it on in the Firebase console.",
   "auth/network-request-failed": "Network error — check your connection and try again.",
   "auth/too-many-requests": "Too many attempts. Wait a bit before trying again.",
   "auth/account-exists-with-different-credential":
@@ -66,12 +73,11 @@ export function signInGoogle() {
   return signInWithPopup(auth, googleProvider);
 }
 
-export async function signUpEmail(email, password, displayName) {
-  const cred = await createUserWithEmailAndPassword(auth, email, password);
-  if (displayName) {
-    await updateProfile(cred.user, { displayName });
-  }
-  return cred;
+export function signUpEmail(email, password) {
+  // No separate "name" input — identity comes from the directory-claim
+  // step right after this, so the account's displayName is synced
+  // there (see claimStudentIdentity) instead of asked for twice.
+  return createUserWithEmailAndPassword(auth, email, password);
 }
 
 export function signInEmail(email, password) {
@@ -149,6 +155,16 @@ export async function claimStudentIdentity(uid, student) {
     },
     { merge: true }
   );
+
+  // Keep the Firebase Auth displayName (used for e.g. Google-side UI)
+  // in sync with the name the student actually claimed.
+  if (auth.currentUser && auth.currentUser.uid === uid) {
+    try {
+      await updateProfile(auth.currentUser, { displayName: student.name });
+    } catch (err) {
+      console.error("Failed to sync displayName after claim:", err);
+    }
+  }
 }
 
 // ------------------------------------------------

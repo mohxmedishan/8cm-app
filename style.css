@@ -283,24 +283,47 @@ h1, h2, h3 {
 }
 
 .btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 12px 22px;
   border-radius: var(--radius-s);
   font-size: 0.92rem;
   font-weight: 500;
-  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease),
+    color 0.2s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
 }
+.btn:hover { transform: translateY(-1px) scale(1.015); }
+.btn:active { transform: translateY(0) scale(0.98); }
 
+/* Glassmorphism + glow accent, explicit dark text so it never washes
+   out against the light accent fill (the white-on-white contrast bug). */
 .btn-primary {
-  background: var(--accent);
-  color: #12211d;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #0e1c18;
+  border: 1px solid transparent;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 6px 18px -10px rgba(107, 154, 143, 0.55);
 }
-.btn-primary:hover { background: var(--accent-strong); }
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  color: #0e1c18;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 10px 24px -10px rgba(107, 154, 143, 0.75);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .btn-ghost {
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border);
   color: var(--text);
+  backdrop-filter: blur(6px);
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
 
@@ -1219,11 +1242,35 @@ h1, h2, h3 {
 }
 .auth-tab.active { background: var(--bg-elevated); color: var(--text); }
 
+/* Google button follows Google's own brand guidance: solid white
+   surface, dark high-contrast text — never inherits the dark ghost
+   button styles, which is what caused white-on-white text before. */
 .btn-google {
-  width: 100%;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  gap: 10px;
+  width: 100%;
   margin-bottom: 16px;
+  padding: 11px 18px;
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: var(--radius-s);
+  color: #3c4043;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: box-shadow 0.2s var(--ease), transform 0.15s var(--ease), background 0.2s var(--ease);
 }
+.btn-google:hover {
+  background: #f8f9fa;
+  color: #202124;
+  box-shadow: 0 4px 14px -6px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px) scale(1.01);
+}
+.btn-google:active { transform: translateY(0) scale(0.98); }
+.btn-google .google-icon { width: 18px; height: 18px; flex-shrink: 0; }
 
 .auth-divider {
   display: flex;
@@ -1265,6 +1312,31 @@ h1, h2, h3 {
   border-color: var(--accent);
 }
 
+/* Password field + eye toggle */
+.password-wrap { position: relative; display: flex; }
+.password-wrap input { padding-right: 42px; }
+.password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+.password-toggle:hover { color: var(--accent-strong); }
+.password-toggle .eye-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
 .auth-error {
   color: var(--danger);
   background: var(--danger-soft);
@@ -1303,17 +1375,19 @@ h1, h2, h3 {
    (fixes the low-contrast ghost-button state)
    ============================================ */
 .btn-add-task {
-  background: var(--accent);
-  color: #12211d;
-  border: 1px solid var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: #0e1c18;
+  border: 1px solid transparent;
   font-weight: 500;
-  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 6px 16px -10px rgba(107, 154, 143, 0.55);
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
 }
 .btn-add-task:hover {
-  background: var(--accent-strong);
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
   border-color: var(--accent-strong);
+  transform: translateY(-1px) scale(1.02);
 }
-.btn-add-task:active { transform: translateY(1px); }
+.btn-add-task:active { transform: translateY(0) scale(0.97); }
 
 /* ============================================
    Task form (add/edit)
@@ -1341,6 +1415,107 @@ h1, h2, h3 {
 
 @media (max-width: 640px) {
   .task-form-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   Immersive loading overlay — full-screen frosted
+   blur shown during async Firebase calls
+   ============================================ */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 11, 12, 0.45);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  animation: fadeIn 0.2s var(--ease) forwards;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 30px 34px;
+  background: rgba(29, 31, 35, 0.7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.6);
+}
+
+.loading-spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--border-soft);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-status {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ============================================
+   Gallery photos — real field trip images mixed
+   with the still-empty placeholders
+   ============================================ */
+.gallery-photo {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.gallery-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s var(--ease);
+}
+.gallery-photo:hover img { transform: scale(1.05); }
+.gallery-photo figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: var(--text);
+  background: linear-gradient(to top, rgba(10, 11, 12, 0.75), transparent);
+}
+
+/* ============================================
+   Profile card stats — house + transportation
+   ============================================ */
+.profile-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.profile-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 /* ============================================

@@ -36,6 +36,14 @@ function hideAuthModal() {
   $("authForm").reset();
   setAuthError(null);
   $("authResetNote").hidden = true;
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
+    const input = document.querySelector(`input[name="${btn.dataset.target}"]`);
+    if (input) input.type = "password";
+    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-label", "Show password");
+    btn.querySelector(".eye-open").hidden = false;
+    btn.querySelector(".eye-closed").hidden = true;
+  });
 }
 
 function setAuthError(message) {
@@ -52,17 +60,51 @@ function setMode(next) {
     tab.classList.toggle("active", matches);
   });
 
-  document.querySelector('[data-field="displayName"]').hidden = next !== "signup";
   document.querySelector('[data-field="password"]').hidden = next === "reset";
+  document.querySelector('[data-field="confirmPassword"]').hidden = next !== "signup";
   $("googleSignInBtn").hidden = next === "reset";
   document.querySelector(".auth-divider").hidden = next === "reset";
   $("forgotPasswordBtn").hidden = next === "signup";
   $("authResetNote").hidden = true;
 
-  $("authSubmitBtn").textContent =
+  $("authSubmitBtn").querySelector(".btn-label").textContent =
     next === "signup" ? "Create account" : next === "reset" ? "Send reset link" : "Sign in";
 
   setAuthError(null);
+}
+
+// ------------------------------------------------
+// Immersive loading overlay (blur backdrop + status)
+// ------------------------------------------------
+function showLoading(status) {
+  $("loadingStatus").textContent = status || "Working…";
+  $("loadingOverlay").hidden = false;
+}
+
+function setLoadingStatus(status) {
+  $("loadingStatus").textContent = status;
+}
+
+function hideLoading() {
+  $("loadingOverlay").hidden = true;
+}
+
+// ------------------------------------------------
+// Password visibility toggles
+// ------------------------------------------------
+function wirePasswordToggles() {
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const input = document.querySelector(`input[name="${btn.dataset.target}"]`);
+      if (!input) return;
+      const nowVisible = input.type === "password"; // about to become visible
+      input.type = nowVisible ? "text" : "password";
+      btn.setAttribute("aria-pressed", String(nowVisible));
+      btn.setAttribute("aria-label", nowVisible ? "Hide password" : "Show password");
+      btn.querySelector(".eye-open").hidden = nowVisible;
+      btn.querySelector(".eye-closed").hidden = !nowVisible;
+    });
+  });
 }
 
 async function handleAuthSubmit(e) {
@@ -70,25 +112,38 @@ async function handleAuthSubmit(e) {
   const f = e.target;
   const email = f.email.value.trim();
   const password = f.password.value;
-  const displayName = f.displayName.value.trim();
+  const confirmPassword = f.confirmPassword.value;
 
   setAuthError(null);
 
+  if (mode === "signup" && password !== confirmPassword) {
+    setAuthError("Those passwords don't match — check and try again.");
+    return;
+  }
+
   try {
     if (mode === "signup") {
-      const cred = await signUpEmail(email, password, displayName);
+      showLoading("Creating your account…");
+      const cred = await signUpEmail(email, password);
+      setLoadingStatus("Setting up your profile…");
       await ensureProfileDoc(cred.user);
+      hideLoading();
       hideAuthModal();
       openClaimModal();
     } else if (mode === "reset") {
+      showLoading("Sending reset link…");
       await resetPassword(email);
+      hideLoading();
       $("authResetNote").hidden = false;
       $("authResetNote").textContent = "Reset link sent — check your inbox.";
     } else {
+      showLoading("Signing in…");
       await signInEmail(email, password);
+      hideLoading();
       hideAuthModal();
     }
   } catch (err) {
+    hideLoading();
     console.error(err);
     setAuthError(getFriendlyAuthError(err));
   }
@@ -96,14 +151,18 @@ async function handleAuthSubmit(e) {
 
 async function handleGoogleSignIn() {
   setAuthError(null);
+  showLoading("Connecting to Google…");
   try {
     const cred = await signInGoogle();
+    setLoadingStatus("Setting up your profile…");
     await ensureProfileDoc(cred.user);
+    hideLoading();
     hideAuthModal();
     if (!latestState.profile || !latestState.profile.claimedStudentId) {
       openClaimModal();
     }
   } catch (err) {
+    hideLoading();
     console.error(err);
     setAuthError(getFriendlyAuthError(err));
   }
@@ -160,6 +219,14 @@ function initials(name) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
+function houseLabel(house) {
+  return house.charAt(0).toUpperCase() + house.slice(1);
+}
+
+function transportLabel(t) {
+  return t === "OT" ? "Own transport" : `Bus ${t}`;
+}
+
 function renderAuthSlot() {
   const slot = $("authSlot");
   if (!slot) return;
@@ -173,6 +240,9 @@ function renderAuthSlot() {
 
   const name = (profile && profile.claimedStudentName) || user.displayName || user.email || "Account";
   const needsClaim = !profile || !profile.claimedStudentId;
+  const student = profile && profile.claimedStudentId
+    ? students.find((s) => s.id === profile.claimedStudentId)
+    : null;
 
   slot.innerHTML = `
     <div class="nav-item has-dropdown" id="profileItem">
@@ -184,6 +254,14 @@ function renderAuthSlot() {
         <p class="profile-name">${name}</p>
         <p class="profile-email">${user.email || ""}</p>
         ${admin ? `<span class="admin-pill">Admin</span>` : ""}
+        ${student ? `
+          <div class="profile-stats">
+            <span class="profile-stat-pill house-${student.house}">
+              <span class="house-dot ${student.house}"></span>${houseLabel(student.house)}
+            </span>
+            <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
+          </div>
+        ` : ""}
         ${needsClaim ? `<button class="dropdown-action" id="completeProfileBtn">Finish setting up profile</button>` : ""}
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
@@ -221,6 +299,8 @@ document.addEventListener("click", (e) => {
 // Init
 // ------------------------------------------------
 export function initAuthUI() {
+  wirePasswordToggles();
+
   document.querySelectorAll(".auth-tab").forEach((tab) => {
     tab.addEventListener("click", () => setMode(tab.dataset.mode));
   });
