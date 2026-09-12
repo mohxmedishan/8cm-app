@@ -1338,6 +1338,10 @@ h1, h2, h3 {
 }
 
 .auth-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--danger);
   background: var(--danger-soft);
   border: 1px solid rgba(193, 102, 90, 0.35);
@@ -1346,6 +1350,22 @@ h1, h2, h3 {
   font-size: 0.82rem;
   margin: 0;
 }
+
+.auth-error-retry {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(193, 102, 90, 0.5);
+  border-radius: var(--radius-s);
+  color: var(--danger);
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 500;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.auth-error-retry:hover { background: rgba(193, 102, 90, 0.16); }
+.auth-error-retry:active { transform: scale(0.96); }
 
 .auth-note {
   color: var(--accent-strong);
@@ -1464,6 +1484,103 @@ h1, h2, h3 {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* Closing state — animated fade instead of an instant [hidden] snap,
+   so async handlers never appear to slam the overlay shut. */
+.loading-overlay.hiding { animation: fadeOut 0.18s var(--ease) forwards; }
+
+/* ============================================
+   Gallery lightbox — 4KWallpapers-style zoom view
+   ============================================ */
+body.lightbox-locked { overflow: hidden; }
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 650;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: rgba(8, 9, 10, 0.88);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.22s var(--ease);
+}
+.lightbox-overlay.open { opacity: 1; }
+
+.lightbox-frame {
+  position: relative;
+  margin: 0;
+  max-width: min(1100px, 92vw);
+  max-height: 88vh;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+  transform: scale(0.94);
+  opacity: 0;
+  transition: transform 0.28s var(--ease), opacity 0.28s var(--ease);
+}
+.lightbox-overlay.open .lightbox-frame {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.lightbox-frame img {
+  display: block;
+  max-width: min(1100px, 92vw);
+  max-height: 88vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #000;
+}
+
+.lightbox-frame figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 16px 22px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  background: rgba(20, 21, 24, 0.45);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 31, 35, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), transform 0.15s var(--ease), border-color 0.2s var(--ease);
+}
+.lightbox-close:hover {
+  background: rgba(29, 31, 35, 0.85);
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+
+@media (max-width: 640px) {
+  .lightbox-close { top: 14px; right: 14px; }
+  .lightbox-frame figcaption { font-size: 0.85rem; padding: 12px 16px; }
+}
 
 /* ============================================
    Gallery photos — real field trip images mixed
@@ -1477,6 +1594,11 @@ h1, h2, h3 {
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--bg-elevated);
+  cursor: zoom-in;
+}
+.gallery-photo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .gallery-photo img {
   width: 100%;

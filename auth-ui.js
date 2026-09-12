@@ -15,6 +15,7 @@ import {
   signOutUser,
   getFriendlyAuthError,
   ensureProfileDoc,
+  getProfile,
   claimStudentIdentity,
 } from "./auth.js";
 
@@ -46,10 +47,27 @@ function hideAuthModal() {
   });
 }
 
-function setAuthError(message) {
+function setAuthError(message, retryFn) {
   const el = $("authError");
+  el.innerHTML = "";
   el.hidden = !message;
-  el.textContent = message || "";
+  if (!message) return;
+
+  const text = document.createElement("span");
+  text.textContent = message;
+  el.appendChild(text);
+
+  if (retryFn) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "auth-error-retry";
+    btn.textContent = "Try again";
+    btn.addEventListener("click", () => {
+      setAuthError(null);
+      retryFn();
+    });
+    el.appendChild(btn);
+  }
 }
 
 function setMode(next) {
@@ -77,6 +95,7 @@ function setMode(next) {
 // Immersive loading overlay (blur backdrop + status)
 // ------------------------------------------------
 function showLoading(status) {
+  $("loadingOverlay").classList.remove("hiding");
   $("loadingStatus").textContent = status || "Working…";
   $("loadingOverlay").hidden = false;
 }
@@ -86,7 +105,47 @@ function setLoadingStatus(status) {
 }
 
 function hideLoading() {
-  $("loadingOverlay").hidden = true;
+  const el = $("loadingOverlay");
+  if (el.hidden) return;
+  // Fade out rather than snapping to [hidden] instantly, so a fast
+  // Firebase response never reads as an abrupt, jarring close.
+  el.classList.add("hiding");
+  setTimeout(() => {
+    el.hidden = true;
+    el.classList.remove("hiding");
+  }, 180);
+}
+
+// ------------------------------------------------
+// Wait for the global auth subscription (below) to actually reflect
+// the just-signed-in user — including its Firestore profile fetch —
+// before any modal/loading state is dismissed. Signing in resolves
+// the moment Firebase Auth confirms the credential, but our own
+// onAuthStateChanged → getProfile chain runs a beat *after* that, so
+// closing the modal on promise-resolution alone could show a stale
+// "Sign in" button for a frame, or make a Google-returning-user
+// wrongly look like they still need to claim a name. This polls
+// `latestState` (kept current by subscribeAuth below) until it lines
+// up with the uid we just authenticated, with a defensive timeout so
+// a dropped listener can never hang the UI forever.
+function waitForAuthUser(uid, timeoutMs = 6000) {
+  return new Promise((resolve) => {
+    if (latestState.user && latestState.user.uid === uid) {
+      resolve(latestState);
+      return;
+    }
+    const interval = setInterval(() => {
+      if (latestState.user && latestState.user.uid === uid) {
+        finish();
+      }
+    }, 50);
+    const timer = setTimeout(finish, timeoutMs);
+    function finish() {
+      clearInterval(interval);
+      clearTimeout(timer);
+      resolve(latestState);
+    }
+  });
 }
 
 // ------------------------------------------------
@@ -121,50 +180,104 @@ async function handleAuthSubmit(e) {
     return;
   }
 
+  if (mode === "signup") {
+    await runSignUp(email, password);
+  } else if (mode === "reset") {
+    await runReset(email);
+  } else {
+    await runSignIn(email, password);
+  }
+}
+
+// ------------------------------------------------
+// Each Firebase call gets its own try/catch so a failure at any one
+// stage (the auth call itself vs. the Firestore sync afterward) gets
+// its own accurate message and its own retry, instead of one
+// catch-all that can't tell the two apart.
+// ------------------------------------------------
+async function runSignIn(email, password) {
+  showLoading("Signing in…");
+  let cred;
   try {
-    if (mode === "signup") {
-      showLoading("Creating your account…");
-      const cred = await signUpEmail(email, password);
-      setLoadingStatus("Setting up your profile…");
-      await ensureProfileDoc(cred.user);
-      hideLoading();
-      hideAuthModal();
-      openClaimModal();
-    } else if (mode === "reset") {
-      showLoading("Sending reset link…");
-      await resetPassword(email);
-      hideLoading();
-      $("authResetNote").hidden = false;
-      $("authResetNote").textContent = "Reset link sent — check your inbox.";
-    } else {
-      showLoading("Signing in…");
-      await signInEmail(email, password);
-      hideLoading();
-      hideAuthModal();
-    }
+    cred = await signInEmail(email, password);
   } catch (err) {
     hideLoading();
     console.error(err);
-    setAuthError(getFriendlyAuthError(err));
+    setAuthError(getFriendlyAuthError(err), () => runSignIn(email, password));
+    return;
+  }
+  await finishAfterAuth(cred.user, { claimCheck: "skip" });
+}
+
+async function runSignUp(email, password) {
+  showLoading("Creating your account…");
+  let cred;
+  try {
+    cred = await signUpEmail(email, password);
+  } catch (err) {
+    hideLoading();
+    console.error(err);
+    setAuthError(getFriendlyAuthError(err), () => runSignUp(email, password));
+    return;
+  }
+  await finishAfterAuth(cred.user, { claimCheck: "always" });
+}
+
+async function runReset(email) {
+  showLoading("Sending reset link…");
+  try {
+    await resetPassword(email);
+    hideLoading();
+    $("authResetNote").hidden = false;
+    $("authResetNote").textContent = "Reset link sent — check your inbox.";
+  } catch (err) {
+    hideLoading();
+    console.error(err);
+    setAuthError(getFriendlyAuthError(err), () => runReset(email));
   }
 }
 
 async function handleGoogleSignIn() {
   setAuthError(null);
   showLoading("Connecting to Google…");
+  let cred;
   try {
-    const cred = await signInGoogle();
+    cred = await signInGoogle();
+  } catch (err) {
+    hideLoading();
+    console.error(err);
+    setAuthError(getFriendlyAuthError(err), handleGoogleSignIn);
+    return;
+  }
+  await finishAfterAuth(cred.user, { claimCheck: "check" });
+}
+
+// Runs after Firebase Auth itself has already succeeded: syncs the
+// Firestore profile doc, waits for that to actually propagate through
+// the app's own auth-state subscription, and only then dismisses the
+// loading state and the modal — this is the fix for the popup/modal
+// closing before Firebase state had fully settled. If this stage
+// fails, the account still exists, so retrying re-runs *this* step
+// only rather than re-attempting sign-in/sign-up (which would just
+// fail again with "email already in use").
+async function finishAfterAuth(user, { claimCheck }) {
+  try {
     setLoadingStatus("Setting up your profile…");
-    await ensureProfileDoc(cred.user);
+    await ensureProfileDoc(user);
+    const profile = claimCheck === "check" ? await getProfile(user.uid) : null;
+    await waitForAuthUser(user.uid);
     hideLoading();
     hideAuthModal();
-    if (!latestState.profile || !latestState.profile.claimedStudentId) {
+    if (claimCheck === "always" || (claimCheck === "check" && (!profile || !profile.claimedStudentId))) {
       openClaimModal();
     }
   } catch (err) {
     hideLoading();
     console.error(err);
-    setAuthError(getFriendlyAuthError(err));
+    setAuthError(
+      "Signed in, but we couldn't finish syncing your profile. Try again.",
+      () => finishAfterAuth(user, { claimCheck })
+    );
   }
 }
 

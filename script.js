@@ -163,6 +163,68 @@ resources.forEach((r) => {
 });
 
 // ============================================
+// Gallery lightbox — 4KWallpapers-style zoom view
+// Click any real gallery photo to open a centered, animated
+// enlargement with the caption pinned to the bottom on a
+// frosted-glass strip.
+// ============================================
+const lightboxOverlay = document.getElementById("lightboxOverlay");
+const lightboxImage = document.getElementById("lightboxImage");
+const lightboxCaption = document.getElementById("lightboxCaption");
+const lightboxClose = document.getElementById("lightboxClose");
+
+function openLightbox(photo) {
+  const img = photo.querySelector("img");
+  const caption = photo.querySelector("figcaption");
+  if (!img || !lightboxOverlay) return;
+
+  lightboxImage.src = img.currentSrc || img.src;
+  lightboxImage.alt = img.alt || "";
+  lightboxCaption.textContent = caption ? caption.textContent : "";
+
+  lightboxOverlay.hidden = false;
+  document.body.classList.add("lightbox-locked");
+  // Two-step so the browser registers [hidden] removal before the
+  // transition class flips — otherwise the fade/scale-in never plays.
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => lightboxOverlay.classList.add("open"));
+  });
+}
+
+function closeLightbox() {
+  if (!lightboxOverlay || lightboxOverlay.hidden) return;
+  lightboxOverlay.classList.remove("open");
+  document.body.classList.remove("lightbox-locked");
+  setTimeout(() => {
+    lightboxOverlay.hidden = true;
+    lightboxImage.src = "";
+  }, 220);
+}
+
+document.querySelectorAll(".gallery-photo").forEach((photo) => {
+  photo.setAttribute("tabindex", "0");
+  photo.setAttribute("role", "button");
+  photo.setAttribute("aria-label", "View larger photo");
+  photo.addEventListener("click", () => openLightbox(photo));
+  photo.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      openLightbox(photo);
+    }
+  });
+});
+
+if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
+if (lightboxOverlay) {
+  lightboxOverlay.addEventListener("click", (e) => {
+    if (e.target === lightboxOverlay) closeLightbox();
+  });
+}
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeLightbox();
+});
+
+// ============================================
 // Nav: scroll shadow, mobile menu, Home + More dropdowns
 // ============================================
 const nav = document.getElementById("nav");
