@@ -35,6 +35,18 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// Loudly flag the template placeholders instead of letting every auth
+// call fail with an opaque "something went wrong" — this is what was
+// actually happening: no code bug, just no real project wired up yet.
+export const isFirebaseConfigured = !Object.values(firebaseConfig).some((v) =>
+  String(v).startsWith("REPLACE_WITH_")
+);
+if (!isFirebaseConfigured) {
+  console.error(
+    "[8CM] firebase-config.js still has placeholder values — every sign-in/sign-up call will fail until you paste in your real project config from Firebase console → Project settings → General → Your apps → SDK setup and configuration."
+  );
+}
+
 // Persist sessions across refreshes/tabs so onAuthStateChanged in
 // auth.js picks the user back up automatically on reload.
 setPersistence(auth, browserLocalPersistence).catch((err) => {

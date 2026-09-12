@@ -25,7 +25,9 @@ import {
   getDocs,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+import { auth, db, isFirebaseConfigured } from "./firebase-config.js";
+
+export { isFirebaseConfigured };
 
 // This must match the email allow-listed in firestore.rules for the
 // tasks collection. Keeping it here too lets the UI hide admin
@@ -59,6 +61,11 @@ const ERROR_MESSAGES = {
   "auth/too-many-requests": "Too many attempts. Wait a bit before trying again.",
   "auth/account-exists-with-different-credential":
     "This email is already linked to Google sign-in. Use \"Continue with Google\" instead.",
+  "auth/invalid-api-key": "This site's Firebase project isn't configured yet — see firebase-config.js.",
+  "auth/api-key-not-valid": "This site's Firebase project isn't configured yet — see firebase-config.js.",
+  "auth/configuration-not-found": "This site's Firebase project isn't configured yet — see firebase-config.js.",
+  "auth/app-not-authorized": "This site's Firebase project isn't configured yet — see firebase-config.js.",
+  "auth/invalid-app-credential": "This site's Firebase project isn't configured yet — see firebase-config.js.",
 };
 
 export function getFriendlyAuthError(error) {

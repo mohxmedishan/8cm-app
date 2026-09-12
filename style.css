@@ -1337,6 +1337,23 @@ h1, h2, h3 {
   fill: currentColor;
 }
 
+.config-banner {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  background: rgba(224, 168, 78, 0.12);
+  border: 1px solid rgba(224, 168, 78, 0.4);
+  border-radius: var(--radius-s);
+  color: #e0a84e;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.config-banner code {
+  background: rgba(224, 168, 78, 0.18);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
 .auth-error {
   display: flex;
   align-items: center;

@@ -17,6 +17,7 @@ import {
   ensureProfileDoc,
   getProfile,
   claimStudentIdentity,
+  isFirebaseConfigured,
 } from "./auth.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
@@ -413,6 +414,10 @@ document.addEventListener("click", (e) => {
 // ------------------------------------------------
 export function initAuthUI() {
   wirePasswordToggles();
+
+  if (!isFirebaseConfigured) {
+    $("configBanner").hidden = false;
+  }
 
   document.querySelectorAll(".auth-tab").forEach((tab) => {
     tab.addEventListener("click", () => setMode(tab.dataset.mode));
