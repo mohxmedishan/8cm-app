@@ -6,41 +6,103 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+let firebaseApp = null;
+let firebaseAuth = null;
+let firebaseDb = null;
+let firebaseInitPromise = null;
+
 async function loadFirebaseConfig() {
   const response = await fetch("/api/firebase-config", {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+    },
     cache: "no-store",
   });
 
   if (!response.ok) {
-    let details = "The Firebase configuration endpoint is unavailable.";
+    let message = "Firebase configuration could not be loaded.";
+
     try {
-      const payload = await response.json();
-      if (payload && payload.error) details = payload.error;
-      if (Array.isArray(payload && payload.missing) && payload.missing.length) {
-        details += ` Missing environment values: ${payload.missing.join(", ")}.`;
+      const data = await response.json();
+
+      if (data?.error) {
+        message = data.error;
+      }
+
+      if (Array.isArray(data?.missing) && data.missing.length > 0) {
+        message += ` Missing: ${data.missing.join(", ")}.`;
       }
     } catch {
-      // Preserve the actionable fallback message when the API did not return JSON.
+      // Keep the default error message.
     }
-    throw new Error(details);
+
+    throw new Error(message);
   }
 
   const config = await response.json();
-  const required = ["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"];
+
+  const required = [
+    "apiKey",
+    "authDomain",
+    "projectId",
+    "storageBucket",
+    "messagingSenderId",
+    "appId",
+  ];
+
   const missing = required.filter((key) => !config[key]);
-  if (missing.length) {
-    throw new Error(`Firebase configuration is incomplete. Missing: ${missing.join(", ")}.`);
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Firebase configuration is incomplete. Missing: ${missing.join(", ")}.`
+    );
   }
+
   return config;
 }
 
-export const firebaseConfig = await loadFirebaseConfig();
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export async function initializeFirebase() {
+  if (firebaseInitPromise) {
+    return firebaseInitPromise;
+  }
 
-export const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Failed to enable local auth persistence:", error);
-});
+  firebaseInitPromise = (async () => {
+    const config = await loadFirebaseConfig();
+
+    firebaseApp = initializeApp(config);
+    firebaseAuth = getAuth(firebaseApp);
+    firebaseDb = getFirestore(firebaseApp);
+
+    await setPersistence(firebaseAuth, browserLocalPersistence);
+
+    return {
+      app: firebaseApp,
+      auth: firebaseAuth,
+      db: firebaseDb,
+    };
+  })();
+
+  try {
+    return await firebaseInitPromise;
+  } catch (error) {
+    firebaseInitPromise = null;
+    throw error;
+  }
+}
+
+export async function getFirebaseAuth() {
+  if (!firebaseAuth) {
+    await initializeFirebase();
+  }
+
+  return firebaseAuth;
+}
+
+export async function getFirebaseDb() {
+  if (!firebaseDb) {
+    await initializeFirebase();
+  }
+
+  return firebaseDb;
+}
