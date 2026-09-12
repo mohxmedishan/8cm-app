@@ -15,7 +15,6 @@ import {
   signOutUser,
   getFriendlyAuthError,
   ensureProfileDoc,
-  getProfile,
   claimStudentIdentity,
   isFirebaseConfigured,
 } from "./auth.js";
@@ -207,7 +206,7 @@ async function runSignIn(email, password) {
     setAuthError(getFriendlyAuthError(err), () => runSignIn(email, password));
     return;
   }
-  await finishAfterAuth(cred.user, { claimCheck: "skip" });
+  await finishAfterAuth(cred.user);
 }
 
 async function runSignUp(email, password) {
@@ -221,7 +220,7 @@ async function runSignUp(email, password) {
     setAuthError(getFriendlyAuthError(err), () => runSignUp(email, password));
     return;
   }
-  await finishAfterAuth(cred.user, { claimCheck: "always" });
+  await finishAfterAuth(cred.user);
 }
 
 async function runReset(email) {
@@ -250,34 +249,32 @@ async function handleGoogleSignIn() {
     setAuthError(getFriendlyAuthError(err), handleGoogleSignIn);
     return;
   }
-  await finishAfterAuth(cred.user, { claimCheck: "check" });
+  await finishAfterAuth(cred.user);
 }
 
 // Runs after Firebase Auth itself has already succeeded: syncs the
-// Firestore profile doc, waits for that to actually propagate through
-// the app's own auth-state subscription, and only then dismisses the
-// loading state and the modal — this is the fix for the popup/modal
-// closing before Firebase state had fully settled. If this stage
-// fails, the account still exists, so retrying re-runs *this* step
-// only rather than re-attempting sign-in/sign-up (which would just
-// fail again with "email already in use").
-async function finishAfterAuth(user, { claimCheck }) {
+// Firestore profile doc, then waits for that to actually propagate
+// through the app's own auth-state subscription before dismissing the
+// loading state and the sign-in modal — this is the fix for the
+// popup/modal closing before Firebase state had fully settled.
+//
+// It deliberately does NOT decide whether the identity-claim modal
+// should open: subscribeAuth's callback below does that, uniformly,
+// for every sign-in path (email, sign-up, Google, and a restored
+// session on page load) instead of each call site guessing.
+async function finishAfterAuth(user) {
   try {
     setLoadingStatus("Setting up your profile…");
     await ensureProfileDoc(user);
-    const profile = claimCheck === "check" ? await getProfile(user.uid) : null;
     await waitForAuthUser(user.uid);
     hideLoading();
     hideAuthModal();
-    if (claimCheck === "always" || (claimCheck === "check" && (!profile || !profile.claimedStudentId))) {
-      openClaimModal();
-    }
   } catch (err) {
     hideLoading();
     console.error(err);
     setAuthError(
       "Signed in, but we couldn't finish syncing your profile. Try again.",
-      () => finishAfterAuth(user, { claimCheck })
+      () => finishAfterAuth(user)
     );
   }
 }
@@ -313,15 +310,35 @@ async function handleClaimConfirm() {
   const student = students.find((s) => s.id === studentId);
   if (!student || !latestState.user) return;
 
+  const btn = $("claimConfirmBtn");
+  btn.disabled = true;
+  $("claimError").hidden = true;
+
   try {
     await claimStudentIdentity(latestState.user.uid, student);
+    // Firestore writes don't re-trigger onAuthStateChanged, so the
+    // reactive state never hears about this on its own — that's what
+    // used to force a manual page reload before the claimed name and
+    // house/transport stats would show up. Patch it in directly here
+    // instead of waiting on a listener that will never fire.
+    latestState = {
+      ...latestState,
+      profile: {
+        ...(latestState.profile || {}),
+        claimedStudentId: student.id,
+        claimedStudentName: student.name,
+      },
+    };
+    renderAuthSlot();
     closeClaimModal();
   } catch (err) {
     $("claimError").hidden = false;
     $("claimError").textContent =
       err.code === "identity/already-claimed"
-        ? "That student is already linked to another account. Pick your own name, or check with an admin if that's wrong."
+        ? "That student is already linked to another account. Pick a different name."
         : "Couldn't save that right now. Try again.";
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -353,7 +370,6 @@ function renderAuthSlot() {
   }
 
   const name = (profile && profile.claimedStudentName) || user.displayName || user.email || "Account";
-  const needsClaim = !profile || !profile.claimedStudentId;
   const student = profile && profile.claimedStudentId
     ? students.find((s) => s.id === profile.claimedStudentId)
     : null;
@@ -376,7 +392,6 @@ function renderAuthSlot() {
             <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
           </div>
         ` : ""}
-        ${needsClaim ? `<button class="dropdown-action" id="completeProfileBtn">Finish setting up profile</button>` : ""}
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
     </div>
@@ -394,14 +409,6 @@ function renderAuthSlot() {
     signOutUser();
     item.classList.remove("open");
   });
-
-  const completeBtn = $("completeProfileBtn");
-  if (completeBtn) {
-    completeBtn.addEventListener("click", () => {
-      item.classList.remove("open");
-      openClaimModal();
-    });
-  }
 }
 
 document.addEventListener("click", (e) => {
@@ -431,14 +438,34 @@ export function initAuthUI() {
     if (e.target === $("authOverlay")) hideAuthModal();
   });
 
-  $("claimSkipBtn").addEventListener("click", closeClaimModal);
   $("claimConfirmBtn").addEventListener("click", handleClaimConfirm);
-  $("claimOverlay").addEventListener("click", (e) => {
-    if (e.target === $("claimOverlay")) closeClaimModal();
+  // This signs the account out entirely — it's not a "skip", it's the
+  // only way out for someone who authenticated with the wrong Google
+  // account and would otherwise be stuck behind a modal with no close
+  // button and nothing else on the page reachable.
+  $("claimWrongAccountBtn").addEventListener("click", () => {
+    signOutUser();
+    closeClaimModal();
   });
+  // Deliberately no backdrop-click or Escape handler here, and no
+  // close/skip button in the markup — see the mandatory-claim note
+  // above the subscribeAuth call below.
 
   subscribeAuth((state) => {
     latestState = state;
     renderAuthSlot();
+
+    // Single source of truth for "does the claim modal need to be
+    // open right now?" — runs for every sign-in path (email, sign-up,
+    // Google) *and* for a session restored on page load, instead of
+    // each call site deciding for itself. A signed-in user with no
+    // linked student is forced through this every time until they
+    // complete it; there is no skip.
+    const overlay = $("claimOverlay");
+    if (state.user && (!state.profile || !state.profile.claimedStudentId)) {
+      if (overlay.hidden) openClaimModal();
+    } else if (!overlay.hidden) {
+      closeClaimModal();
+    }
   });
 }

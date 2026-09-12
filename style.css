@@ -1407,6 +1407,12 @@ h1, h2, h3 {
 }
 .link-btn:hover { color: var(--accent-strong); }
 
+.claim-wrong-account {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+}
+
 /* ============================================
    Add Task button — solid, always legible
    (fixes the low-contrast ghost-button state)

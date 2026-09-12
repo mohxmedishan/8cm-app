@@ -6,7 +6,11 @@
 <title>8CM.</title>
 <meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba. Students, houses, resources, and what's due today.">
 <meta name="theme-color" content="#16171a">
+<link rel="canonical" href="https://8cm.vercel.app/">
+<meta property="og:url" content="https://8cm.vercel.app/">
+<meta property="og:site_name" content="8CM">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="8CM.">
 
@@ -480,12 +484,14 @@
 </div>
 
 <!-- ============================================
-     Identity claim (post sign-up / first Google sign-in)
+     Identity claim — mandatory before using the account.
+     No skip/close: this modal only ever gets hidden once a
+     claim actually succeeds (see auth-ui.js).
      ============================================ -->
 <div class="modal-overlay" id="claimOverlay" hidden>
   <div class="modal-card">
     <h3>Which one are you?</h3>
-    <p class="modal-sub">Link your account to your name in the directory. It's one-time, and it stops anyone else from claiming it after you.</p>
+    <p class="modal-sub">Pick your name from the directory to finish setting up your account. This is one-time, and it stops anyone else from claiming it after you.</p>
 
     <label class="field">
       <span>Your name</span>
@@ -495,9 +501,9 @@
     <p class="auth-error" id="claimError" hidden></p>
 
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="claimSkipBtn" type="button">Skip for now</button>
       <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
     </div>
+    <button type="button" class="link-btn claim-wrong-account" id="claimWrongAccountBtn">Signed in with the wrong account? Sign out</button>
   </div>
 </div>
 

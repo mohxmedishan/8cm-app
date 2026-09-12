@@ -71,7 +71,7 @@ function renderTasks() {
 
 function startTasksListener() {
   const q = query(collection(db, "tasks"), orderBy("createdAt", "asc"));
-  onSnapshot(
+  return onSnapshot(
     q,
     (snap) => {
       tasksCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -146,12 +146,36 @@ async function handleSubmit(e) {
 }
 
 export function initTasks() {
-  startTasksListener();
+  // firestore.rules requires request.auth != null to read /tasks, but
+  // this used to call startTasksListener() unconditionally at load —
+  // before Firebase Auth had finished restoring the persisted session.
+  // The very first query would run with no auth token attached yet,
+  // Firestore would reject it as "Missing or insufficient permissions,"
+  // and onSnapshot's error callback never fires again to retry. Gating
+  // the listener on the auth-state subscription instead means it only
+  // ever starts once we actually know whether someone's signed in.
+  let unsubscribeTasks = null;
+  let listening = false;
 
-  subscribeAuth(({ admin }) => {
+  subscribeAuth(({ user, admin }) => {
     isCurrentAdmin = admin;
     applyAdminVisibility();
-    renderTasks();
+
+    if (user) {
+      if (!listening) {
+        listening = true;
+        unsubscribeTasks = startTasksListener();
+      }
+    } else {
+      if (unsubscribeTasks) {
+        unsubscribeTasks();
+        unsubscribeTasks = null;
+        listening = false;
+      }
+      tasksCache = [];
+      const list = $("taskList");
+      if (list) list.innerHTML = `<p class="task-empty">Sign in to see today's tasks.</p>`;
+    }
   });
 
   const addBtn = $("addTaskBtn");
