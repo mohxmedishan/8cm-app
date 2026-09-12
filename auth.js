@@ -137,16 +137,14 @@ async function getProfileWithRetry(uid, attempts = 3, baseDelayMs = 200) {
 // ------------------------------------------------
 // Local claim cache
 // ------------------------------------------------
-// A same-browser, per-uid memory of the last claimedStudentId we
-// actually saw succeed. This exists purely as a bridge for the
-// getProfileWithRetry window above: if EVERY retry throws (a longer
-// permission-propagation stall than 3 tries covers, a flaky
-// connection, etc.), the old behavior was to fall back to
-// profile = null — which is exactly what forced an already-claimed
-// person back through the "which one are you?" modal on some
-// sign-ins. Now that case falls back to this cache instead. It is
-// never treated as more trustworthy than a real Firestore read —
-// it only fills the gap when Firestore couldn't be reached at all.
+// A same-browser, per-uid memory of the last claimedStudentId this
+// account successfully claimed. subscribeAuth below treats this as
+// the deciding factor for "has this account already onboarded" any
+// time Firestore doesn't hand back a claim on its own (a slow read,
+// a permission-propagation stall right after sign-in, a dropped
+// retry) — that gap used to mean the picker got shown again on a
+// perfectly normal re-sign-in. A real Firestore claim always takes
+// priority when it's present; this only fills in when it's missing.
 function claimCacheKey(uid) {
   return `8cm:claimedStudent:${uid}`;
 }
@@ -296,12 +294,22 @@ export function subscribeAuth(callback) {
       profile = await getProfileWithRetry(user.uid);
     } catch (err) {
       console.error("Failed to load profile after retries:", err);
-      // Firestore was unreachable for the whole retry window — fall
-      // back to the last claim this browser confirmed rather than
-      // treating this uid as unclaimed and re-showing the picker.
+    }
+
+    // The single source of truth for "has this account already picked
+    // a student" is meant to be Firestore's claimedStudentId — but a
+    // signed-in user should NEVER see the picker again once they've
+    // completed it on this browser, full stop, regardless of whether
+    // this particular Firestore read came back clean, came back
+    // without the field due to a propagation lag, or failed outright.
+    // So: if Firestore didn't give us a claim but this browser has
+    // already seen this uid claim one, trust the cache instead of
+    // re-opening the picker. A genuine Firestore claim always wins
+    // when it's present — this only fills the gap when it's absent.
+    if (!profile || !profile.claimedStudentId) {
       const cached = getCachedClaim(user.uid);
       if (cached) {
-        profile = { claimedStudentId: cached.id, claimedStudentName: cached.name };
+        profile = { ...(profile || {}), claimedStudentId: cached.id, claimedStudentName: cached.name };
       }
     }
 

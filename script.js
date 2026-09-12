@@ -359,14 +359,13 @@ window.addEventListener("load", () => {
 });
 
 // ============================================
-// Update log — footer, visible to everyone, collapsed by default
+// Changelog — its own always-visible section, filled from changelog.js
 // ============================================
 function renderChangelog() {
-  const list = document.getElementById("changelogList");
-  const toggle = document.getElementById("changelogToggle");
-  if (!list || !toggle) return;
+  const container = document.getElementById("changelogEntries");
+  if (!container) return;
 
-  list.innerHTML = changelog
+  container.innerHTML = changelog
     .map(
       (entry) => `
         <div class="changelog-entry">
@@ -378,13 +377,6 @@ function renderChangelog() {
       `
     )
     .join("");
-
-  toggle.addEventListener("click", () => {
-    const open = list.hidden;
-    list.hidden = !open;
-    toggle.setAttribute("aria-expanded", String(open));
-    toggle.classList.toggle("open", open);
-  });
 }
 renderChangelog();
 
