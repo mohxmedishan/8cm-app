@@ -1,320 +1,89 @@
-import { students } from "./students.js";
+import { students } from './students.js';
 
-const grid = document.getElementById("studentGrid");
-const resultCount = document.getElementById("resultCount");
-
-function transportLabel(transport) {
-  return transport === "OT" ? "Own transport" : `Bus ${transport}`;
-}
-
-function houseLabel(house) {
-  return house.charAt(0).toUpperCase() + house.slice(1);
-}
+const $ = (id) => document.getElementById(id);
+const grid = $('studentGrid');
+const resultCount = $('resultCount');
+let filters = new Set();
+let search = '';
 
 function renderStudents(list) {
+  if (!grid || !resultCount) return;
   grid.replaceChildren();
-  grid.classList.toggle("empty", list.length === 0);
-
-  list.forEach((student, index) => {
-    const card = document.createElement("div");
-    card.className = "student-card";
-    card.style.animationDelay = `${Math.min(index, 12) * 0.02}s`;
-
-    const top = document.createElement("div");
-    top.className = "student-top";
-
-    const dot = document.createElement("span");
-    dot.className = `house-dot ${student.house}`;
-
-    const name = document.createElement("span");
-    name.className = "student-name";
-    name.textContent = student.name;
-
+  grid.classList.toggle('empty', list.length === 0);
+  list.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'student-card';
+    card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+    const top = document.createElement('div'); top.className = 'student-top';
+    const dot = document.createElement('span'); dot.className = `house-dot ${s.house}`;
+    const name = document.createElement('span'); name.className = 'student-name'; name.textContent = s.name;
     top.append(dot, name);
-
-    const meta = document.createElement("div");
-    meta.className = "student-meta";
-
-    const house = document.createElement("span");
-    house.textContent = houseLabel(student.house);
-
-    const transport = document.createElement("span");
-    transport.textContent = transportLabel(student.transport);
-
-    meta.append(house, transport);
-    card.append(top, meta);
-    grid.appendChild(card);
+    const meta = document.createElement('div'); meta.className = 'student-meta';
+    const house = document.createElement('span'); house.textContent = s.house[0].toUpperCase() + s.house.slice(1);
+    const transport = document.createElement('span'); transport.textContent = s.transport === 'OT' ? 'Own transport' : `Bus ${s.transport}`;
+    meta.append(house, transport); card.append(top, meta); grid.appendChild(card);
   });
-
-  resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
+  resultCount.textContent = `${list.length} student${list.length === 1 ? '' : 's'}`;
 }
-
-let activeFilters = new Set();
-let searchTerm = "";
-
-function matchesFilters(student) {
-  if (activeFilters.size === 0) return true;
-
-  return [...activeFilters].every((filter) => {
-    if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
-    if (filter.startsWith("house:")) return student.house === filter.slice(6);
-    return true;
-  });
-}
-
 function applyFilters() {
-  let list = students.filter(matchesFilters);
-  const queryText = searchTerm.trim().toLowerCase();
-
-  if (queryText) {
-    list = list.filter((student) => student.name.toLowerCase().includes(queryText));
-  }
-
+  let list = students.filter(s => [...filters].every(f => f.startsWith('house:') ? s.house === f.slice(6) : f.startsWith('transport:') ? s.transport === f.slice(10) : true));
+  const q = search.trim().toLowerCase();
+  if (q) list = list.filter(s => s.name.toLowerCase().includes(q));
   renderStudents(list);
 }
-
-function syncPillStates() {
-  document.querySelectorAll(".pill").forEach((pill) => {
-    const filter = pill.dataset.filter;
-    const isAll = filter === "all";
-    pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(filter));
-
-    const houseColor = {
-      "house:winter": "var(--house-winter)",
-      "house:autumn": "var(--house-autumn)",
-      "house:spring": "var(--house-spring)",
-      "house:summer": "var(--house-summer)",
-    }[filter];
-
-    if (houseColor) pill.style.setProperty("--pill-house-color", houseColor);
+function syncPills() {
+  document.querySelectorAll('.pill').forEach(p => {
+    const f = p.dataset.filter;
+    p.classList.toggle('active', f === 'all' ? filters.size === 0 : filters.has(f));
+    const c = {'house:winter':'var(--house-winter)','house:autumn':'var(--house-autumn)','house:spring':'var(--house-spring)','house:summer':'var(--house-summer)'}[f];
+    if (c) p.style.setProperty('--pill-house-color', c);
   });
 }
-
-function toggleFilter(filter) {
-  if (filter === "all") {
-    activeFilters.clear();
-  } else if (filter.startsWith("house:")) {
-    const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
-
-    if (activeFilters.has(filter)) {
-      activeFilters.delete(filter);
-    } else {
-      houseFilters.forEach((houseFilter) => activeFilters.delete(houseFilter));
-      activeFilters.add(filter);
-    }
-  } else if (activeFilters.has(filter)) {
-    activeFilters.delete(filter);
-  } else {
-    activeFilters.add(filter);
-  }
-
-  syncPillStates();
-  applyFilters();
+function toggleFilter(f) {
+  if (f === 'all') filters.clear();
+  else if (f.startsWith('house:')) {
+    ['house:winter','house:autumn','house:spring','house:summer'].forEach(x => filters.delete(x));
+    if (!filters.has(f)) filters.add(f);
+  } else filters.has(f) ? filters.delete(f) : filters.add(f);
+  syncPills(); applyFilters();
 }
-
-function jumpToHouse(house) {
-  activeFilters.clear();
-  activeFilters.add(`house:${house}`);
-  syncPillStates();
-  applyFilters();
-
-  document.getElementById("students")?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
+function jumpHouse(h) {
+  filters.clear(); filters.add(`house:${h}`); syncPills(); applyFilters();
+  $('students')?.scrollIntoView({behavior:'smooth',block:'start'});
 }
-
-function closeMobileNav() {
-  const burger = document.getElementById("burger");
-  const navLinks = document.getElementById("navLinks");
-  if (!burger || !navLinks) return;
-
-  burger.classList.remove("open");
-  burger.setAttribute("aria-expanded", "false");
-  navLinks.classList.remove("open");
-}
-
-renderStudents(students);
-syncPillStates();
-
-document.querySelectorAll(".pill").forEach((pill) => {
-  pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
+renderStudents(students); syncPills();
+document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => toggleFilter(p.dataset.filter)));
+$('searchInput')?.addEventListener('input', e => { search=e.target.value; applyFilters(); });
+document.querySelectorAll('.house-card,.bar-row').forEach(el => {
+  const run=()=>jumpHouse(el.dataset.house); el.addEventListener('click',run);
+  el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();run();}});
 });
 
-document.getElementById("searchInput")?.addEventListener("input", (event) => {
-  searchTerm = event.target.value;
-  applyFilters();
-});
-
-document.querySelectorAll(".house-card, .bar-row").forEach((element) => {
-  const trigger = () => jumpToHouse(element.dataset.house);
-
-  element.addEventListener("click", trigger);
-  element.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      trigger();
-    }
-  });
-});
-
-const resources = [
-  {
-    name: "Google Classroom",
-    description: "Assignments, materials, and class-wide posts.",
-    url: "https://classroom.google.com",
-  },
-  {
-    name: "Digital Campus (DC)",
-    description: "School portal for grades, attendance, and notices.",
-    url: "http://lms.adiswathba.com/my/",
-  },
+const resources=[
+ {name:'Google Classroom',description:'Assignments, materials, and class-wide posts.',url:'https://classroom.google.com'},
+ {name:'Digital Campus (DC)',description:'School portal for grades, attendance, and notices.',url:'http://lms.adiswathba.com/my/'}
 ];
+const rg=$('resourceGrid');
+if(rg) resources.forEach(r=>{const a=document.createElement('a');a.className='resource-card';a.href=r.url;a.target='_blank';a.rel='noopener noreferrer';const h=document.createElement('h3');h.textContent=r.name;const p=document.createElement('p');p.textContent=r.description;const n=document.createElement('span');n.className='resource-note';n.textContent='Open →';a.append(h,p,n);rg.appendChild(a);});
 
-const resourceGrid = document.getElementById("resourceGrid");
+const nav=$('nav'), burger=$('burger'), navLinks=$('navLinks');
+window.addEventListener('scroll',()=>nav?.classList.toggle('scrolled',scrollY>8),{passive:true});
+function closeMenu(){burger?.classList.remove('open');burger?.setAttribute('aria-expanded','false');navLinks?.classList.remove('open');}
+burger?.addEventListener('click',e=>{e.stopPropagation();const open=!navLinks.classList.contains('open');burger.classList.toggle('open',open);burger.setAttribute('aria-expanded',String(open));navLinks.classList.toggle('open',open);});
+navLinks?.querySelectorAll('a.nav-link').forEach(a=>a.addEventListener('click',closeMenu));
+function dropdown(id){const t=$(id);const item=t?.closest('.nav-item');if(!t||!item)return;t.addEventListener('click',e=>{e.stopPropagation();document.querySelectorAll('.nav-item.has-dropdown.open').forEach(o=>{if(o!==item){o.classList.remove('open');o.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded','false');}});const open=item.classList.toggle('open');t.setAttribute('aria-expanded',String(open));});item.querySelectorAll('.dropdown a').forEach(a=>a.addEventListener('click',()=>{item.classList.remove('open');t.setAttribute('aria-expanded','false');closeMenu();}));}
+dropdown('homeTrigger'); dropdown('moreTrigger');
+document.addEventListener('click',e=>document.querySelectorAll('.nav-item.has-dropdown.open').forEach(item=>{if(!item.contains(e.target)){item.classList.remove('open');item.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded','false');}}));
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.nav-item.has-dropdown.open').forEach(item=>{item.classList.remove('open');item.querySelector('.nav-dropdown-trigger')?.setAttribute('aria-expanded','false');});closeMenu();}});
 
-for (const resource of resources) {
-  const card = document.createElement("a");
-  card.className = "resource-card";
-  card.href = resource.url;
-  card.target = "_blank";
-  card.rel = "noopener noreferrer";
+function animateBars(){document.querySelectorAll('.bar-fill').forEach(bar=>{const v=Number(bar.dataset.value),m=Number(bar.dataset.max);bar.style.width=Number.isFinite(v)&&Number.isFinite(m)&&m>0?`${Math.min(100,v/m*100)}%`:'0%';});}
+function countUp(el){const target=Number(el.dataset.count);if(!Number.isFinite(target))return;const start=performance.now(),duration=900;function tick(now){const p=Math.min((now-start)/duration,1);el.textContent=String(Math.round((1-Math.pow(1-p,3))*target));if(p<1)requestAnimationFrame(tick);}requestAnimationFrame(tick);}
+function startStats(){const els=document.querySelectorAll('.stat-number[data-count]');if(!('IntersectionObserver'in window)){els.forEach(countUp);return;}const o=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){countUp(e.target);o.unobserve(e.target);}}),{threshold:.5});els.forEach(e=>o.observe(e));}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{animateBars();startStats();},{once:true});else{animateBars();startStats();}
 
-  const title = document.createElement("h3");
-  title.textContent = resource.name;
+const splash=$('splash');
+function hideSplash(){if(!splash)return;splash.classList.add('hide');window.setTimeout(()=>splash.remove(),500);}
+window.setTimeout(hideSplash,1800);
+window.addEventListener('load',()=>window.setTimeout(hideSplash,50),{once:true});
 
-  const description = document.createElement("p");
-  description.textContent = resource.description;
-
-  const note = document.createElement("span");
-  note.className = "resource-note";
-  note.textContent = "Open →";
-
-  card.append(title, description, note);
-  resourceGrid.appendChild(card);
-}
-
-const nav = document.getElementById("nav");
-window.addEventListener("scroll", () => {
-  nav.classList.toggle("scrolled", window.scrollY > 8);
-}, { passive: true });
-
-const burger = document.getElementById("burger");
-const navLinks = document.getElementById("navLinks");
-
-burger?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  const open = !navLinks.classList.contains("open");
-  burger.classList.toggle("open", open);
-  burger.setAttribute("aria-expanded", String(open));
-  navLinks.classList.toggle("open", open);
-});
-
-navLinks?.querySelectorAll("a.nav-link").forEach((link) => {
-  link.addEventListener("click", closeMobileNav);
-});
-
-function wireDropdown(triggerId) {
-  const trigger = document.getElementById(triggerId);
-  if (!trigger) return;
-
-  const item = trigger.closest(".nav-item");
-  trigger.addEventListener("click", (event) => {
-    event.stopPropagation();
-
-    document.querySelectorAll(".nav-item.has-dropdown.open").forEach((other) => {
-      if (other !== item) {
-        other.classList.remove("open");
-        other.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-      }
-    });
-
-    const open = item.classList.toggle("open");
-    trigger.setAttribute("aria-expanded", String(open));
-  });
-
-  item.querySelectorAll(".dropdown a").forEach((link) => {
-    link.addEventListener("click", () => {
-      item.classList.remove("open");
-      trigger.setAttribute("aria-expanded", "false");
-      closeMobileNav();
-    });
-  });
-}
-
-wireDropdown("homeTrigger");
-wireDropdown("moreTrigger");
-
-document.addEventListener("click", (event) => {
-  document.querySelectorAll(".nav-item.has-dropdown.open").forEach((item) => {
-    if (!item.contains(event.target)) {
-      item.classList.remove("open");
-      item.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-    }
-  });
-});
-
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    document.querySelectorAll(".nav-item.has-dropdown.open").forEach((item) => {
-      item.classList.remove("open");
-      item.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-    });
-    closeMobileNav();
-  }
-});
-
-window.addEventListener("DOMContentLoaded", () => {
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      document.querySelectorAll(".bar-fill").forEach((bar) => {
-        const value = Number.parseFloat(bar.dataset.value);
-        const max = Number.parseFloat(bar.dataset.max);
-        bar.style.width = max > 0 ? `${(value / max) * 100}%` : "0%";
-      });
-    }, 260);
-  });
-});
-
-const statNumbers = document.querySelectorAll(".stat-number[data-count]");
-
-function countUp(element) {
-  const target = Number.parseInt(element.dataset.count, 10);
-  if (!Number.isFinite(target)) return;
-
-  const duration = 900;
-  const start = performance.now();
-
-  function tick(now) {
-    const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    element.textContent = String(Math.round(eased * target));
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-
-  requestAnimationFrame(tick);
-}
-
-const statObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      countUp(entry.target);
-      statObserver.unobserve(entry.target);
-    });
-  },
-  { threshold: 0.5 }
-);
-
-statNumbers.forEach((element) => statObserver.observe(element));
-
-const splash = document.getElementById("splash");
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    splash?.classList.add("hide");
-    setTimeout(() => splash?.remove(), 500);
-  }, 380);
-});
-
-initAuthUI();
-initTasks();
+(async()=>{try{const [{initAuthUI},{initTasks}]=await Promise.all([import('./auth-ui.js'),import('./tasks.js')]);initAuthUI();initTasks();}catch(error){console.error('Optional Firebase features failed:',error);const slot=$('authSlot');if(slot){slot.innerHTML='<button class="btn btn-primary btn-small" id="signInTriggerBtn" type="button">Sign in</button>';$("signInTriggerBtn")?.addEventListener('click',()=>{$('authOverlay').hidden=false;document.body.classList.add('modal-open');});}if($('taskList'))$('taskList').innerHTML='<p class="task-empty">Live tasks are temporarily unavailable.</p>';}})();
