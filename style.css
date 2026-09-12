@@ -20,6 +20,9 @@
   --house-spring: #7c9a5d;
   --house-summer: #d9a441;
 
+  --danger: #c1665a;
+  --danger-soft: rgba(193, 102, 90, 0.14);
+
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "IBM Plex Sans", -apple-system, sans-serif;
 
@@ -29,6 +32,11 @@
 }
 
 * { box-sizing: border-box; }
+
+/* Native [hidden] must always win over a component's own display rule
+   (flex/grid modals, block forms, etc.) — auth-ui.js and tasks.js toggle
+   visibility purely via the hidden attribute. */
+[hidden] { display: none !important; }
 
 html { scroll-behavior: smooth; }
 
@@ -115,6 +123,14 @@ h1, h2, h3 {
   align-items: center;
   justify-content: space-between;
 }
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.wordmark-dot { color: var(--accent); }
 
 .nav-links {
   display: flex;
@@ -208,232 +224,6 @@ h1, h2, h3 {
 .burger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
 
 /* ============================================
-   Auth Modals & Profile UI Overrides
-   ============================================ */
-#authSlot {
-  display: flex;
-  align-items: center;
-}
-
-.profile-pill {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 4px 10px 4px 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: var(--text);
-  transition: border-color 0.2s var(--ease), background 0.2s var(--ease);
-}
-.profile-pill:hover {
-  border-color: var(--accent);
-  background: var(--bg-elevated-2);
-}
-
-.profile-avatar {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.profile-dropdown {
-  min-width: 220px;
-  right: 0;
-  left: auto;
-}
-
-.profile-name {
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin: 4px 10px 0;
-}
-.profile-email {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin: 0 10px 8px;
-  word-break: break-all;
-}
-
-.admin-pill {
-  display: inline-block;
-  background: rgba(217, 164, 65, 0.12);
-  color: var(--house-summer);
-  border: 1px solid var(--house-summer);
-  border-radius: 100px;
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  margin: 0 10px 8px;
-  width: fit-content;
-}
-
-.dropdown-action {
-  background: none;
-  border: none;
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px;
-  border-radius: var(--radius-s);
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-.dropdown-action:hover {
-  background: var(--bg-elevated-2);
-  color: var(--text);
-}
-
-.auth-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(22, 23, 26, 0.85);
-  backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.auth-modal {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  width: 100%;
-  max-width: 380px;
-  padding: 28px 24px;
-  position: relative;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-}
-.auth-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  cursor: pointer;
-}
-.auth-tabs {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border-soft);
-}
-.auth-tab {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  padding: 8px 0;
-  cursor: pointer;
-  position: relative;
-}
-.auth-tab.active { color: var(--text); font-weight: 500; }
-.auth-tab.active::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; bottom: -1px;
-  height: 2px;
-  background: var(--accent);
-}
-.auth-error {
-  background: rgba(217, 164, 65, 0.12);
-  color: var(--house-summer);
-  padding: 10px 12px;
-  border-radius: var(--radius-s);
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-  border: 1px solid rgba(217, 164, 65, 0.3);
-}
-.auth-reset-note {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-  padding: 10px 12px;
-  border-radius: var(--radius-s);
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-  border: 1px solid var(--accent);
-}
-.btn-google {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-.auth-divider {
-  text-align: center;
-  position: relative;
-  margin-bottom: 16px;
-}
-.auth-divider::before {
-  content: "";
-  position: absolute;
-  top: 50%; left: 0; right: 0;
-  height: 1px;
-  background: var(--border-soft);
-  z-index: 1;
-}
-.auth-divider span {
-  background: var(--bg-elevated);
-  padding: 0 10px;
-  color: var(--text-faint);
-  font-size: 0.8rem;
-  position: relative;
-  z-index: 2;
-}
-.auth-form label {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 14px;
-}
-.auth-form input, .auth-modal select, .auth-modal textarea {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 12px;
-  border-radius: var(--radius-s);
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-}
-.auth-form input:focus, .auth-modal select:focus, .auth-modal textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.btn-full { width: 100%; justify-content: center; margin-bottom: 12px; }
-.auth-text-btn {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 0;
-  width: 100%;
-  text-align: center;
-}
-.auth-text-btn:hover { text-decoration: underline; }
-
-.claim-modal h3 { margin-bottom: 8px; }
-.claim-sub { color: var(--text-muted); font-size: 0.9rem; margin: 0 0 20px; }
-.claim-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
-
-
-/* ============================================
    Hero
    ============================================ */
 .hero {
@@ -499,27 +289,20 @@ h1, h2, h3 {
   border-radius: var(--radius-s);
   font-size: 0.92rem;
   font-weight: 500;
-  transition: background 0.25s var(--ease), border-color 0.25s var(--ease), color 0.25s var(--ease);
-  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), color 0.2s var(--ease);
 }
 
 .btn-primary {
   background: var(--accent);
   color: #12211d;
-  border: 1px solid var(--accent);
 }
-.btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+.btn-primary:hover { background: var(--accent-strong); }
 
 .btn-ghost {
-  background: var(--bg-elevated);
   border: 1px solid var(--border);
   color: var(--text);
 }
-.btn-ghost:hover { 
-  background: var(--bg-elevated-2);
-  border-color: var(--accent); 
-  color: var(--accent-strong); 
-}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
 
 .hero-visual {
   background: var(--bg-elevated);
@@ -941,7 +724,7 @@ h1, h2, h3 {
   .nav-link { padding: 10px 0; width: 100%; }
   .burger { display: flex; }
 
-  .dropdown {
+  .nav-links .dropdown {
     position: static;
     opacity: 1;
     transform: none;
@@ -951,7 +734,7 @@ h1, h2, h3 {
     padding: 0 0 0 12px;
   }
 
-  .nav-item.open .dropdown { display: flex; }
+  .nav-links .nav-item.open .dropdown { display: flex; }
 
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1057,26 +840,30 @@ h1, h2, h3 {
   }
 }
 
+
 /* ============================================
-   8CM. brand mark Config Adjustments
+   8CM. brand mark
+   The source PNG is rendered at a much higher resolution than its
+   display size (640x240 for a ~34px-tall nav mark), so it stays crisp
+   on retina screens without needing a srcset — there's only one
+   version of this asset and it's already oversized for the largest
+   display size it'll ever hit.
    ============================================ */
 .brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
 }
 
 .brand img {
   display: block;
   width: auto;
-  height: 34px;
+  height: 30px;
   object-fit: contain;
 }
 
 @media (max-width: 720px) {
   .brand img {
-    height: 28px;
+    height: 26px;
   }
 }
 
@@ -1090,7 +877,6 @@ h1, h2, h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
   background: var(--bg);
   opacity: 1;
   transition: opacity 0.5s var(--ease);
@@ -1100,8 +886,7 @@ h1, h2, h3 {
 
 .splash-logo {
   width: 160px;
-  height: 160px;
-  object-fit: contain;
+  height: auto;
   animation: splashPulse 1.4s var(--ease) infinite;
 }
 
@@ -1268,4 +1053,299 @@ h1, h2, h3 {
   .task-body { grid-area: body; }
   .task-admin-actions { grid-area: admin; justify-self: end; }
   .today-panel-head { flex-direction: column; align-items: flex-start; }
+}
+
+/* ============================================
+   Nav auth slot — sign-in button / profile pill
+   ============================================ */
+.nav-auth {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+}
+
+.profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 5px 10px 5px 5px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease);
+}
+.profile-pill:hover { border-color: var(--accent); }
+
+.profile-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-dropdown {
+  right: 0;
+  left: auto;
+  min-width: 200px;
+  padding: 14px;
+}
+
+.profile-name { font-size: 0.9rem; font-weight: 500; margin: 0 0 2px; }
+.profile-email {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  margin: 0 0 10px;
+  word-break: break-word;
+}
+
+.admin-pill {
+  display: inline-block;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  padding: 2px 9px;
+  font-size: 0.7rem;
+  margin-bottom: 10px;
+}
+
+.dropdown-action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 10px 2px 0;
+  margin-top: 8px;
+  cursor: pointer;
+  transition: color 0.2s var(--ease);
+}
+.dropdown-action:hover { color: var(--text); }
+.dropdown-action:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+
+/* ============================================
+   Modals — sign in/up, password reset, identity claim
+   ============================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 11, 12, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 28px 26px 24px;
+  animation: fadeUp 0.25s var(--ease) forwards;
+}
+
+.modal-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+
+.modal-sub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 18px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s var(--ease);
+}
+.modal-close:hover { color: var(--text); }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ============================================
+   Auth tabs + form
+   ============================================ */
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-elevated-2);
+  border-radius: var(--radius-s);
+  padding: 4px;
+  margin: 8px 0 18px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 8px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.auth-tab.active { background: var(--bg-elevated); color: var(--text); }
+
+.btn-google {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  margin-bottom: 16px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.field input,
+.field select {
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  width: 100%;
+}
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.auth-error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid rgba(193, 102, 90, 0.35);
+  border-radius: var(--radius-s);
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.auth-note {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-s);
+  padding: 9px 12px;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  text-align: center;
+  cursor: pointer;
+  padding: 2px;
+  transition: color 0.2s var(--ease);
+}
+.link-btn:hover { color: var(--accent-strong); }
+
+/* ============================================
+   Add Task button — solid, always legible
+   (fixes the low-contrast ghost-button state)
+   ============================================ */
+.btn-add-task {
+  background: var(--accent);
+  color: #12211d;
+  border: 1px solid var(--accent);
+  font-weight: 500;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.btn-add-task:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+.btn-add-task:active { transform: translateY(1px); }
+
+/* ============================================
+   Task form (add/edit)
+   ============================================ */
+.task-form {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg-elevated-2);
+}
+
+.task-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.field-wide { grid-column: 1 / -1; }
+
+.task-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .task-form-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   Responsive — auth slot on small nav
+   ============================================ */
+@media (max-width: 720px) {
+  .nav-auth { margin-left: auto; margin-right: 10px; }
 }

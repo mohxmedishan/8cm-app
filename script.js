@@ -1,10 +1,22 @@
+// ============================================
+// 8CM — Site interactions (entry module)
+// ------------------------------------------------
+// Imports the auth/task modules and wires up everything else: nav,
+// student directory filters, house shortcuts, resources, stats,
+// and the loading splash.
+// ============================================
 import { students } from "./students.js";
+import { initAuthUI } from "./auth-ui.js";
+import { initTasks } from "./tasks.js";
 
+// ============================================
+// Student directory: render + filter
+// ============================================
 const grid = document.getElementById("studentGrid");
 const resultCount = document.getElementById("resultCount");
 
-function transportLabel(transport) {
-  return transport === "OT" ? "Own transport" : `Bus ${transport}`;
+function transportLabel(t) {
+  return t === "OT" ? "Own transport" : `Bus ${t}`;
 }
 
 function houseLabel(house) {
@@ -12,37 +24,23 @@ function houseLabel(house) {
 }
 
 function renderStudents(list) {
-  grid.replaceChildren();
+  grid.innerHTML = "";
   grid.classList.toggle("empty", list.length === 0);
 
-  list.forEach((student, index) => {
+  list.forEach((s, i) => {
     const card = document.createElement("div");
     card.className = "student-card";
-    card.style.animationDelay = `${Math.min(index, 12) * 0.02}s`;
-
-    const top = document.createElement("div");
-    top.className = "student-top";
-
-    const dot = document.createElement("span");
-    dot.className = `house-dot ${student.house}`;
-
-    const name = document.createElement("span");
-    name.className = "student-name";
-    name.textContent = student.name;
-
-    top.append(dot, name);
-
-    const meta = document.createElement("div");
-    meta.className = "student-meta";
-
-    const house = document.createElement("span");
-    house.textContent = houseLabel(student.house);
-
-    const transport = document.createElement("span");
-    transport.textContent = transportLabel(student.transport);
-
-    meta.append(house, transport);
-    card.append(top, meta);
+    card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+    card.innerHTML = `
+      <div class="student-top">
+        <span class="house-dot ${s.house}"></span>
+        <span class="student-name">${s.name}</span>
+      </div>
+      <div class="student-meta">
+        <span>${houseLabel(s.house)}</span>
+        <span>${transportLabel(s.transport)}</span>
+      </div>
+    `;
     grid.appendChild(card);
   });
 
@@ -54,7 +52,6 @@ let searchTerm = "";
 
 function matchesFilters(student) {
   if (activeFilters.size === 0) return true;
-
   return [...activeFilters].every((filter) => {
     if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
     if (filter.startsWith("house:")) return student.house === filter.slice(6);
@@ -64,29 +61,22 @@ function matchesFilters(student) {
 
 function applyFilters() {
   let list = students.filter(matchesFilters);
-  const queryText = searchTerm.trim().toLowerCase();
-
-  if (queryText) {
-    list = list.filter((student) => student.name.toLowerCase().includes(queryText));
+  if (searchTerm.trim() !== "") {
+    const q = searchTerm.trim().toLowerCase();
+    list = list.filter((s) => s.name.toLowerCase().includes(q));
   }
-
   renderStudents(list);
 }
 
 function syncPillStates() {
   document.querySelectorAll(".pill").forEach((pill) => {
-    const filter = pill.dataset.filter;
-    const isAll = filter === "all";
-    pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(filter));
+    const isAll = pill.dataset.filter === "all";
+    pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter));
 
-    const houseColor = {
-      "house:winter": "var(--house-winter)",
-      "house:autumn": "var(--house-autumn)",
-      "house:spring": "var(--house-spring)",
-      "house:summer": "var(--house-summer)",
-    }[filter];
-
-    if (houseColor) pill.style.setProperty("--pill-house-color", houseColor);
+    if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
+    if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
+    if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
+    if (pill.dataset.filter === "house:summer") pill.style.setProperty("--pill-house-color", "var(--house-summer)");
   });
 }
 
@@ -95,11 +85,10 @@ function toggleFilter(filter) {
     activeFilters.clear();
   } else if (filter.startsWith("house:")) {
     const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
-
     if (activeFilters.has(filter)) {
       activeFilters.delete(filter);
     } else {
-      houseFilters.forEach((houseFilter) => activeFilters.delete(houseFilter));
+      houseFilters.forEach((h) => activeFilters.delete(h));
       activeFilters.add(filter);
     }
   } else if (activeFilters.has(filter)) {
@@ -107,7 +96,6 @@ function toggleFilter(filter) {
   } else {
     activeFilters.add(filter);
   }
-
   syncPillStates();
   applyFilters();
 }
@@ -117,21 +105,7 @@ function jumpToHouse(house) {
   activeFilters.add(`house:${house}`);
   syncPillStates();
   applyFilters();
-
-  document.getElementById("students")?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}
-
-function closeMobileNav() {
-  const burger = document.getElementById("burger");
-  const navLinks = document.getElementById("navLinks");
-  if (!burger || !navLinks) return;
-
-  burger.classList.remove("open");
-  burger.setAttribute("aria-expanded", "false");
-  navLinks.classList.remove("open");
+  document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 renderStudents(students);
@@ -141,23 +115,25 @@ document.querySelectorAll(".pill").forEach((pill) => {
   pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
 });
 
-document.getElementById("searchInput")?.addEventListener("input", (event) => {
-  searchTerm = event.target.value;
+document.getElementById("searchInput").addEventListener("input", (e) => {
+  searchTerm = e.target.value;
   applyFilters();
 });
 
-document.querySelectorAll(".house-card, .bar-row").forEach((element) => {
-  const trigger = () => jumpToHouse(element.dataset.house);
-
-  element.addEventListener("click", trigger);
-  element.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
+document.querySelectorAll(".house-card, .bar-row").forEach((el) => {
+  const trigger = () => jumpToHouse(el.dataset.house);
+  el.addEventListener("click", trigger);
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
       trigger();
     }
   });
 });
 
+// ============================================
+// Resources — quick links to school platforms
+// ============================================
 const resources = [
   {
     name: "Google Classroom",
@@ -172,149 +148,123 @@ const resources = [
 ];
 
 const resourceGrid = document.getElementById("resourceGrid");
-
-for (const resource of resources) {
+resources.forEach((r) => {
   const card = document.createElement("a");
   card.className = "resource-card";
-  card.href = resource.url;
+  card.href = r.url;
   card.target = "_blank";
-  card.rel = "noopener noreferrer";
-
-  const title = document.createElement("h3");
-  title.textContent = resource.name;
-
-  const description = document.createElement("p");
-  description.textContent = resource.description;
-
-  const note = document.createElement("span");
-  note.className = "resource-note";
-  note.textContent = "Open →";
-
-  card.append(title, description, note);
+  card.rel = "noopener";
+  card.innerHTML = `
+    <h3>${r.name}</h3>
+    <p>${r.description}</p>
+    <span class="resource-note">Open →</span>
+  `;
   resourceGrid.appendChild(card);
-}
+});
 
+// ============================================
+// Nav: scroll shadow, mobile menu, Home + More dropdowns
+// ============================================
 const nav = document.getElementById("nav");
 window.addEventListener("scroll", () => {
   nav.classList.toggle("scrolled", window.scrollY > 8);
-}, { passive: true });
+});
 
 const burger = document.getElementById("burger");
 const navLinks = document.getElementById("navLinks");
-
-burger?.addEventListener("click", (event) => {
-  event.stopPropagation();
-  const open = !navLinks.classList.contains("open");
-  burger.classList.toggle("open", open);
-  burger.setAttribute("aria-expanded", String(open));
-  navLinks.classList.toggle("open", open);
+burger.addEventListener("click", () => {
+  burger.classList.toggle("open");
+  navLinks.classList.toggle("open");
 });
 
-navLinks?.querySelectorAll("a.nav-link").forEach((link) => {
-  link.addEventListener("click", closeMobileNav);
+navLinks.querySelectorAll("a.nav-link").forEach((link) => {
+  link.addEventListener("click", () => {
+    burger.classList.remove("open");
+    navLinks.classList.remove("open");
+  });
 });
 
 function wireDropdown(triggerId) {
   const trigger = document.getElementById(triggerId);
   if (!trigger) return;
-
   const item = trigger.closest(".nav-item");
-  trigger.addEventListener("click", (event) => {
-    event.stopPropagation();
 
-    document.querySelectorAll(".nav-item.has-dropdown.open").forEach((other) => {
-      if (other !== item) {
-        other.classList.remove("open");
-        other.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-      }
-    });
-
-    const open = item.classList.toggle("open");
-    trigger.setAttribute("aria-expanded", String(open));
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = item.classList.toggle("open");
+    trigger.setAttribute("aria-expanded", isOpen);
   });
 
-  item.querySelectorAll(".dropdown a").forEach((link) => {
-    link.addEventListener("click", () => {
+  document.addEventListener("click", (e) => {
+    if (!item.contains(e.target)) {
       item.classList.remove("open");
       trigger.setAttribute("aria-expanded", "false");
-      closeMobileNav();
-    });
+    }
   });
 }
 
-wireDropdown("homeTrigger");
 wireDropdown("moreTrigger");
 
-document.addEventListener("click", (event) => {
-  document.querySelectorAll(".nav-item.has-dropdown.open").forEach((item) => {
-    if (!item.contains(event.target)) {
-      item.classList.remove("open");
-      item.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-    }
-  });
-});
-
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    document.querySelectorAll(".nav-item.has-dropdown.open").forEach((item) => {
-      item.classList.remove("open");
-      item.querySelector(".nav-dropdown-trigger")?.setAttribute("aria-expanded", "false");
-    });
-    closeMobileNav();
-  }
-});
-
+// ============================================
+// Hero bar chart — grow on load
+// ============================================
 window.addEventListener("DOMContentLoaded", () => {
   requestAnimationFrame(() => {
     setTimeout(() => {
       document.querySelectorAll(".bar-fill").forEach((bar) => {
-        const value = Number.parseFloat(bar.dataset.value);
-        const max = Number.parseFloat(bar.dataset.max);
-        bar.style.width = max > 0 ? `${(value / max) * 100}%` : "0%";
+        const value = parseFloat(bar.dataset.value);
+        const max = parseFloat(bar.dataset.max);
+        bar.style.width = `${(value / max) * 100}%`;
       });
-    }, 260);
+    }, 300);
   });
 });
 
+// ============================================
+// Stat count-up — triggered once, on scroll into view
+// ============================================
 const statNumbers = document.querySelectorAll(".stat-number[data-count]");
 
-function countUp(element) {
-  const target = Number.parseInt(element.dataset.count, 10);
-  if (!Number.isFinite(target)) return;
-
+function countUp(el) {
+  const target = parseInt(el.dataset.count, 10);
   const duration = 900;
   const start = performance.now();
 
   function tick(now) {
     const progress = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    element.textContent = String(Math.round(eased * target));
+    el.textContent = Math.round(eased * target);
     if (progress < 1) requestAnimationFrame(tick);
   }
-
   requestAnimationFrame(tick);
 }
 
 const statObserver = new IntersectionObserver(
   (entries) => {
     entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      countUp(entry.target);
-      statObserver.unobserve(entry.target);
+      if (entry.isIntersecting) {
+        countUp(entry.target);
+        statObserver.unobserve(entry.target);
+      }
     });
   },
   { threshold: 0.5 }
 );
+statNumbers.forEach((el) => statObserver.observe(el));
 
-statNumbers.forEach((element) => statObserver.observe(element));
-
+// ============================================
+// Loading splash — brief on first paint, then fades
+// ============================================
 const splash = document.getElementById("splash");
 window.addEventListener("load", () => {
   setTimeout(() => {
-    splash?.classList.add("hide");
-    setTimeout(() => splash?.remove(), 500);
-  }, 380);
+    splash.classList.add("hide");
+    setTimeout(() => splash.remove(), 500);
+  }, 400);
 });
 
+// ============================================
+// Boot auth UI + task hub
+// ============================================
 initAuthUI();
 initTasks();
