@@ -551,6 +551,13 @@ h1, h2, h3 {
   color: var(--accent-strong);
 }
 
+.pill-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 2px 2px;
+}
+
 .result-count {
   color: var(--text-faint);
   font-size: 0.82rem;
@@ -584,6 +591,20 @@ h1, h2, h3 {
   margin-bottom: 8px;
 }
 
+.roll-badge {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+  line-height: 1.5;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .house-dot {
   width: 8px;
   height: 8px;
@@ -605,7 +626,13 @@ h1, h2, h3 {
   color: var(--text-faint);
   font-size: 0.78rem;
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.student-meta span:not(:last-child)::after {
+  content: "·";
+  margin: 0 8px;
+  color: var(--border);
 }
 
 .student-grid.empty::after {
@@ -1045,6 +1072,70 @@ h1, h2, h3 {
   font-size: 0.9rem;
   margin: 0;
 }
+
+/* ============================================
+   Task attachments
+   ============================================ */
+.task-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.task-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px 4px 3px 10px;
+  font-size: 0.75rem;
+}
+
+.task-attachment-chip a {
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-attachment-chip a:hover { color: var(--accent-strong); }
+
+.task-attachment-size {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+}
+
+.task-attachment-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.task-attachment-remove:hover {
+  background: var(--bg-elevated);
+  color: var(--accent-strong);
+}
+
+.task-form-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -6px 0 14px;
+}
+.task-form-attachments:empty { margin: 0; }
 
 /* ============================================
    Resources
@@ -1669,6 +1760,22 @@ body.lightbox-locked { overflow: hidden; }
    Gallery photos — real field trip images mixed
    with the still-empty placeholders
    ============================================ */
+.gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gallery-upload-form {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-elevated-2);
+  margin-bottom: 20px;
+}
+.gallery-upload-form .task-form-grid { margin-bottom: 0; }
+.gallery-upload-form .task-form-actions { padding-top: 14px; }
+
 .gallery-photo {
   position: relative;
   margin: 0;
@@ -1702,6 +1809,30 @@ body.lightbox-locked { overflow: hidden; }
   background: linear-gradient(to top, rgba(10, 11, 12, 0.75), transparent);
 }
 
+.gallery-delete-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 11, 12, 0.6);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  color: var(--text);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.gallery-delete-btn:hover {
+  background: rgba(193, 102, 90, 0.75);
+  border-color: rgba(193, 102, 90, 0.9);
+  transform: scale(1.08);
+}
+
 /* ============================================
    Profile card stats — house + transportation
    ============================================ */
@@ -1728,4 +1859,8 @@ body.lightbox-locked { overflow: hidden; }
    ============================================ */
 @media (max-width: 720px) {
   .nav-auth { margin-left: auto; margin-right: 10px; }
+}
+
+@media (max-width: 640px) {
+  .gallery-head { flex-wrap: wrap; }
 }

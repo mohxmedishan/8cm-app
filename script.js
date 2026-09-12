@@ -8,6 +8,7 @@
 import { students } from "./students.js";
 import { initAuthUI } from "./auth-ui.js";
 import { initTasks } from "./tasks.js";
+import { initGallery } from "./gallery.js";
 import { changelog } from "./changelog.js";
 
 // ============================================
@@ -56,6 +57,10 @@ function houseLabel(house) {
   return house.charAt(0).toUpperCase() + house.slice(1);
 }
 
+function rollLabel(rollNumber) {
+  return String(rollNumber).padStart(2, "0");
+}
+
 function renderStudents(list) {
   grid.innerHTML = "";
   grid.classList.toggle("empty", list.length === 0);
@@ -66,11 +71,13 @@ function renderStudents(list) {
     card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
     card.innerHTML = `
       <div class="student-top">
+        <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
         <span class="house-dot ${s.house}"></span>
         <span class="student-name">${s.name}</span>
       </div>
       <div class="student-meta">
         <span>${houseLabel(s.house)}</span>
+        <span>${s.language || "—"}</span>
         <span>${transportLabel(s.transport)}</span>
       </div>
     `;
@@ -88,6 +95,9 @@ function matchesFilters(student) {
   return [...activeFilters].every((filter) => {
     if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
     if (filter.startsWith("house:")) return student.house === filter.slice(6);
+    if (filter.startsWith("language:")) {
+      return (student.language || "").toLowerCase() === filter.slice(9);
+    }
     return true;
   });
 }
@@ -117,11 +127,26 @@ function toggleFilter(filter) {
   if (filter === "all") {
     activeFilters.clear();
   } else if (filter.startsWith("house:")) {
+    // Houses are single-select among themselves, but combine (AND)
+    // freely with the transport pill and the language pills below.
     const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
     if (activeFilters.has(filter)) {
       activeFilters.delete(filter);
     } else {
       houseFilters.forEach((h) => activeFilters.delete(h));
+      activeFilters.add(filter);
+    }
+  } else if (filter.startsWith("language:")) {
+    // Languages are single-select among themselves too, and combine
+    // (AND) with house and OT — e.g. "Autumn + Hindi" is a valid,
+    // narrower filter, but "Hindi + French" together would always
+    // return zero students since each student has exactly one
+    // language track.
+    const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
+    if (activeFilters.has(filter)) {
+      activeFilters.delete(filter);
+    } else {
+      languageFilters.forEach((l) => activeFilters.delete(l));
       activeFilters.add(filter);
     }
   } else if (activeFilters.has(filter)) {
@@ -234,18 +259,28 @@ function closeLightbox() {
   }, 220);
 }
 
-document.querySelectorAll(".gallery-photo").forEach((photo) => {
-  photo.setAttribute("tabindex", "0");
-  photo.setAttribute("role", "button");
-  photo.setAttribute("aria-label", "View larger photo");
-  photo.addEventListener("click", () => openLightbox(photo));
-  photo.addEventListener("keydown", (e) => {
+// The grid is rendered dynamically by gallery.js (seed photos +
+// Firestore uploads, re-rendered on every snapshot/admin-state
+// change), so photos can't be wired up individually at page load —
+// a fresh render would leave newly-added figures unbound. Delegating
+// the click/keydown listeners to the grid container instead means
+// every photo works regardless of when it was added, with no
+// re-wiring needed after each render.
+const galleryGrid = document.getElementById("galleryGrid");
+if (galleryGrid) {
+  galleryGrid.addEventListener("click", (e) => {
+    const photo = e.target.closest(".gallery-photo");
+    if (photo) openLightbox(photo);
+  });
+  galleryGrid.addEventListener("keydown", (e) => {
+    const photo = e.target.closest(".gallery-photo");
+    if (!photo) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       openLightbox(photo);
     }
   });
-});
+}
 
 if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
 if (lightboxOverlay) {
@@ -385,3 +420,4 @@ renderChangelog();
 // ============================================
 initAuthUI();
 initTasks();
+initGallery();

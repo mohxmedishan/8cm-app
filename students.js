@@ -15,6 +15,56 @@ function slug(name) {
     .replace(/(^-|-$)/g, "");
 }
 
+// ------------------------------------------------
+// Language track, keyed by full name so it's unambiguous even where
+// first names repeat a common word (e.g. "Zayan"). Every name in
+// `raw` below must appear in exactly one of these three lists — that
+// invariant is checked at the bottom of this file.
+// ------------------------------------------------
+const LANGUAGE_GROUPS = {
+  Hindi: [
+    "Abhay Sriram Kolluru",
+    "Advitya",
+    "Ashwin Verma",
+    "Mohammed Akhsar",
+    "Dhruvlal Kalathingal",
+    "Garvit Bhola",
+    "Sarvesh Prabhu",
+  ],
+  Malayalam: [
+    "Ihsan Sajidh Karappamveettil",
+    "Mohamed Ishan Kunnummal",
+    "Naresh Nair Narayanan",
+    "Parthiv Suresh Babu",
+    "Pranav Rakesh Nair",
+    "Saathvik Chooranath Sajithkumar",
+    "Shahbaz Shamsudeen",
+    "Suhail Saidu Mohammed",
+    "Zayan Shafil Riyas Raymarakkar Puthanpurayil",
+    "Zishan Mohammed Karathel",
+  ],
+  French: [
+    "Abhinav Biju",
+    "Khush Bimal Thakkar",
+    "Mohammed Isam Hussain",
+    "Rushdi Nasar",
+    "Tazeem Mahfuz Mohamed Ismail",
+    "Vaibhav Vibin",
+    "Zayan Sayed Munaffer",
+    "Adithya Sunil Kumar",
+    "Mohammed Ali Al Jabri",
+    "Muhammad Ibrahim",
+    "Muhammed Mishal Ali Kuzhiyanchery",
+    "Pranav Sathyam",
+    "Sayed Ahmed Faizaan Hirdh",
+  ],
+};
+
+const languageByName = new Map();
+Object.entries(LANGUAGE_GROUPS).forEach(([language, names]) => {
+  names.forEach((name) => languageByName.set(name, language));
+});
+
 const raw = [
   { name: "Abhay Sriram Kolluru", house: "winter", transport: "22" },
   { name: "Abhinav Biju", house: "autumn", transport: "4" },
@@ -48,4 +98,27 @@ const raw = [
   { name: "Zishan Mohammed Karathel", house: "autumn", transport: "7" },
 ];
 
-export const students = raw.map((s) => ({ ...s, id: slug(s.name) }));
+// Roll numbers are assigned by alphabetical order of full name —
+// Abhay comes out as 1, Zishan as the last number — computed from a
+// sorted copy so this stays correct even if `raw` above is ever
+// reordered or added to.
+const rollByName = new Map(
+  [...raw]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((s, i) => [s.name, i + 1])
+);
+
+export const students = raw
+  .map((s) => {
+    const language = languageByName.get(s.name);
+    if (!language && typeof console !== "undefined") {
+      console.error(`[8CM] No language assigned for student: ${s.name}`);
+    }
+    return {
+      ...s,
+      id: slug(s.name),
+      rollNumber: rollByName.get(s.name),
+      language: language || null,
+    };
+  })
+  .sort((a, b) => a.rollNumber - b.rollNumber);

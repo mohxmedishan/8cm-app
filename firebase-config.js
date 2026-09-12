@@ -13,6 +13,11 @@
 //      "Google" and "Email/Password".
 //   3. Build → Firestore Database → Create database.
 //   4. Rules tab → paste in firestore.rules from this project → Publish.
+//   5. Build → Storage → Get started (default bucket is fine).
+//   6. Rules tab → paste in storage.rules from this project → Publish.
+//      (Storage is a separate product from Firestore — publishing
+//      firestore.rules does NOT cover it, and vice versa. Both are
+//      needed for gallery uploads and task attachments to work.)
 // ============================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -21,6 +26,7 @@ import {
   browserLocalPersistence,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOaFX6jYFLxfH_9zf0XhvwZfTFfxkjUyY",
@@ -34,6 +40,7 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // Loudly flag the template placeholders instead of letting every auth
 // call fail with an opaque "something went wrong" — this is what was

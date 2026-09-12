@@ -295,7 +295,7 @@ function populateClaimSelect() {
     .forEach((s) => {
       const opt = document.createElement("option");
       opt.value = s.id;
-      opt.textContent = s.name;
+      opt.textContent = `${s.rollNumber}. ${s.name}`;
       select.appendChild(opt);
     });
 }
@@ -410,9 +410,11 @@ function renderAuthSlot() {
         ${admin ? `<span class="admin-pill">Admin</span>` : ""}
         ${student ? `
           <div class="profile-stats">
+            <span class="profile-stat-pill">Roll #${student.rollNumber}</span>
             <span class="profile-stat-pill house-${student.house}">
               <span class="house-dot ${student.house}"></span>${houseLabel(student.house)}
             </span>
+            ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
             <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
           </div>
         ` : ""}

@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// ------------------------------------------------
+// Deploy this from the Firebase console: Build → Storage → Rules tab
+// → paste this in → Publish. It's a separate product from Firestore,
+// so firestore.rules being published does NOT cover this file — both
+// need to be deployed.
+// ------------------------------------------------
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null &&
+        (
+          request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
+          // Cross-service read of the same admin flag used in
+          // firestore.rules, so there's one source of truth for who
+          // counts as admin instead of duplicating it as a separate
+          // Storage-only allow-list.
+          firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.admin == true
+        );
+    }
+
+    // Task attachments: anyone can view/download (tasks are public),
+    // only admins can upload. 10MB cap per file — the client also
+    // enforces this before it ever starts an upload, this is the
+    // real backstop.
+    match /task-attachments/{taskId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Gallery photos: public read, admin-only write, PNG/JPG only,
+    // 8MB cap — mirrors the client-side validation in gallery.js.
+    match /gallery/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() &&
+        request.resource.size < 8 * 1024 * 1024 &&
+        request.resource.contentType.matches("image/(png|jpeg)");
+    }
+
+    // Everything else in this bucket: closed by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
