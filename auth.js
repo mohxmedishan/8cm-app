@@ -19,7 +19,10 @@ import {
   serverTimestamp,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db, authPersistenceReady } from "./firebase-config.js";
+import {
+  getFirebaseAuth,
+  getFirebaseDb,
+} from "./firebase-config.js";
 
 export const ADMIN_EMAIL = "mohamedishankunnummal@gmail.com";
 const googleProvider = new GoogleAuthProvider();
