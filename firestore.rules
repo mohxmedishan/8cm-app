@@ -16,10 +16,34 @@ service cloud.firestore {
 
     // User profiles: any signed-in user can read (needed so the
     // identity-claim check can see who has already claimed which
-    // student). Users can only write their own profile document.
+    // student).
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Admins can always fix a binding (e.g. someone genuinely
+      // claimed the wrong name). Otherwise, a user may only write
+      // their own doc, and — this is the actual one-time-identity
+      // enforcement — once claimedStudentId is set to a value, that
+      // same account can never change it to a *different* value.
+      // The UI never offers a re-pick to an already-bound account,
+      // but this is what holds even if that check is ever bypassed
+      // or buggy on the client.
+      allow update: if request.auth != null && (
+        request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true ||
+        (
+          request.auth.uid == userId &&
+          (
+            !("claimedStudentId" in resource.data) ||
+            resource.data.claimedStudentId == null ||
+            request.resource.data.claimedStudentId == resource.data.claimedStudentId
+          )
+        )
+      );
+
+      allow delete: if false;
     }
   }
 }

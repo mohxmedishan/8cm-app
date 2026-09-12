@@ -111,6 +111,29 @@ export async function getProfile(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
+// Firestore reads issued the instant onAuthStateChanged fires can hit
+// a brief window where the ID token hasn't finished propagating to
+// the Firestore SDK's channel yet — especially right after a fresh
+// sign-out/sign-in cycle — and come back permission-denied even
+// though the rules would normally allow them. subscribeAuth used to
+// swallow that as "no profile," which is exactly what made an
+// already-claimed account get asked to pick a student all over again
+// on every re-login. A couple of short retries absorbs that window.
+async function getProfileWithRetry(uid, attempts = 3, baseDelayMs = 200) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await getProfile(uid);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, baseDelayMs * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 export function computeIsAdmin(user, profile) {
   if (!user) return false;
   if (user.email === ADMIN_EMAIL) return true;
@@ -142,9 +165,20 @@ export async function findExistingClaim(studentId) {
   return claimedBy;
 }
 
-// Links a Firebase account to one directory entry. Throws
-// { code: "identity/already-claimed" } if someone else got there first.
-export async function claimStudentIdentity(uid, student) {
+// Links a Firebase account to one directory entry — permanently.
+// Throws { code: "identity/already-claimed" } if someone else got
+// there first, or { code: "identity/already-bound" } if THIS account
+// already has a different student locked in (the one-time binding —
+// the actual enforcement is the firestore.rules update alongside this
+// file, which rejects the write server-side even if this check is
+// ever bypassed client-side).
+export async function claimStudentIdentity(uid, student, currentProfile) {
+  if (currentProfile && currentProfile.claimedStudentId && currentProfile.claimedStudentId !== student.id) {
+    const err = new Error("This account is already permanently linked to a different student.");
+    err.code = "identity/already-bound";
+    throw err;
+  }
+
   const existing = await findExistingClaim(student.id);
   if (existing && existing !== uid) {
     const err = new Error("That student has already been claimed by another account.");
@@ -189,9 +223,9 @@ export function subscribeAuth(callback) {
 
     let profile = null;
     try {
-      profile = await getProfile(user.uid);
+      profile = await getProfileWithRetry(user.uid);
     } catch (err) {
-      console.error("Failed to load profile:", err);
+      console.error("Failed to load profile after retries:", err);
     }
 
     callback({ user, profile, admin: computeIsAdmin(user, profile) });

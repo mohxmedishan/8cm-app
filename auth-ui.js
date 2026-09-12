@@ -315,7 +315,7 @@ async function handleClaimConfirm() {
   $("claimError").hidden = true;
 
   try {
-    await claimStudentIdentity(latestState.user.uid, student);
+    await claimStudentIdentity(latestState.user.uid, student, latestState.profile);
     // Firestore writes don't re-trigger onAuthStateChanged, so the
     // reactive state never hears about this on its own — that's what
     // used to force a manual page reload before the claimed name and
@@ -336,6 +336,8 @@ async function handleClaimConfirm() {
     $("claimError").textContent =
       err.code === "identity/already-claimed"
         ? "That student is already linked to another account. Pick a different name."
+        : err.code === "identity/already-bound"
+        ? "Your account is already permanently linked to a student and can't be changed here."
         : "Couldn't save that right now. Try again.";
   } finally {
     btn.disabled = false;
