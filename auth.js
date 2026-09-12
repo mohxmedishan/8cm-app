@@ -19,7 +19,7 @@ import {
   serverTimestamp,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+import { auth, db, authPersistenceReady } from "./firebase-config.js";
 
 export const ADMIN_EMAIL = "mohamedishankunnummal@gmail.com";
 const googleProvider = new GoogleAuthProvider();
@@ -46,11 +46,17 @@ export function getFriendlyAuthError(error) {
   return ERROR_MESSAGES[error?.code] || "Something went wrong. Try again in a moment.";
 }
 
+async function waitForPersistence() {
+  await authPersistenceReady;
+}
+
 export async function signInGoogle() {
+  await waitForPersistence();
   return signInWithPopup(auth, googleProvider);
 }
 
 export async function signUpEmail(email, password, displayName) {
+  await waitForPersistence();
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   if (displayName) {
     await updateProfile(cred.user, { displayName });
@@ -59,15 +65,17 @@ export async function signUpEmail(email, password, displayName) {
 }
 
 export async function signInEmail(email, password) {
+  await waitForPersistence();
   return signInWithEmailAndPassword(auth, email, password);
 }
 
 export async function resetPassword(email) {
+  await waitForPersistence();
   return sendPasswordResetEmail(auth, email);
 }
 
 export async function signOutUser() {
-  return signOut(auth);
+  await signOut(auth);
 }
 
 function profileRef(uid) {

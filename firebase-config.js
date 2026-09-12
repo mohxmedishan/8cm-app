@@ -1,5 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 async function loadFirebaseConfig() {
@@ -18,7 +22,7 @@ async function loadFirebaseConfig() {
         details += ` Missing environment values: ${payload.missing.join(", ")}.`;
       }
     } catch {
-      // Preserve fallback
+      // Preserve the actionable fallback message when the API did not return JSON.
     }
     throw new Error(details);
   }
@@ -36,3 +40,7 @@ export const firebaseConfig = await loadFirebaseConfig();
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+export const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Failed to enable local auth persistence:", error);
+});
