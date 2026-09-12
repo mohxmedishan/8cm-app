@@ -3,51 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8CM.</title>
 <meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba. Students, houses, resources, and what's due today.">
 <meta name="theme-color" content="#16171a">
-<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="8CM.">
-<title>8CM.</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 
+<!-- Corrected CM Brand Assets -->
 <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
 <link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-<div class="splash" id="splash" aria-hidden="true">
-  <div class="splash-logo-wrap">
-    <img src="assets/cm-logo.png" alt="" class="splash-logo">
-  </div>
-</div>
-<script>
-  window.setTimeout(() => {
-    const splash = document.getElementById("splash");
-    if (!splash) return;
-    splash.classList.add("hide");
-    window.setTimeout(() => splash.remove(), 600);
-  }, 2200);
-</script>
 
-<div class="grain" aria-hidden="true"></div>
+<!-- Mobile / PWA loading splash -->
+<div class="splash" id="splash" aria-hidden="true">
+  <img src="assets/cm-logo.png" alt="" class="splash-logo">
+</div>
+
+<div class="grain"></div>
 
 <header class="nav" id="nav">
   <div class="nav-inner">
     <a href="#top" class="brand" aria-label="8CM home">
-      <img src="assets/cm-logo.png" alt="CM." width="112" height="42">
+      <img src="assets/cm-logo.png" alt="8CM">
     </a>
 
-    <nav class="nav-links" id="navLinks" aria-label="Primary navigation">
+    <nav class="nav-links" id="navLinks">
       <div class="nav-item has-dropdown">
-        <button class="nav-link nav-dropdown-trigger" id="homeTrigger" type="button" aria-expanded="false" aria-controls="homeDropdown">
-          Home <span class="tri" aria-hidden="true">▾</span>
+        <button class="nav-link nav-dropdown-trigger" id="homeTrigger" aria-expanded="false">
+          Home <span class="tri">▾</span>
         </button>
         <div class="dropdown" id="homeDropdown">
           <a href="#top">Back to top</a>
@@ -55,17 +46,19 @@
           <a href="#archives">Archives</a>
         </div>
       </div>
-
+      
+      <!-- Compacted Primary Links -->
       <a href="#today" class="nav-link">Today</a>
       <a href="#students" class="nav-link">Students</a>
       <a href="#houses" class="nav-link">Houses</a>
-
+      <a href="#resources" class="nav-link">Resources</a>
+      
+      <!-- Grouped Secondary Links -->
       <div class="nav-item has-dropdown">
-        <button class="nav-link nav-dropdown-trigger" id="moreTrigger" type="button" aria-expanded="false" aria-controls="moreDropdown">
-          More <span class="tri" aria-hidden="true">▾</span>
+        <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">
+          More <span class="tri">▾</span>
         </button>
         <div class="dropdown" id="moreDropdown">
-          <a href="#resources">Resources</a>
           <a href="#stats">Stats</a>
           <a href="#events">Events</a>
           <a href="#gallery">Gallery</a>
@@ -73,21 +66,20 @@
           <a href="#achievements">Achievements</a>
         </div>
       </div>
+
+      <!-- Auth profile & Sign-out dropdown slot injected via React/JS -->
+      <div id="authSlot"></div>
     </nav>
 
-    <div class="nav-actions">
-      <div class="auth-slot" id="authSlot" aria-live="polite">
-        <span class="auth-loading" id="authLoading">Checking account…</span>
-      </div>
-
-      <button class="burger" id="burger" type="button" aria-label="Toggle menu" aria-controls="navLinks" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
+    <button class="burger" id="burger" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
 
 <main id="top">
+
+  <!-- HERO -->
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-text">
@@ -128,6 +120,7 @@
     </div>
   </section>
 
+  <!-- TODAY / TASK HUB -->
   <section class="today" id="today">
     <div class="section-inner">
       <div class="section-head">
@@ -137,46 +130,20 @@
 
       <div class="today-panel">
         <div class="today-panel-head">
-          <span class="today-note" id="todayNote">Sign in to see the live class task list.</span>
-          <button class="btn btn-primary btn-small admin-only" id="addTaskBtn" type="button" hidden>+ Add task</button>
+          <span class="today-note">Real-time sync via Firebase</span>
+          <button class="btn btn-ghost btn-small admin-only" id="addTaskBtn" hidden>+ Add task</button>
         </div>
-
-        <form class="task-form" id="taskForm" hidden autocomplete="off">
-          <div class="task-form-grid">
-            <label>
-              <span>Subject</span>
-              <input name="subject" maxlength="120" required>
-            </label>
-            <label>
-              <span>Type</span>
-              <select name="type">
-                <option value="homework">Homework</option>
-                <option value="announcement">Announcement</option>
-              </select>
-            </label>
-            <label>
-              <span>Due</span>
-              <input name="due" maxlength="80" required placeholder="Tomorrow">
-            </label>
-            <label class="task-detail-field">
-              <span>Details</span>
-              <textarea name="detail" maxlength="1000" rows="3" required></textarea>
-            </label>
-          </div>
-          <div class="task-form-actions">
-            <button class="btn btn-primary btn-small" type="submit">Add task</button>
-            <button class="btn btn-ghost btn-small" type="button" data-action="cancel">Cancel</button>
-          </div>
-        </form>
-
         <div class="task-list" id="taskList"></div>
       </div>
     </div>
   </section>
 
+  <!-- ABOUT -->
   <section class="about" id="about">
     <div class="section-inner about-grid">
-      <div class="about-lead"><h2>What 8CM actually is</h2></div>
+      <div class="about-lead">
+        <h2>What 8CM actually is</h2>
+      </div>
       <div class="about-body">
         <p>8CM runs on a school day that starts at 8:00 and ends at 2:30 — except Friday, which lets out around 11:30 and is treated accordingly. Thirty students sit in pairs, three pairs to a row, in front of a projector and whiteboard.</p>
         <p>The class runs on four houses — Winter, Autumn, Spring, and Summer — plus split groups for Malayalam, Hindi, and French, and shared periods for Islamic Education and Value Education. What holds 8CM together is the batch itself: the friendships, the routines, and the culture built around them.</p>
@@ -185,6 +152,7 @@
     </div>
   </section>
 
+  <!-- ARCHIVES -->
   <section class="archives" id="archives">
     <div class="section-inner">
       <div class="section-head">
@@ -211,6 +179,7 @@
     </div>
   </section>
 
+  <!-- HOUSES -->
   <section class="houses" id="houses">
     <div class="section-inner">
       <div class="section-head">
@@ -222,31 +191,40 @@
         <article class="house-card" data-house="winter" tabindex="0" role="button" aria-label="View Winter students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Winter</h3><p class="house-count">8 students</p><p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
+            <h3>Winter</h3>
+            <p class="house-count">8 students</p>
+            <p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
           </div>
         </article>
         <article class="house-card" data-house="autumn" tabindex="0" role="button" aria-label="View Autumn students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Autumn</h3><p class="house-count">11 students</p><p class="house-desc">The biggest house in the room, and it acts like it.</p>
+            <h3>Autumn</h3>
+            <p class="house-count">11 students</p>
+            <p class="house-desc">The biggest house in the room, and it acts like it.</p>
           </div>
         </article>
         <article class="house-card" data-house="spring" tabindex="0" role="button" aria-label="View Spring students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Spring</h3><p class="house-count">8 students</p><p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
+            <h3>Spring</h3>
+            <p class="house-count">8 students</p>
+            <p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
           </div>
         </article>
         <article class="house-card" data-house="summer" tabindex="0" role="button" aria-label="View Summer students">
           <div class="house-bar"></div>
           <div class="house-card-body">
-            <h3>Summer</h3><p class="house-count">3 students</p><p class="house-desc">Smallest house in the batch. Every point counts more.</p>
+            <h3>Summer</h3>
+            <p class="house-count">3 students</p>
+            <p class="house-desc">Smallest house in the batch. Every point counts more.</p>
           </div>
         </article>
       </div>
     </div>
   </section>
 
+  <!-- STUDENTS -->
   <section class="students" id="students">
     <div class="section-inner">
       <div class="section-head">
@@ -255,278 +233,222 @@
       </div>
 
       <div class="controls">
-        <div class="search-wrap"><input type="search" id="searchInput" placeholder="Search a name…" autocomplete="off" enterkeyhint="search"></div>
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
+        </div>
         <div class="filter-pills" id="filterPills">
-          <button class="pill active" type="button" data-filter="all">All</button>
-          <button class="pill" type="button" data-filter="transport:OT">OT</button>
-          <button class="pill" type="button" data-filter="house:winter">Winter</button>
-          <button class="pill" type="button" data-filter="house:autumn">Autumn</button>
-          <button class="pill" type="button" data-filter="house:spring">Spring</button>
-          <button class="pill" type="button" data-filter="house:summer">Summer</button>
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill" data-filter="transport:OT">OT</button>
+          <button class="pill" data-filter="house:winter">Winter</button>
+          <button class="pill" data-filter="house:autumn">Autumn</button>
+          <button class="pill" data-filter="house:spring">Spring</button>
+          <button class="pill" data-filter="house:summer">Summer</button>
         </div>
       </div>
 
       <p class="result-count" id="resultCount">30 students</p>
+
       <div class="student-grid" id="studentGrid"></div>
     </div>
   </section>
 
+  <!-- RESOURCES -->
   <section class="resources" id="resources">
     <div class="section-inner">
       <div class="section-head">
         <h2>Resources</h2>
-        <p class="section-sub">Quick links to the platforms 8CM actually uses.</p>
+        <p class="section-sub">Quick links to school platforms.</p>
       </div>
-      <div class="resource-grid" id="resourceGrid"></div>
+      <div class="resource-grid" id="resourceGrid">
+        <!-- populated by js -->
+      </div>
     </div>
   </section>
 
+  <!-- STATS -->
   <section class="stats" id="stats">
     <div class="section-inner">
-      <div class="section-head"><h2>8CM, in numbers</h2></div>
+      <div class="section-head">
+        <h2>By the numbers</h2>
+      </div>
       <div class="stat-grid">
-        <div class="stat-block"><p class="stat-number" data-count="30">0</p><p class="stat-label">Students</p></div>
-        <div class="stat-block"><p class="stat-number" data-count="4">0</p><p class="stat-label">Houses</p></div>
-        <div class="stat-block"><p class="stat-number" data-count="3">0</p><p class="stat-label">Language groups</p></div>
-        <div class="stat-block"><p class="stat-number" data-count="24">0</p><p class="stat-label">Take the bus</p></div>
-        <div class="stat-block"><p class="stat-number" data-count="6">0</p><p class="stat-label">Own transport</p></div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="30">0</p>
+          <p class="stat-label">Students</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="4">0</p>
+          <p class="stat-label">Houses</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="1">0</p>
+          <p class="stat-label">Classroom</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="8">0</p>
+          <p class="stat-label">Periods</p>
+        </div>
+        <div class="stat-block">
+          <p class="stat-number" data-count="190">0</p>
+          <p class="stat-label">School days</p>
+        </div>
       </div>
     </div>
   </section>
 
+  <!-- EVENTS (Empty State) -->
   <section class="empty-section" id="events">
     <div class="section-inner">
-      <div class="section-head"><h2>Events</h2></div>
-      <div class="empty-state"><p class="empty-title">Nothing scheduled yet.</p><p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p></div>
+      <div class="section-head">
+        <h2>Upcoming events</h2>
+      </div>
+      <div class="empty-state">
+        <h3 class="empty-title">Nothing on the calendar yet.</h3>
+        <p class="empty-body">When inter-house competitions, assemblies, or major school events are announced, they'll appear here.</p>
+      </div>
     </div>
   </section>
 
+  <!-- GALLERY (Empty State) -->
   <section class="gallery" id="gallery">
     <div class="section-inner">
-      <div class="section-head"><h2>Gallery</h2></div>
-      <div class="gallery-grid">
-        <div class="gallery-placeholder"></div><div class="gallery-placeholder"></div><div class="gallery-placeholder"></div>
-        <div class="gallery-placeholder"></div><div class="gallery-placeholder"></div><div class="gallery-placeholder"></div>
+      <div class="section-head">
+        <h2>Gallery</h2>
+        <p class="section-sub">Photos from the year.</p>
       </div>
-      <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
+      <div class="gallery-grid">
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+        <div class="gallery-placeholder"></div>
+      </div>
+      <p class="gallery-note">Waiting for the first events of the term.</p>
     </div>
   </section>
 
+  <!-- UPDATES (Empty State) -->
   <section class="empty-section" id="updates">
     <div class="section-inner">
-      <div class="section-head"><h2>Updates</h2></div>
-      <div class="empty-state"><p class="empty-title">No announcements right now.</p><p class="empty-body">Anything the class needs to know will be posted here first.</p></div>
+      <div class="section-head">
+        <h2>Updates</h2>
+      </div>
+      <div class="empty-state">
+        <h3 class="empty-title">No recent updates.</h3>
+        <p class="empty-body">Any structural changes, new routines, or major announcements will be logged here.</p>
+      </div>
     </div>
   </section>
 
+  <!-- ACHIEVEMENTS (Empty State) -->
   <section class="empty-section" id="achievements">
     <div class="section-inner">
-      <div class="section-head"><h2>Achievements</h2></div>
-      <div class="empty-state"><p class="empty-title">The board is empty. For now.</p><p class="empty-body">Academic, sport, or competition wins get logged here as they happen.</p></div>
+      <div class="section-head">
+        <h2>Achievements</h2>
+      </div>
+      <div class="empty-state">
+        <h3 class="empty-title">Clean slate.</h3>
+        <p class="empty-body">Waiting for the first inter-house or academic results of the term.</p>
+      </div>
     </div>
   </section>
+
 </main>
 
 <footer class="footer">
   <div class="section-inner footer-inner">
-    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
-    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+    <p>8CM. Abu Dhabi Indian School, Al Wathba.</p>
+    <p class="footer-sub">Thirty desks. Grade 8.</p>
   </div>
 </footer>
 
-<div class="modal-overlay" id="authOverlay" hidden>
-  <section class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
-    <button class="modal-close" id="authClose" type="button" aria-label="Close">×</button>
-
-    <p class="modal-kicker">8CM ACCOUNT</p>
-    <h2 id="authTitle">Welcome back</h2>
-    <p class="modal-sub" id="authSubtitle">Sign in to access your class profile and live task list.</p>
-
-    <div class="auth-tabs" id="authTabs" role="tablist" aria-label="Authentication mode">
-      <button
-        class="auth-tab active"
-        type="button"
-        data-mode="signin"
-        role="tab"
-        aria-selected="true"
-      >
-        Sign in
-      </button>
-
-      <button
-        class="auth-tab"
-        type="button"
-        data-mode="signup"
-        role="tab"
-        aria-selected="false"
-      >
-        Create account
-      </button>
+<!-- AUTHENTICATION OVERLAY -->
+<div class="auth-overlay" id="authOverlay" hidden>
+  <div class="auth-modal">
+    <button class="auth-close" id="authClose" aria-label="Close form">✕</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-mode="signin">Sign in</button>
+      <button class="auth-tab" data-mode="signup">Create account</button>
     </div>
+    
+    <div class="auth-error" id="authError" hidden></div>
+    <div class="auth-reset-note" id="authResetNote" hidden></div>
 
-    <form id="authForm" class="auth-form" novalidate>
-      <label>
-        <span>Email</span>
-        <input
-          name="email"
-          type="email"
-          autocomplete="email"
-          inputmode="email"
-          autocapitalize="none"
-          spellcheck="false"
-          required
-        >
-      </label>
-
-      <label data-field="displayName" hidden>
-        <span>Display name</span>
-        <input
-          name="displayName"
-          type="text"
-          maxlength="80"
-          autocomplete="name"
-        >
-      </label>
-
-      <label data-field="password">
-        <span>Password</span>
-        <div class="password-input-wrap">
-          <input
-            name="password"
-            type="password"
-            minlength="6"
-            autocomplete="current-password"
-          >
-          <button
-            class="password-toggle"
-            id="passwordToggle"
-            type="button"
-            aria-label="Show password"
-            aria-pressed="false"
-          >
-            <span class="eye-icon" aria-hidden="true"></span>
-          </button>
-        </div>
-      </label>
-
-      <label data-field="confirmPassword" hidden>
-        <span>Confirm password</span>
-        <div class="password-input-wrap">
-          <input
-            name="confirmPassword"
-            type="password"
-            minlength="6"
-            autocomplete="new-password"
-          >
-          <button
-            class="password-toggle"
-            id="confirmPasswordToggle"
-            type="button"
-            aria-label="Show confirm password"
-            aria-pressed="false"
-          >
-            <span class="eye-icon" aria-hidden="true"></span>
-          </button>
-        </div>
-      </label>
-
-      <p class="auth-error" id="authError" hidden></p>
-      <p class="auth-reset-note" id="authResetNote" hidden></p>
-
-      <div class="auth-actions">
-        <button
-          class="btn btn-primary"
-          id="authSubmitBtn"
-          type="submit"
-        >
-          Sign in
-        </button>
-
-        <button
-          class="text-button"
-          id="forgotPasswordBtn"
-          type="button"
-        >
-          Forgot password?
-        </button>
-      </div>
-
-      <div class="auth-divider" id="authDivider" aria-hidden="true">
-        <span>OR</span>
-      </div>
-
-      <button
-        class="btn btn-google"
-        id="googleSignInBtn"
-        type="button"
-      >
-        Continue with Google
-      </button>
-    </form>
-  </section>
-</div>
-
-<div class="modal-overlay" id="claimOverlay" hidden>
-  <section
-    class="modal claim-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="claimTitle"
-  >
-    <button
-      class="modal-close"
-      id="claimClose"
-      type="button"
-      aria-label="Close"
-    >
-      ×
+    <button class="btn btn-ghost btn-google" id="googleSignInBtn" type="button">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
     </button>
 
-    <p class="modal-kicker">PROFILE SETUP</p>
-    <h2 id="claimTitle">Select your identity</h2>
+    <div class="auth-divider"><span>or</span></div>
 
-    <p class="modal-sub">
-      Choose your name from the 8CM directory. This links your account to one student profile, and each identity can only be claimed once.
-    </p>
+    <form class="auth-form" id="authForm">
+      <label data-field="displayName" hidden>
+        Name
+        <input type="text" name="displayName" placeholder="How should we call you?">
+      </label>
+      <label data-field="email">
+        Email
+        <input type="email" name="email" required placeholder="you@example.com">
+      </label>
+      <label data-field="password">
+        Password
+        <input type="password" name="password" placeholder="At least 6 characters">
+      </label>
+      
+      <div class="auth-actions">
+        <button type="submit" class="btn btn-primary btn-full" id="authSubmitBtn">Sign in</button>
+      </div>
+      <button type="button" class="auth-text-btn" id="forgotPasswordBtn">Forgot password?</button>
+    </form>
+  </div>
+</div>
 
-    <p
-      class="claim-verification-note"
-      id="claimVerificationNote"
-      hidden
-    ></p>
+<!-- IDENTITY CLAIM OVERLAY -->
+<div class="auth-overlay" id="claimOverlay" hidden>
+  <div class="auth-modal claim-modal">
+    <h3>Who are you?</h3>
+    <p class="claim-sub">Link your account to a student to be recognized across the site.</p>
+    
+    <div class="auth-error" id="claimError" hidden></div>
 
-    <div
-      class="claim-grid"
-      id="claimGrid"
-      role="group"
-      aria-label="8CM student identities"
-    ></div>
-
-    <p
-      class="claim-error"
-      id="claimError"
-      hidden
-    ></p>
+    <label>
+      Pick your name
+      <select id="claimSelect"></select>
+    </label>
 
     <div class="claim-actions">
-      <button
-        class="btn btn-primary"
-        id="claimConfirmBtn"
-        type="button"
-        disabled
-      >
-        Link profile
-      </button>
-
-      <button
-        class="btn btn-ghost"
-        id="claimSkipBtn"
-        type="button"
-      >
-        Do this later
-      </button>
+      <button class="btn btn-ghost" id="claimSkipBtn">Skip for now</button>
+      <button class="btn btn-primary" id="claimConfirmBtn">Confirm</button>
     </div>
-  </section>
+  </div>
+</div>
+
+<!-- TASK FORM OVERLAY (Admin) -->
+<div class="auth-overlay" id="taskForm" hidden>
+  <form class="auth-modal" style="width: 100%; max-width: 400px;">
+    <h3>Task details</h3>
+    <label>
+      Subject
+      <input type="text" name="subject" required placeholder="e.g. Science">
+    </label>
+    <label>
+      Type
+      <select name="type">
+        <option value="homework">Homework</option>
+        <option value="announcement">Announcement</option>
+      </select>
+    </label>
+    <label>
+      Details
+      <textarea name="detail" required rows="3" placeholder="What needs to be done?"></textarea>
+    </label>
+    <label>
+      Due date
+      <input type="text" name="due" required placeholder="e.g. Tomorrow, or Oct 12">
+    </label>
+    <div class="claim-actions">
+      <button type="button" class="btn btn-ghost" data-action="cancel">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save task</button>
+    </div>
+  </form>
 </div>
 
 <script type="module" src="script.js"></script>
