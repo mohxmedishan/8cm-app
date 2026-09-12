@@ -27,6 +27,14 @@
     <img src="assets/cm-logo.png" alt="" class="splash-logo">
   </div>
 </div>
+<script>
+  window.setTimeout(() => {
+    const splash = document.getElementById("splash");
+    if (!splash) return;
+    splash.classList.add("hide");
+    window.setTimeout(() => splash.remove(), 600);
+  }, 2200);
+</script>
 
 <div class="grain" aria-hidden="true"></div>
 
@@ -329,62 +337,194 @@
 <div class="modal-overlay" id="authOverlay" hidden>
   <section class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <button class="modal-close" id="authClose" type="button" aria-label="Close">×</button>
-    <p class="modal-kicker">8CM account</p>
-    <h2 id="authTitle">Welcome back</h2>
-    <p class="modal-sub">Sign in to access your class profile and live task list.</p>
 
-    <div class="auth-tabs" role="tablist" aria-label="Authentication">
-      <button class="auth-tab active" type="button" data-mode="signin">Sign in</button>
-      <button class="auth-tab" type="button" data-mode="signup">Create account</button>
+    <p class="modal-kicker">8CM ACCOUNT</p>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="modal-sub" id="authSubtitle">Sign in to access your class profile and live task list.</p>
+
+    <div class="auth-tabs" id="authTabs" role="tablist" aria-label="Authentication mode">
+      <button
+        class="auth-tab active"
+        type="button"
+        data-mode="signin"
+        role="tab"
+        aria-selected="true"
+      >
+        Sign in
+      </button>
+
+      <button
+        class="auth-tab"
+        type="button"
+        data-mode="signup"
+        role="tab"
+        aria-selected="false"
+      >
+        Create account
+      </button>
     </div>
 
     <form id="authForm" class="auth-form" novalidate>
       <label>
         <span>Email</span>
-        <input name="email" type="email" autocomplete="email" required>
+        <input
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          autocapitalize="none"
+          spellcheck="false"
+          required
+        >
       </label>
 
       <label data-field="displayName" hidden>
         <span>Display name</span>
-        <input name="displayName" type="text" maxlength="80" autocomplete="name">
+        <input
+          name="displayName"
+          type="text"
+          maxlength="80"
+          autocomplete="name"
+        >
       </label>
 
       <label data-field="password">
         <span>Password</span>
-        <input name="password" type="password" minlength="6" autocomplete="current-password">
+        <div class="password-input-wrap">
+          <input
+            name="password"
+            type="password"
+            minlength="6"
+            autocomplete="current-password"
+          >
+          <button
+            class="password-toggle"
+            id="passwordToggle"
+            type="button"
+            aria-label="Show password"
+            aria-pressed="false"
+          >
+            <span class="eye-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </label>
+
+      <label data-field="confirmPassword" hidden>
+        <span>Confirm password</span>
+        <div class="password-input-wrap">
+          <input
+            name="confirmPassword"
+            type="password"
+            minlength="6"
+            autocomplete="new-password"
+          >
+          <button
+            class="password-toggle"
+            id="confirmPasswordToggle"
+            type="button"
+            aria-label="Show confirm password"
+            aria-pressed="false"
+          >
+            <span class="eye-icon" aria-hidden="true"></span>
+          </button>
+        </div>
       </label>
 
       <p class="auth-error" id="authError" hidden></p>
       <p class="auth-reset-note" id="authResetNote" hidden></p>
 
       <div class="auth-actions">
-        <button class="btn btn-primary" id="authSubmitBtn" type="submit">Sign in</button>
-        <button class="btn btn-google" id="googleSignInBtn" type="button">Continue with Google</button>
-        <button class="text-button" id="forgotPasswordBtn" type="button">Forgot password?</button>
-      </div>
-    </form>
+        <button
+          class="btn btn-primary"
+          id="authSubmitBtn"
+          type="submit"
+        >
+          Sign in
+        </button>
 
-    <div class="auth-divider"><span>or</span></div>
+        <button
+          class="text-button"
+          id="forgotPasswordBtn"
+          type="button"
+        >
+          Forgot password?
+        </button>
+      </div>
+
+      <div class="auth-divider" id="authDivider" aria-hidden="true">
+        <span>OR</span>
+      </div>
+
+      <button
+        class="btn btn-google"
+        id="googleSignInBtn"
+        type="button"
+      >
+        Continue with Google
+      </button>
+    </form>
   </section>
 </div>
 
 <div class="modal-overlay" id="claimOverlay" hidden>
-  <section class="modal claim-modal" role="dialog" aria-modal="true" aria-labelledby="claimTitle">
-    <button class="modal-close" id="claimClose" type="button" aria-label="Close">×</button>
-    <p class="modal-kicker">Profile setup</p>
-    <h2 id="claimTitle">Link your class identity</h2>
-    <p class="modal-sub">Choose your directory entry so your account maps to the correct 8CM profile. Each student identity can only be claimed once.</p>
+  <section
+    class="modal claim-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="claimTitle"
+  >
+    <button
+      class="modal-close"
+      id="claimClose"
+      type="button"
+      aria-label="Close"
+    >
+      ×
+    </button>
 
-    <label class="claim-label">
-      <span>Your name</span>
-      <select id="claimSelect"></select>
-    </label>
+    <p class="modal-kicker">PROFILE SETUP</p>
+    <h2 id="claimTitle">Select your identity</h2>
 
-    <p class="claim-error" id="claimError" hidden></p>
+    <p class="modal-sub">
+      Choose your name from the 8CM directory. This links your account to one student profile, and each identity can only be claimed once.
+    </p>
+
+    <p
+      class="claim-verification-note"
+      id="claimVerificationNote"
+      hidden
+    ></p>
+
+    <div
+      class="claim-grid"
+      id="claimGrid"
+      role="group"
+      aria-label="8CM student identities"
+    ></div>
+
+    <p
+      class="claim-error"
+      id="claimError"
+      hidden
+    ></p>
 
     <div class="claim-actions">
-      <button class="btn btn-primary" id="claimConfirmBtn" type="button">Link profile</button>
-      <button class="btn btn-ghost" id="claimSkipBtn" type="button">Do this later</button>
+      <button
+        class="btn btn-primary"
+        id="claimConfirmBtn"
+        type="button"
+        disabled
+      >
+        Link profile
+      </button>
+
+      <button
+        class="btn btn-ghost"
+        id="claimSkipBtn"
+        type="button"
+      >
+        Do this later
+      </button>
     </div>
   </section>
 </div>
