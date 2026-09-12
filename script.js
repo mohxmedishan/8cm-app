@@ -324,5 +324,5 @@ if (document.readyState === "loading") {
   hideSplash();
 }
 
-// initAuthUI();
-// initTasks();
+initAuthUI();
+initTasks();
