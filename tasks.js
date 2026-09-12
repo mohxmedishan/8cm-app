@@ -7,7 +7,7 @@ import {
   onSnapshot,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { getFirebaseDb } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
 
 const $ = (id) => document.getElementById(id);
@@ -97,8 +97,21 @@ function renderTasks() {
   }
 }
 
-function startTasksListener() {
+async function startTasksListener() {
   if (stopTasksListener || !currentUser) return;
+
+  let db;
+  try {
+    db = await getFirebaseDb();
+  } catch (error) {
+    console.error("Firebase tasks initialization failed:", error);
+    const list = $("taskList");
+    if (list) {
+      list.replaceChildren();
+      appendText(list, "p", "Live tasks are temporarily unavailable.", "task-empty");
+    }
+    return;
+  }
 
   const tasksRef = collection(db, "tasks");
 
@@ -176,6 +189,7 @@ function closeForm() {
 
 async function handleDelete(id) {
   if (!isCurrentAdmin || !currentUser) return;
+  const db = await getFirebaseDb();
   const task = tasksCache.find((entry) => entry.id === id);
   const label = task?.subject || "this task";
 
@@ -192,6 +206,7 @@ async function handleDelete(id) {
 async function handleSubmit(event) {
   event.preventDefault();
   if (!isCurrentAdmin || !currentUser) return;
+  const db = await getFirebaseDb();
 
   const form = event.currentTarget;
   const payload = {

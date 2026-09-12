@@ -19,10 +19,7 @@ import {
   serverTimestamp,
   runTransaction,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-  getFirebaseAuth,
-  getFirebaseDb,
-} from "./firebase-config.js";
+import { auth, db, authPersistenceReady } from "./firebase-config.js";
 
 export const ADMIN_EMAIL = "mohamedishankunnummal@gmail.com";
 const googleProvider = new GoogleAuthProvider();
@@ -49,17 +46,14 @@ export function getFriendlyAuthError(error) {
   return ERROR_MESSAGES[error?.code] || "Something went wrong. Try again in a moment.";
 }
 
-async function waitForPersistence() {
-  await authPersistenceReady;
-}
 
 export async function signInGoogle() {
-  await waitForPersistence();
+  const auth = await getFirebaseAuth();
   return signInWithPopup(auth, googleProvider);
 }
 
 export async function signUpEmail(email, password, displayName) {
-  await waitForPersistence();
+  const auth = await getFirebaseAuth();
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   if (displayName) {
     await updateProfile(cred.user, { displayName });
@@ -68,25 +62,23 @@ export async function signUpEmail(email, password, displayName) {
 }
 
 export async function signInEmail(email, password) {
-  await waitForPersistence();
+  const auth = await getFirebaseAuth();
   return signInWithEmailAndPassword(auth, email, password);
 }
 
 export async function resetPassword(email) {
-  await waitForPersistence();
+  const auth = await getFirebaseAuth();
   return sendPasswordResetEmail(auth, email);
 }
 
 export async function signOutUser() {
-  await signOut(auth);
-}
-
-function profileRef(uid) {
-  return doc(db, "users", uid);
+  const auth = await getFirebaseAuth();
+  return signOut(auth);
 }
 
 export async function getProfile(uid) {
-  const snap = await getDoc(profileRef(uid));
+  const db = await getFirebaseDb();
+  const snap = await getDoc(doc(db, "users", uid));
   return snap.exists() ? snap.data() : null;
 }
 
@@ -110,11 +102,13 @@ export async function ensureProfileDoc(user) {
     payload.admin = false;
   }
 
-  await setDoc(profileRef(user.uid), payload, { merge: true });
+  const db = await getFirebaseDb();
+  await setDoc(doc(db, "users", user.uid), payload, { merge: true });
   return getProfile(user.uid);
 }
 
 export async function findExistingClaim(studentId) {
+  const db = await getFirebaseDb();
   const q = query(collection(db, "users"), where("claimedStudentId", "==", studentId));
   const snap = await getDocs(q);
 
@@ -125,6 +119,7 @@ export async function findExistingClaim(studentId) {
 }
 
 export async function claimStudentIdentity(uid, student) {
+  const db = await getFirebaseDb();
   const existing = await findExistingClaim(student.id);
   if (existing && existing !== uid) {
     const error = new Error("That student has already been claimed by another account.");
@@ -181,8 +176,10 @@ export async function claimStudentIdentity(uid, student) {
   });
 }
 
-export function subscribeAuth(callback) {
+export async function subscribeAuth(callback) {
   callback({ loading: true, user: null, profile: null, admin: false });
+
+  const auth = await getFirebaseAuth();
 
   return onAuthStateChanged(auth, async (user) => {
     if (!user) {
