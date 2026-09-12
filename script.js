@@ -10,6 +10,38 @@ import { initAuthUI } from "./auth-ui.js";
 import { initTasks } from "./tasks.js";
 
 // ============================================
+// Fallback error logging
+// ------------------------------------------------
+// A safety net for anything that slips past the try/catch blocks in
+// auth-ui.js/auth.js (a typo'd .catch(), a promise nobody awaited,
+// etc.) so a bug there degrades to a console entry + a small toast
+// instead of a silent white-screen failure with zero trace of what
+// happened.
+// ============================================
+function showErrorToast(message) {
+  let toast = document.getElementById("globalErrorToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "globalErrorToast";
+    toast.className = "error-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showErrorToast._timer);
+  showErrorToast._timer = setTimeout(() => toast.classList.remove("show"), 5000);
+}
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection:", event.reason);
+  showErrorToast("Something went wrong behind the scenes — try that again.");
+});
+
+window.addEventListener("error", (event) => {
+  console.error("Uncaught error:", event.error || event.message);
+});
+
+// ============================================
 // Student directory: render + filter
 // ============================================
 const grid = document.getElementById("studentGrid");
@@ -143,7 +175,7 @@ const resources = [
   {
     name: "Digital Campus (DC)",
     description: "School portal for grades, attendance, and notices.",
-    url: "http://lms.adiswathba.com/my/",
+    url: "https://ict.adiswathba.com/ADIS1/",
   },
 ];
 

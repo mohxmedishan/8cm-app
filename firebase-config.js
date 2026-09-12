@@ -40,3 +40,20 @@ export const db = getFirestore(app);
 setPersistence(auth, browserLocalPersistence).catch((err) => {
   console.error("Failed to set auth persistence:", err);
 });
+
+// ------------------------------------------------
+// Note on Google sign-in popups (signInWithPopup)
+// ------------------------------------------------
+// If Google sign-in intermittently fails with "auth/popup-closed-by-user"
+// even though nobody closed anything, the usual root cause is a strict
+// default Cross-Origin-Opener-Policy ("same-origin") on this page's own
+// response headers — it silently severs the window handle Firebase
+// needs to watch the popup, which the SDK then reports as the user
+// having closed it. firebase.json in this project sets
+// "Cross-Origin-Opener-Policy: same-origin-allow-popups" for Firebase
+// Hosting; if this site is served from somewhere else (Netlify,
+// Vercel, nginx, etc.), that same header needs to be set there instead
+// — it can't be set from a <meta> tag, only from the actual HTTP
+// response. Also double-check authDomain above matches this site's
+// real domain, and that the domain is listed under Authentication →
+// Settings → Authorized domains in the Firebase console.
