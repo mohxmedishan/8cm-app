@@ -1,5 +1,5 @@
 /* ============================================
-   CM — Design tokens
+   8CM — Design tokens
    ============================================ */
 :root {
   --bg: #16171a;
@@ -570,25 +570,6 @@ h1, h2, h3 {
   font-weight: 500;
 }
 
-.student-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin: 0 0 9px 16px;
-}
-
-.batch-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 7px;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  background: var(--bg-elevated-2);
-  color: var(--text-faint);
-  font-size: 0.68rem;
-  line-height: 1;
-}
-
 .student-meta {
   color: var(--text-faint);
   font-size: 0.78rem;
@@ -611,7 +592,7 @@ h1, h2, h3 {
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1px;
   background: var(--border-soft);
   border: 1px solid var(--border-soft);
@@ -628,10 +609,6 @@ h1, h2, h3 {
   font-size: clamp(2rem, 4vw, 2.6rem);
   margin: 0 0 6px;
   color: var(--accent-strong);
-}
-
-.stat-text {
-  font-size: clamp(1.7rem, 3vw, 2.3rem);
 }
 
 .stat-label {
@@ -815,13 +792,6 @@ h1, h2, h3 {
   background: var(--accent-soft);
 }
 
-/* Batch pills remain neutral so the hierarchy stays clean. */
-.pill[data-filter^="batch:"].active {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-  background: var(--accent-soft);
-}
-
 /* ============================================
    Hero chart hover
    ============================================ */
@@ -863,18 +833,216 @@ h1, h2, h3 {
 }
 
 
-/* CM. brand mark */
+/* ============================================
+   8CM. brand mark
+   The source PNG is rendered at a much higher resolution than its
+   display size (640x240 for a ~34px-tall nav mark), so it stays crisp
+   on retina screens without needing a srcset — there's only one
+   version of this asset and it's already oversized for the largest
+   display size it'll ever hit.
+   ============================================ */
+.brand {
+  display: flex;
+  align-items: center;
+}
+
 .brand img {
   display: block;
-  width: 76px;
-  height: auto;
-  max-height: 34px;
+  width: auto;
+  height: 30px;
   object-fit: contain;
 }
 
 @media (max-width: 720px) {
   .brand img {
-    width: 68px;
-    max-height: 31px;
+    height: 26px;
   }
+}
+
+/* ============================================
+   Loading splash (mobile / PWA first paint)
+   ============================================ */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  opacity: 1;
+  transition: opacity 0.5s var(--ease);
+}
+
+.splash.hide { opacity: 0; pointer-events: none; }
+
+.splash-logo {
+  width: 160px;
+  height: auto;
+  animation: splashPulse 1.4s var(--ease) infinite;
+}
+
+@keyframes splashPulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo { animation: none; }
+}
+
+/* ============================================
+   Today / task hub
+   ============================================ */
+.today { padding: 80px 0; border-top: 1px solid var(--border-soft); }
+
+.today-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.today-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.today-note {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.btn-small {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+}
+
+.task-list { display: flex; flex-direction: column; }
+
+.task-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.task-row:last-child { border-bottom: none; }
+
+.task-tag {
+  font-size: 0.7rem;
+  padding: 4px 9px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.task-tag.homework {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+.task-tag.announcement {
+  border-color: var(--house-summer);
+  color: var(--house-summer);
+  background: rgba(217, 164, 65, 0.12);
+}
+
+.task-subject { font-size: 0.9rem; font-weight: 500; margin: 0 0 3px; }
+.task-detail { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+
+.task-due {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.task-admin-actions { display: flex; gap: 6px; }
+
+.task-icon-btn {
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-s);
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.task-icon-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
+
+.task-empty {
+  padding: 24px 20px;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ============================================
+   Resources
+   ============================================ */
+.resources { padding: 80px 0; border-top: 1px solid var(--border-soft); }
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.resource-card {
+  display: block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 22px 20px;
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.resource-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+}
+
+.resource-card h3 { font-size: 1.02rem; margin-bottom: 6px; }
+.resource-card p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 16px;
+}
+
+.resource-note {
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.resource-card.pinged .resource-note { color: var(--house-summer); }
+
+/* ============================================
+   Responsive — new sections
+   ============================================ */
+@media (max-width: 860px) {
+  .resource-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .task-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "tag due"
+      "body body"
+      "admin admin";
+    row-gap: 6px;
+  }
+  .task-tag { grid-area: tag; justify-self: start; }
+  .task-due { grid-area: due; justify-self: end; }
+  .task-body { grid-area: body; }
+  .task-admin-actions { grid-area: admin; justify-self: end; }
+  .today-panel-head { flex-direction: column; align-items: flex-start; }
 }

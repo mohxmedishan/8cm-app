@@ -1,39 +1,37 @@
 // ============================================
-// CM — Student data
+// 8CM — Student data
 // ============================================
-// batches is an array so students can later carry
-// multiple class badges, e.g. ["5CM", "6CM", "7CM", "8CM"].
 const students = [
-  { name: "Abhay Sriram Kolluru", house: "winter", transport: "22", batches: ["8CM"] },
-  { name: "Abhinav Biju", house: "autumn", transport: "4", batches: ["8CM"] },
-  { name: "Adithya Sunil Kumar", house: "spring", transport: "61", batches: ["8CM"] },
-  { name: "Advitya", house: "autumn", transport: "16", batches: ["8CM"] },
-  { name: "Ashwin Verma", house: "summer", transport: "57", batches: ["8CM"] },
-  { name: "Dhruvlal Kalathingal", house: "autumn", transport: "OT", batches: ["8CM"] },
-  { name: "Garvit Bhola", house: "spring", transport: "26", batches: ["8CM"] },
-  { name: "Ihsan Sajidh Karappamveettil", house: "spring", transport: "52", batches: ["8CM"] },
-  { name: "Khush Bimal Thakkar", house: "autumn", transport: "17", batches: ["8CM"] },
-  { name: "Mohamed Ishan Kunnummal", house: "spring", transport: "OT", batches: ["8CM"] },
-  { name: "Mohammed Akhsar", house: "spring", transport: "7", batches: ["8CM"] },
-  { name: "Mohammed Ali Al Jabri", house: "winter", transport: "OT", batches: ["8CM"] },
-  { name: "Mohammed Isam Hussain", house: "winter", transport: "37", batches: ["8CM"] },
-  { name: "Muhammad Ibrahim", house: "autumn", transport: "17", batches: ["8CM"] },
-  { name: "Muhammed Mishal Ali Kuzhiyanchery", house: "spring", transport: "58", batches: ["8CM"] },
-  { name: "Naresh Nair Narayanan", house: "spring", transport: "OT", batches: ["8CM"] },
-  { name: "Parthiv Suresh Babu", house: "autumn", transport: "17", batches: ["8CM"] },
-  { name: "Pranav Rakesh Nair", house: "winter", transport: "3", batches: ["8CM"] },
-  { name: "Pranav Sathyam", house: "autumn", transport: "26", batches: ["8CM"] },
-  { name: "Rushdi Nasar", house: "autumn", transport: "OT", batches: ["8CM"] },
-  { name: "Saathvik Chooranath Sajithkumar", house: "spring", transport: "64", batches: ["8CM"] },
-  { name: "Sarvesh Prabhu", house: "summer", transport: "17", batches: ["8CM"] },
-  { name: "Sayed Ahmed Faizaan Hirdh", house: "winter", transport: "63", batches: ["8CM"] },
-  { name: "Shahbaz Shamsudeen", house: "winter", transport: "OT", batches: ["8CM"] },
-  { name: "Suhail Saidu Mohammed", house: "summer", transport: "18", batches: ["8CM"] },
-  { name: "Tazeem Mahfuz Mohamed Ismail", house: "winter", transport: "4", batches: ["8CM"] },
-  { name: "Vaibhav Vibin", house: "autumn", transport: "26", batches: ["8CM"] },
-  { name: "Zayan Sayed Munaffer", house: "autumn", transport: "3", batches: ["8CM"] },
-  { name: "Zayan Shafil Riyas Raymarakkar Puthanpurayil", house: "winter", transport: "39", batches: ["8CM"] },
-  { name: "Zishan Mohammed Karathel", house: "autumn", transport: "7", batches: ["8CM"] },
+  { name: "Abhay Sriram Kolluru", house: "winter", transport: "22" },
+  { name: "Abhinav Biju", house: "autumn", transport: "4" },
+  { name: "Adithya Sunil Kumar", house: "spring", transport: "61" },
+  { name: "Advitya", house: "autumn", transport: "16" },
+  { name: "Ashwin Verma", house: "summer", transport: "57" },
+  { name: "Dhruvlal Kalathingal", house: "autumn", transport: "OT" },
+  { name: "Garvit Bhola", house: "spring", transport: "26" },
+  { name: "Ihsan Sajidh Karappamveettil", house: "spring", transport: "52" },
+  { name: "Khush Bimal Thakkar", house: "autumn", transport: "17" },
+  { name: "Mohamed Ishan Kunnummal", house: "spring", transport: "OT" },
+  { name: "Mohammed Akhsar", house: "spring", transport: "7" },
+  { name: "Mohammed Ali Al Jabri", house: "winter", transport: "OT" },
+  { name: "Mohammed Isam Hussain", house: "winter", transport: "37" },
+  { name: "Muhammad Ibrahim", house: "autumn", transport: "17" },
+  { name: "Muhammed Mishal Ali Kuzhiyanchery", house: "spring", transport: "58" },
+  { name: "Naresh Nair Narayanan", house: "spring", transport: "OT" },
+  { name: "Parthiv Suresh Babu", house: "autumn", transport: "17" },
+  { name: "Pranav Rakesh Nair", house: "winter", transport: "3" },
+  { name: "Pranav Sathyam", house: "autumn", transport: "26" },
+  { name: "Rushdi Nasar", house: "autumn", transport: "OT" },
+  { name: "Saathvik Chooranath Sajithkumar", house: "spring", transport: "64" },
+  { name: "Sarvesh Prabhu", house: "summer", transport: "17" },
+  { name: "Sayed Ahmed Faizaan Hirdh", house: "winter", transport: "63" },
+  { name: "Shahbaz Shamsudeen", house: "winter", transport: "OT" },
+  { name: "Suhail Saidu Mohammed", house: "summer", transport: "18" },
+  { name: "Tazeem Mahfuz Mohamed Ismail", house: "winter", transport: "4" },
+  { name: "Vaibhav Vibin", house: "autumn", transport: "26" },
+  { name: "Zayan Sayed Munaffer", house: "autumn", transport: "3" },
+  { name: "Zayan Shafil Riyas Raymarakkar Puthanpurayil", house: "winter", transport: "39" },
+  { name: "Zishan Mohammed Karathel", house: "autumn", transport: "7" },
 ];
 
 // ============================================
@@ -58,25 +56,16 @@ function renderStudents(list) {
     const card = document.createElement("div");
     card.className = "student-card";
     card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
-
-    const batchBadges = (s.batches || [])
-      .map((batch) => `<span class="batch-badge">${batch}</span>`)
-      .join("");
-
     card.innerHTML = `
       <div class="student-top">
         <span class="house-dot ${s.house}"></span>
         <span class="student-name">${s.name}</span>
-      </div>
-      <div class="student-badges">
-        ${batchBadges}
       </div>
       <div class="student-meta">
         <span>${houseLabel(s.house)}</span>
         <span>${transportLabel(s.transport)}</span>
       </div>
     `;
-
     grid.appendChild(card);
   });
 
@@ -90,21 +79,12 @@ function matchesFilters(student) {
   if (activeFilters.size === 0) return true;
 
   return [...activeFilters].every((filter) => {
-    if (filter.startsWith("batch:")) {
-      const batch = filter.slice(6);
-      return (student.batches || []).includes(batch);
-    }
-
     if (filter.startsWith("transport:")) {
-      const transport = filter.slice(10);
-      return student.transport === transport;
+      return student.transport === filter.slice(10);
     }
-
     if (filter.startsWith("house:")) {
-      const house = filter.slice(6);
-      return student.house === house;
+      return student.house === filter.slice(6);
     }
-
     return true;
   });
 }
@@ -128,40 +108,23 @@ function syncPillStates() {
       isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter)
     );
 
-    if (pill.dataset.filter === "house:winter") {
-      pill.style.setProperty("--pill-house-color", "var(--house-winter)");
-    } else if (pill.dataset.filter === "house:autumn") {
-      pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
-    } else if (pill.dataset.filter === "house:spring") {
-      pill.style.setProperty("--pill-house-color", "var(--house-spring)");
-    } else if (pill.dataset.filter === "house:summer") {
-      pill.style.setProperty("--pill-house-color", "var(--house-summer)");
-    }
+    if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
+    if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
+    if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
+    if (pill.dataset.filter === "house:summer") pill.style.setProperty("--pill-house-color", "var(--house-summer)");
   });
-}
-
-function setActiveFilter(filter) {
-  if (filter === "all") {
-    activeFilters.clear();
-  } else {
-    activeFilters.add(filter);
-  }
-
-  syncPillStates();
-  applyFilters();
 }
 
 function toggleFilter(filter) {
   if (filter === "all") {
     activeFilters.clear();
   } else if (filter.startsWith("house:")) {
-    // Houses are mutually exclusive. Cross-category filters such as OT
-    // and batch remain active.
+    // Houses are mutually exclusive with each other; OT stays independent.
     const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
     if (activeFilters.has(filter)) {
       activeFilters.delete(filter);
     } else {
-      houseFilters.forEach((house) => activeFilters.delete(house));
+      houseFilters.forEach((h) => activeFilters.delete(h));
       activeFilters.add(filter);
     }
   } else if (activeFilters.has(filter)) {
@@ -174,97 +137,160 @@ function toggleFilter(filter) {
   applyFilters();
 }
 
+function jumpToHouse(house) {
+  activeFilters.clear();
+  activeFilters.add(`house:${house}`);
+  syncPillStates();
+  applyFilters();
+  document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 renderStudents(students);
 syncPillStates();
 
-// filter pills
 document.querySelectorAll(".pill").forEach((pill) => {
-  pill.addEventListener("click", () => {
-    toggleFilter(pill.dataset.filter);
-  });
+  pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
 });
 
-// search
 document.getElementById("searchInput").addEventListener("input", (e) => {
   searchTerm = e.target.value;
   applyFilters();
 });
 
-// ============================================
-// House cards — jump to Students with filter
-// ============================================
-document.querySelectorAll(".house-jump").forEach((card) => {
-  const openHouse = () => {
-    const house = card.dataset.house;
-    // House quick-navigation resets every existing filter first.
-    activeFilters.clear();
-    activeFilters.add(`house:${house}`);
-    syncPillStates();
-    applyFilters();
-
-    document.getElementById("students").scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
-
-  card.addEventListener("click", openHouse);
-
-  card.addEventListener("keydown", (e) => {
+// House cards + hero bar rows both jump to Students with that house pre-filtered
+document.querySelectorAll(".house-card, .bar-row").forEach((el) => {
+  const trigger = () => jumpToHouse(el.dataset.house);
+  el.addEventListener("click", trigger);
+  el.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      openHouse();
+      trigger();
     }
   });
 });
 
 // ============================================
-// Hero bar chart — grow on load + subtle house filter interaction
+// Resources — quick links to school platforms
 // ============================================
-window.addEventListener("DOMContentLoaded", () => {
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      document.querySelectorAll(".bar-fill").forEach((bar) => {
-        const value = parseFloat(bar.dataset.value);
-        const max = parseFloat(bar.dataset.max);
-        bar.style.width = `${(value / max) * 100}%`;
-      });
-    }, 300);
-  });
-});
+const resources = [
+  {
+    name: "Google Classroom",
+    description: "Assignments, materials, and class-wide posts.",
+    url: "#",
+  },
+  {
+    name: "ClassDojo",
+    description: "Behaviour points and updates from teachers.",
+    url: "#",
+  },
+  {
+    name: "Digital Campus (DC)",
+    description: "School portal for grades, attendance, and notices.",
+    url: "#",
+  },
+];
 
-document.querySelectorAll(".bar-row").forEach((row) => {
-  const openHouse = () => {
-    const house = row.dataset.house;
-    // House quick-navigation resets every existing filter first.
-    activeFilters.clear();
-    activeFilters.add(`house:${house}`);
-    syncPillStates();
-    applyFilters();
+const resourceGrid = document.getElementById("resourceGrid");
 
-    document.getElementById("students").scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  };
+resources.forEach((r) => {
+  const card = document.createElement("a");
+  card.className = "resource-card";
+  card.href = r.url;
+  card.target = "_blank";
+  card.rel = "noopener";
 
-  row.addEventListener("click", openHouse);
-
-  row.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
+  const isPlaceholder = r.url === "#";
+  if (isPlaceholder) {
+    card.addEventListener("click", (e) => {
       e.preventDefault();
-      openHouse();
-    }
-  });
+      const note = card.querySelector(".resource-note");
+      note.textContent = "Link not added yet";
+      card.classList.add("pinged");
+      setTimeout(() => {
+        note.textContent = "Open →";
+        card.classList.remove("pinged");
+      }, 1600);
+    });
+  }
+
+  card.innerHTML = `
+    <h3>${r.name}</h3>
+    <p>${r.description}</p>
+    <span class="resource-note">${isPlaceholder ? "Open →" : "Open →"}</span>
+  `;
+  resourceGrid.appendChild(card);
 });
 
 // ============================================
-/*
- * URL fragment policy:
- * Hash changes stay tied to intentional navigation clicks. Passive
- * scroll-based hash updates are deliberately not implemented.
- */
+// What's for today — daily task hub
+// ============================================
+// Placeholder auth state. This is UI scaffolding only — real access
+// control has to come from Firebase (or whatever backend is chosen)
+// once that's wired in. A client-side flag like this can be flipped
+// in devtools, so it must never be trusted as the actual security
+// boundary; it just decides what the page tries to render.
+let currentUser = { role: "student" }; // "student" | "admin"
+function isAdmin() {
+  return currentUser.role === "admin";
+}
 
+// Mock data for layout testing. Swap for the real list (and eventually
+// a Firestore collection) once one exists.
+const dailyTasks = [
+  { subject: "Math", type: "homework", detail: "Exercise 4.3, questions 1–10", due: "Tomorrow" },
+  { subject: "Science", type: "announcement", detail: "Bring lab coats for the practical", due: "Monday" },
+  { subject: "English", type: "homework", detail: "Finish the Chapter 6 reading summary", due: "Tomorrow" },
+  { subject: "Value Education", type: "announcement", detail: "Notebook check next class", due: "Wednesday" },
+];
+
+function renderTasks() {
+  const list = document.getElementById("taskList");
+  list.innerHTML = "";
+
+  if (dailyTasks.length === 0) {
+    list.innerHTML = `<p class="task-empty">Nothing logged for today.</p>`;
+    return;
+  }
+
+  dailyTasks.forEach((task) => {
+    const row = document.createElement("div");
+    row.className = "task-row";
+    row.innerHTML = `
+      <span class="task-tag ${task.type}">${task.type === "homework" ? "Homework" : "Announcement"}</span>
+      <div class="task-body">
+        <p class="task-subject">${task.subject}</p>
+        <p class="task-detail">${task.detail}</p>
+      </div>
+      <span class="task-due">${task.due}</span>
+      <div class="task-admin-actions admin-only" hidden>
+        <button class="task-icon-btn" aria-label="Edit task">✎</button>
+        <button class="task-icon-btn" aria-label="Delete task">✕</button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  applyAdminVisibility();
+}
+
+function applyAdminVisibility() {
+  document.querySelectorAll(".admin-only").forEach((el) => {
+    el.hidden = !isAdmin();
+  });
+}
+
+document.getElementById("todayDate").textContent =
+  new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) +
+  " — homework, tasks, and announcements, kept current.";
+
+renderTasks();
+
+document.getElementById("addTaskBtn").addEventListener("click", () => {
+  // Wire this up to a real form + Firestore write once admin auth exists.
+  console.log("Add task clicked — hook up admin editing here later.");
+});
+
+// ============================================
 // Nav: scroll shadow + mobile menu + Home dropdown
 // ============================================
 const nav = document.getElementById("nav");
@@ -279,7 +305,6 @@ burger.addEventListener("click", () => {
   navLinks.classList.toggle("open");
 });
 
-// close mobile menu after clicking a regular link
 navLinks.querySelectorAll("a.nav-link").forEach((link) => {
   link.addEventListener("click", () => {
     burger.classList.remove("open");
@@ -334,7 +359,6 @@ function countUp(el) {
     el.textContent = Math.round(eased * target);
     if (progress < 1) requestAnimationFrame(tick);
   }
-
   requestAnimationFrame(tick);
 }
 
@@ -351,3 +375,14 @@ const statObserver = new IntersectionObserver(
 );
 
 statNumbers.forEach((el) => statObserver.observe(el));
+
+// ============================================
+// Loading splash — brief on first paint, then fades
+// ============================================
+const splash = document.getElementById("splash");
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    splash.classList.add("hide");
+    setTimeout(() => splash.remove(), 500);
+  }, 400);
+});
