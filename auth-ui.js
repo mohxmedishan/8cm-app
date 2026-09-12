@@ -315,3 +315,17 @@ export function initAuthUI() {
     renderAuthSlot();
   });
 }
+// Ensure the DOM is fully interactive before mounting Firebase auth listener
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      subscribeAuth((state) => {
+        latestState = state;
+        renderAuthSlot();
+      });
+    });
+  } else {
+    subscribeAuth((state) => {
+      latestState = state;
+      renderAuthSlot();
+    });
+  }
