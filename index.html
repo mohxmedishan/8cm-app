@@ -148,12 +148,22 @@
               <span>Due</span>
               <input type="text" name="due" placeholder="Tomorrow" required>
             </label>
-            <label class="field field-wide">
+            <div class="field field-wide">
               <span>Attachments (up to 5 files, 10MB each)</span>
-              <input type="file" name="attachments" multiple accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt">
-            </label>
+              <div class="dropzone" id="taskAttachmentsZone" tabindex="0" role="button" aria-label="Add attachments — click or drop files">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                  <path d="M12 16V4M12 4l-4 4M12 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+                <p class="dropzone-text"><strong>Drag files here</strong> or click to browse</p>
+                <p class="dropzone-hint">PDF, Word, PowerPoint, Excel, images, or text</p>
+                <input type="file" name="attachments" id="taskAttachmentsInput" multiple hidden accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt">
+              </div>
+              <div class="file-chip-list" id="taskAttachmentsPreview"></div>
+            </div>
           </div>
           <div class="task-form-attachments" id="taskFormExistingAttachments"></div>
+          <div class="upload-progress-list" id="taskFormUploadProgress" hidden></div>
           <p class="auth-error" id="taskFormError" hidden></p>
           <div class="task-form-actions">
             <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
@@ -351,11 +361,21 @@
             <span>Caption</span>
             <input type="text" name="caption" placeholder="7CM Field Trip · Motion Gate" required>
           </label>
-          <label class="field field-wide">
+          <div class="field field-wide">
             <span>Photo (.png or .jpg, 8MB max)</span>
-            <input type="file" name="photo" accept="image/png,image/jpeg" required>
-          </label>
+            <div class="dropzone dropzone-compact" id="galleryPhotoZone" tabindex="0" role="button" aria-label="Add a photo — click or drop an image">
+              <svg class="dropzone-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+                <path d="M12 16V4M12 4l-4 4M12 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+              <p class="dropzone-text"><strong>Drag a photo here</strong> or click to browse</p>
+              <p class="dropzone-hint">PNG or JPG, 8MB max</p>
+              <input type="file" name="photo" id="galleryPhotoInput" hidden accept="image/png,image/jpeg">
+            </div>
+            <div class="file-chip-list" id="galleryPhotoPreview"></div>
+          </div>
         </div>
+        <div class="upload-progress-list" id="galleryUploadProgress" hidden></div>
         <p class="auth-error" id="galleryUploadError" hidden></p>
         <div class="task-form-actions">
           <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
@@ -517,6 +537,23 @@
     <div class="modal-actions">
       <button type="button" class="link-btn" id="claimCancelBtn" hidden>Cancel</button>
       <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     Shared destructive-action confirmation — driven by
+     confirm-modal.js's confirmDelete(). One overlay, reused for
+     gallery photo deletes, task attachment removal, and task deletes.
+     ============================================ -->
+<div class="modal-overlay" id="deleteConfirmOverlay" hidden>
+  <div class="modal-card modal-card-danger">
+    <button class="modal-close" id="deleteConfirmClose" aria-label="Close">✕</button>
+    <h3 id="deleteConfirmTitle">Delete this item?</h3>
+    <p class="modal-sub" id="deleteConfirmMessage">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost btn-small" id="deleteConfirmCancel">Cancel</button>
+      <button type="button" class="btn btn-danger btn-small" id="deleteConfirmOk">Delete</button>
     </div>
   </div>
 </div>

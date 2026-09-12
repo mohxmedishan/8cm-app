@@ -327,6 +327,18 @@ h1, h2, h3 {
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
 
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), #d97b6c);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 6px 18px -10px rgba(193, 102, 90, 0.6);
+}
+.btn-danger:hover {
+  background: linear-gradient(135deg, #d97b6c, var(--danger));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 10px 24px -10px rgba(193, 102, 90, 0.8);
+}
+.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
 .hero-visual {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -1066,6 +1078,19 @@ h1, h2, h3 {
 }
 .task-icon-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
 
+/* Shared "clear, red-styled delete" treatment for admin-only
+   destructive icon buttons (task delete, attachment remove). */
+.icon-btn-danger {
+  border-color: rgba(193, 102, 90, 0.45) !important;
+  background: var(--danger-soft) !important;
+  color: var(--danger) !important;
+}
+.icon-btn-danger:hover {
+  border-color: var(--danger) !important;
+  background: rgba(193, 102, 90, 0.3) !important;
+  color: var(--danger) !important;
+}
+
 .task-empty {
   padding: 24px 20px;
   color: var(--text-faint);
@@ -1136,6 +1161,153 @@ h1, h2, h3 {
   margin: -6px 0 14px;
 }
 .task-form-attachments:empty { margin: 0; }
+
+/* File-type badge icon — inline SVG from file-utils.js, used in
+   attachment chips, staged file previews, and upload progress rows. */
+.file-icon {
+  vertical-align: -4px;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Drag-and-drop file picker
+   ============================================ */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  padding: 22px 16px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-elevated-2);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.dropzone:hover,
+.dropzone:focus-visible {
+  border-color: var(--accent);
+  color: var(--text);
+  outline: none;
+}
+.dropzone.dropzone-active {
+  border-color: var(--accent-strong);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.dropzone.dropzone-full {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.dropzone-compact { padding: 16px; }
+.dropzone-icon { color: var(--text-faint); transition: color 0.2s var(--ease); }
+.dropzone:hover .dropzone-icon,
+.dropzone.dropzone-active .dropzone-icon { color: currentColor; }
+.dropzone-text { margin: 0; font-size: 0.85rem; }
+.dropzone-text strong { color: var(--text); font-weight: 600; }
+.dropzone-hint { margin: 0; font-size: 0.72rem; color: var(--text-faint); }
+
+/* Staged file preview chips (before upload) */
+.file-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.file-chip-list:empty { margin-top: 0; }
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 4px 4px 4px 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.file-chip-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.file-chip-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-chip-size { color: var(--text-faint); font-size: 0.7rem; flex-shrink: 0; }
+.file-chip-remove {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.file-chip-remove:hover { background: var(--danger-soft); color: var(--danger); }
+
+/* ============================================
+   Upload progress (real progress via uploadBytesResumable, with a
+   stall/timeout watchdog behind it — see file-utils.js)
+   ============================================ */
+.upload-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.upload-progress-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(60px, 2fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.upload-progress-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.upload-progress {
+  height: 6px;
+  border-radius: 100px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 0.2s var(--ease);
+}
+.upload-progress-pct {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  width: 34px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .upload-progress-row { grid-template-columns: 1fr; row-gap: 4px; }
+  .upload-progress-pct { text-align: left; }
+}
 
 /* ============================================
    Resources
@@ -1336,6 +1508,11 @@ h1, h2, h3 {
   gap: 10px;
   margin-top: 4px;
 }
+
+/* Delete-confirmation variant — a subtle red cue so it reads as
+   destructive at a glance, without being alarming. */
+.modal-card-danger { border-color: rgba(193, 102, 90, 0.4); }
+.modal-card-danger h3 { color: var(--danger); }
 
 /* ============================================
    Auth tabs + form
@@ -1813,24 +1990,24 @@ body.lightbox-locked { overflow: hidden; }
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 26px;
-  height: 26px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(10, 11, 12, 0.6);
+  gap: 4px;
+  padding: 5px 10px 5px 9px;
+  background: rgba(193, 102, 90, 0.85);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 50%;
-  color: var(--text);
-  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+  transition: background 0.2s var(--ease), transform 0.15s var(--ease);
 }
 .gallery-delete-btn:hover {
-  background: rgba(193, 102, 90, 0.75);
-  border-color: rgba(193, 102, 90, 0.9);
-  transform: scale(1.08);
+  background: var(--danger);
+  transform: scale(1.05);
 }
 
 /* ============================================

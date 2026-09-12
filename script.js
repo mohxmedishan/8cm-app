@@ -10,6 +10,7 @@ import { initAuthUI } from "./auth-ui.js";
 import { initTasks } from "./tasks.js";
 import { initGallery } from "./gallery.js";
 import { changelog } from "./changelog.js";
+import "./confirm-modal.js"; // wires up the shared delete-confirmation overlay
 
 // ============================================
 // Fallback error logging
