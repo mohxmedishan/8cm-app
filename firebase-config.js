@@ -23,12 +23,12 @@ import {
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_PROJECT.firebaseapp.com",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "REPLACE_WITH_YOUR_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID",
+  apiKey: "AIzaSyDOaFX6jYFLxfH_9zf0XhvwZfTFfxkjUyY",
+  authDomain: "8cm.vercel.app",
+  projectId: "cm-app-1644e",
+  storageBucket: "cm-app-1644e.firebasestorage.app",
+  messagingSenderId: "984229007988",
+  appId: "1:984229007988:web:cce453b7206aa1d7dd3721",
 };
 
 export const app = initializeApp(firebaseConfig);
