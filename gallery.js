@@ -2,24 +2,21 @@
 // 8CM — Gallery (public view + admin upload)
 // ------------------------------------------------
 // The grid is built from two sources, rendered through one code path:
-//   1. gallerySeed — the original hand-picked photos, baked in as data,
-//      served as plain static image files (unaffected by any of this).
+//   1. gallerySeed — the original hand-picked photos, baked in as data.
 //   2. the Firestore `gallery` collection — anything an admin uploads
 //      through the "+ Add photo" form, live via onSnapshot for every
 //      visitor (no sign-in required to see them — see firestore.rules).
+// Uploads go to Firebase Storage at gallery/<timestamp>-<filename>;
+// the Firestore doc just stores the resulting URL + caption + the
+// storage path (so a delete can clean up the file, not just the doc).
 //
-// There's no Firebase Storage here — the Spark (free) plan doesn't
-// include it. Each uploaded photo is compressed and re-encoded to a
-// base64 data: URL client-side (compressImageToDataUrl, file-utils.js)
-// and that string is written straight onto the gallery doc's
-// `dataUrl` field — Firestore is the only backing store, so deleting
-// the doc is the entire delete (no separate blob to clean up).
-//
-// Photos are capped much smaller than before (an 8MB JPEG straight
-// off a phone would blow well past Firestore's ~1 MiB per-document
-// limit once base64-encoded) — compressImageToDataUrl resizes and
-// re-encodes until the result fits comfortably under that limit.
+// Uploading uses uploadFileWithProgress (file-utils.js) instead of a
+// bare uploadBytes() call: it reports real progress for the bar below
+// the form, and — the actual fix for the old "stuck on Uploading…"
+// bug — it guarantees the promise always settles, even if the
+// transfer stalls, by cancelling and rejecting after a timeout.
 // ============================================
+import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 import {
   collection,
   addDoc,
@@ -30,20 +27,16 @@ import {
   query,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { db, storage } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
 import { gallerySeed } from "./gallery-seed.js";
-import { compressImageToDataUrl } from "./file-utils.js";
+import { sanitizeFilename, uploadFileWithProgress } from "./file-utils.js";
 import { createDropzone } from "./dropzone.js";
 import { confirmDelete } from "./confirm-modal.js";
 
 const $ = (id) => document.getElementById(id);
 
-// Generous pre-compression ceiling on the original file — just a
-// sanity guard against picking something absurd; the real cap is
-// what compressImageToDataUrl squeezes it down to before it's ever
-// written to Firestore.
-const MAX_PHOTO_INPUT_BYTES = 20 * 1024 * 1024;
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024; // 8MB
 const ALLOWED_TYPES = ["image/png", "image/jpeg"];
 
 let isCurrentAdmin = false;
@@ -53,7 +46,7 @@ let photoDropzone = null;
 function figureMarkup(photo) {
   const deleteBtn =
     photo.docId && isCurrentAdmin
-      ? `<button type="button" class="gallery-delete-btn admin-only" data-id="${photo.docId}" data-caption="${(photo.caption || "").replace(/"/g, "&quot;")}" aria-label="Delete photo">✕ Delete</button>`
+      ? `<button type="button" class="gallery-delete-btn admin-only" data-id="${photo.docId}" data-path="${photo.storagePath || ""}" data-caption="${(photo.caption || "").replace(/"/g, "&quot;")}" aria-label="Delete photo">✕ Delete</button>`
       : "";
   return `
     <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo: ${photo.caption || photo.alt || ""}">
@@ -70,7 +63,7 @@ function renderGallery() {
 
   const seedMarkup = gallerySeed.map((p) => figureMarkup(p)).join("");
   const uploadedMarkup = uploadedPhotos
-    .map((p) => figureMarkup({ src: p.dataUrl, alt: p.caption, caption: p.caption, docId: p.id }))
+    .map((p) => figureMarkup({ src: p.url, alt: p.caption, caption: p.caption, docId: p.id, storagePath: p.path }))
     .join("");
 
   grid.innerHTML = seedMarkup + uploadedMarkup;
@@ -78,7 +71,7 @@ function renderGallery() {
   grid.querySelectorAll(".gallery-delete-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation(); // don't also open the lightbox
-      handleDeletePhoto(btn.dataset.id, btn.dataset.caption);
+      handleDeletePhoto(btn.dataset.id, btn.dataset.path, btn.dataset.caption);
     });
   });
 }
@@ -97,7 +90,7 @@ function startGalleryListener() {
   );
 }
 
-async function handleDeletePhoto(docId, caption) {
+async function handleDeletePhoto(docId, storagePath, caption) {
   const ok = await confirmDelete({
     title: "Delete this photo?",
     message: caption
@@ -107,11 +100,15 @@ async function handleDeletePhoto(docId, caption) {
   if (!ok) return;
 
   try {
-    // The photo's bytes live entirely on this doc (dataUrl field) —
-    // no separate Storage object to clean up, so deleting the doc is
-    // the whole delete. This is also what makes it disappear from
-    // every visitor's grid via onSnapshot.
     await deleteDoc(doc(db, "gallery", docId));
+    // Firestore delete succeeding is what makes the photo disappear
+    // from every visitor's grid via onSnapshot — the Storage cleanup
+    // below is bookkeeping, so it doesn't block or reverse that.
+    if (storagePath) {
+      await deleteObject(ref(storage, storagePath)).catch((err) => {
+        console.error("Failed to delete storage file:", err);
+      });
+    }
   } catch (err) {
     console.error("Delete failed:", err);
     alert("Couldn't delete that photo — check your admin access and try again.");
@@ -162,7 +159,7 @@ function closeUploadForm() {
 
 function validatePhoto(file) {
   if (!ALLOWED_TYPES.includes(file.type)) return "Only PNG or JPG images are allowed.";
-  if (file.size > MAX_PHOTO_INPUT_BYTES) return "That photo is too large to process — try a smaller image.";
+  if (file.size > MAX_PHOTO_BYTES) return "That photo is too large — 8MB max.";
   return null;
 }
 
@@ -185,30 +182,30 @@ async function handleUploadSubmit(e) {
   const submitBtn = $("galleryUploadSubmit");
   submitBtn.disabled = true;
   submitBtn.textContent = "Uploading…";
-  setUploadProgress(10);
+  setUploadProgress(0);
 
   try {
-    // Resize/re-encode client-side until it fits Firestore's document
-    // budget, then write the base64 result straight onto the doc —
-    // no Storage bucket, no separate file reference.
-    const { dataUrl } = await compressImageToDataUrl(file);
-    setUploadProgress(70);
+    const path = `gallery/${Date.now()}-${sanitizeFilename(file.name)}`;
+    const fileRef = ref(storage, path);
+    const url = await uploadFileWithProgress(fileRef, file, {
+      onProgress: setUploadProgress,
+    });
 
     await addDoc(collection(db, "gallery"), {
-      dataUrl,
+      url,
       caption,
+      path,
       createdAt: serverTimestamp(),
     });
-    setUploadProgress(100);
 
     closeUploadForm();
   } catch (err) {
     console.error("Gallery upload failed:", err);
     setUploadError(err?.message || "Couldn't upload that photo — check your admin access and try again.");
   } finally {
-    // Always runs — success, validation failure, a compression that
-    // couldn't hit budget, or a rules rejection all land here, so the
-    // button never gets stuck reading "Uploading…" indefinitely.
+    // Always runs — success, validation failure, stalled/timed-out
+    // upload, or a rules rejection all land here, so the button
+    // never gets stuck reading "Uploading…" indefinitely.
     submitBtn.disabled = false;
     submitBtn.textContent = "Upload";
     setUploadProgress(null);

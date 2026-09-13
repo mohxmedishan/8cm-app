@@ -6,22 +6,11 @@
 // admins client-side — the real enforcement is firestore.rules,
 // which reject the write server-side regardless of what the UI shows.
 //
-// Attachments are NOT in Firebase Storage — the Spark (free) plan
-// doesn't include Storage. Instead each attachment is its own doc in
-// a top-level `taskAttachments` collection: {taskId, name, type,
-// size, dataUrl, createdAt}, where dataUrl is the file re-encoded as
-// base64 (see file-utils.js). The task doc itself only keeps a light
-// `attachments: [{id, name, type, size}]` array — no dataUrl — so the
-// live task-feed listener (which every visitor runs) never has to
-// download megabytes of base64 just to show a list of pill cards.
-// The actual bytes are only fetched on demand, when someone clicks
-// a pill to download it (see handleDownloadAttachment).
-//
-// Splitting attachments into their own docs (rather than embedding
-// dataUrl directly on the task) is what makes 5 attachments per task
-// workable at all: Firestore caps a single document at ~1 MiB, so 5
-// embedded files would have to share that one budget. As separate
-// docs, each attachment gets its own ~1 MiB ceiling.
+// Attachment uploads use uploadFileWithProgress (file-utils.js)
+// instead of a bare uploadBytes() call, uploaded in parallel with a
+// progress bar per file — the fix for the old "stuck on Uploading…"
+// bug, where a stalled transfer had no timeout and just hung forever
+// with no feedback.
 // ============================================
 import {
   collection,
@@ -29,36 +18,22 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  getDoc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+import { db, storage } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
-import {
-  formatBytes,
-  fileIconSvg,
-  fileToDataUrl,
-  compressImageToDataUrl,
-  estimateEncodedBytes,
-  MAX_ENCODED_BYTES,
-} from "./file-utils.js";
+import { formatBytes, sanitizeFilename, fileIconSvg, uploadFileWithProgress } from "./file-utils.js";
 import { createDropzone } from "./dropzone.js";
 import { confirmDelete } from "./confirm-modal.js";
 
 const $ = (id) => document.getElementById(id);
 
 const MAX_ATTACHMENTS = 5;
-// Non-image files (PDF, Office docs, text) can't be compressed
-// client-side, so they're capped small and hard here: 650KB raw
-// becomes ~867KB base64, safely under MAX_ENCODED_BYTES (900KB).
-const MAX_NONIMAGE_BYTES = 650 * 1024;
-// Images get compressed at submit time (see compressImageToDataUrl),
-// so this is just a sanity ceiling on the *original* file at
-// picking-time — generous enough for an uncompressed phone photo.
-const MAX_IMAGE_INPUT_BYTES = 20 * 1024 * 1024;
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024; // 10MB — mirrors storage.rules
 const ALLOWED_ATTACHMENT_TYPES = [
   "image/png",
   "image/jpeg",
@@ -77,8 +52,8 @@ const ALLOWED_ATTACHMENT_TYPES = [
 let isCurrentAdmin = false;
 let tasksCache = [];
 let editingId = null;
-let existingAttachments = []; // [{id, name, type, size}] already saved on the task being edited
-let removedExistingIds = []; // existing attachments staged for removal — actually deleted from Firestore on save
+let existingAttachments = []; // attachments already saved on the task being edited
+let removedExistingPaths = []; // existing attachments staged for removal — actually deleted from Storage on save
 let attachmentsDropzone = null;
 
 function taskTypeLabel(type) {
@@ -94,15 +69,13 @@ function attachmentsMarkup(task) {
         .map(
           (a) => `
         <span class="task-attachment-chip">
-          <button type="button" class="task-attachment-download" data-action="download-attachment" data-id="${a.id}" data-name="${a.name}">
-            ${fileIconSvg(a.name, a.type)} ${a.name}<span class="task-attachment-size">${formatBytes(a.size)}</span>
-          </button>
+          <a href="${a.url}" target="_blank" rel="noopener">${fileIconSvg(a.name, a.type)} ${a.name}<span class="task-attachment-size">${formatBytes(a.size)}</span></a>
           <button
             type="button"
             class="task-attachment-remove admin-only icon-btn-danger"
             data-action="remove-attachment"
             data-task-id="${task.id}"
-            data-id="${a.id}"
+            data-path="${a.path}"
             data-name="${a.name}"
             aria-label="Delete attachment ${a.name}"
             ${isCurrentAdmin ? "" : "hidden"}
@@ -153,43 +126,14 @@ function renderTasks() {
       if (task) openForm(task);
     });
   });
-  list.querySelectorAll('[data-action="download-attachment"]').forEach((btn) => {
-    btn.addEventListener("click", () => handleDownloadAttachment(btn.dataset.id, btn.dataset.name));
-  });
   list.querySelectorAll('[data-action="remove-attachment"]').forEach((btn) => {
     btn.addEventListener("click", () =>
-      handleRemoveAttachment(btn.dataset.taskId, btn.dataset.id, btn.dataset.name)
+      handleRemoveAttachment(btn.dataset.taskId, btn.dataset.path, btn.dataset.name)
     );
   });
 }
 
-// Attachment bytes live only on the taskAttachments doc, not on the
-// task itself (see the file header note on why) — so "download" is a
-// small on-demand fetch, then a normal blob download, rather than a
-// plain <a href> straight to a stored URL.
-async function handleDownloadAttachment(id, name) {
-  try {
-    const snap = await getDoc(doc(db, "taskAttachments", id));
-    if (!snap.exists()) {
-      alert("That attachment is no longer available.");
-      return;
-    }
-    const blob = await (await fetch(snap.data().dataUrl)).blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = name || "attachment";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-  } catch (err) {
-    console.error("Failed to download attachment:", err);
-    alert("Couldn't download that attachment right now.");
-  }
-}
-
-async function handleRemoveAttachment(taskId, id, name) {
+async function handleRemoveAttachment(taskId, path, name) {
   const ok = await confirmDelete({
     title: "Delete this attachment?",
     message: name
@@ -200,15 +144,13 @@ async function handleRemoveAttachment(taskId, id, name) {
 
   const task = tasksCache.find((t) => t.id === taskId);
   if (!task) return;
-  const remaining = (task.attachments || []).filter((a) => a.id !== id);
+  const remaining = (task.attachments || []).filter((a) => a.path !== path);
   try {
     await updateDoc(doc(db, "tasks", taskId), { attachments: remaining });
-    // The Firestore write above is what makes it disappear from the
-    // live list via onSnapshot — deleting the attachment doc below is
-    // bookkeeping (frees the stored bytes), so it doesn't block or
-    // reverse that.
-    await deleteDoc(doc(db, "taskAttachments", id)).catch((err) => {
-      console.error("Failed to delete attachment doc:", err);
+    // The Firestore write is what makes it disappear from the live
+    // list via onSnapshot — Storage cleanup below is bookkeeping.
+    await deleteObject(ref(storage, path)).catch((err) => {
+      console.error("Failed to delete attachment file:", err);
     });
   } catch (err) {
     console.error("Failed to remove attachment:", err);
@@ -253,24 +195,21 @@ function renderExistingAttachmentsPreview() {
     .map(
       (a) => `
       <span class="task-attachment-chip">
-        <button type="button" class="task-attachment-download" data-action="download-attachment" data-id="${a.id}" data-name="${a.name}">${fileIconSvg(a.name, a.type)} ${a.name}</button>
-        <button type="button" class="task-attachment-remove" data-id="${a.id}" aria-label="Remove attachment ${a.name}">✕</button>
+        <a href="${a.url}" target="_blank" rel="noopener">${fileIconSvg(a.name, a.type)} ${a.name}</a>
+        <button type="button" class="task-attachment-remove" data-path="${a.path}" aria-label="Remove attachment ${a.name}">✕</button>
       </span>
     `
     )
     .join("");
-  el.querySelectorAll('[data-action="download-attachment"]').forEach((btn) => {
-    btn.addEventListener("click", () => handleDownloadAttachment(btn.dataset.id, btn.dataset.name));
-  });
   el.querySelectorAll(".task-attachment-remove").forEach((btn) => {
     btn.addEventListener("click", () => {
       // Staged, not permanent yet — cancelling the form leaves the
-      // attachment untouched. The attachment doc is only deleted once
-      // the removal is saved (see handleSubmit), so backing out of
-      // the form never orphans anything.
-      const removed = existingAttachments.find((a) => a.id === btn.dataset.id);
-      existingAttachments = existingAttachments.filter((a) => a.id !== btn.dataset.id);
-      if (removed) removedExistingIds.push(removed.id);
+      // attachment untouched. The actual Storage file is only
+      // deleted once the removal is saved (see handleSubmit), so a
+      // removal here never orphans a file if the admin backs out.
+      const removed = existingAttachments.find((a) => a.path === btn.dataset.path);
+      existingAttachments = existingAttachments.filter((a) => a.path !== btn.dataset.path);
+      if (removed) removedExistingPaths.push(removed.path);
       renderExistingAttachmentsPreview();
       refreshAttachmentCap();
     });
@@ -282,7 +221,7 @@ function openForm(task) {
   if (!form) return;
   editingId = task ? task.id : null;
   existingAttachments = (task && task.attachments) || [];
-  removedExistingIds = [];
+  removedExistingPaths = [];
   form.subject.value = (task && task.subject) || "";
   form.type.value = (task && task.type) || "homework";
   form.detail.value = (task && task.detail) || "";
@@ -305,7 +244,7 @@ function closeForm() {
   form.hidden = true;
   editingId = null;
   existingAttachments = [];
-  removedExistingIds = [];
+  removedExistingPaths = [];
   setTaskFormError(null);
   renderExistingAttachmentsPreview();
 }
@@ -364,46 +303,16 @@ async function handleDelete(id) {
   }
 }
 
-// Turns a staged File into a saved taskAttachments doc and returns
-// the light metadata the parent task's `attachments` array stores.
-// Images are compressed to fit the shared byte budget; everything
-// else is just base64-encoded directly (already capped small by
-// validateAttachment below, since there's no way to shrink a PDF).
-async function processAttachment(taskId, file, onProgress) {
-  const isImage = file.type.startsWith("image/");
-  onProgress(15);
-
-  const { dataUrl, size } = isImage
-    ? await compressImageToDataUrl(file)
-    : { dataUrl: await fileToDataUrl(file), size: file.size };
-
-  if (!isImage && estimateEncodedBytes(dataUrl) > MAX_ENCODED_BYTES) {
-    throw new Error(`"${file.name}" is too large to store — ${formatBytes(MAX_NONIMAGE_BYTES)} max.`);
-  }
-  onProgress(60);
-
-  const docRef = await addDoc(collection(db, "taskAttachments"), {
-    taskId,
-    name: file.name,
-    type: file.type,
-    size,
-    dataUrl,
-    createdAt: serverTimestamp(),
-  });
-  onProgress(100);
-  return { id: docRef.id, name: file.name, type: file.type, size };
+async function uploadAttachment(taskId, file, onProgress) {
+  const path = `task-attachments/${taskId}/${Date.now()}-${sanitizeFilename(file.name)}`;
+  const fileRef = ref(storage, path);
+  const url = await uploadFileWithProgress(fileRef, file, { onProgress });
+  return { name: file.name, url, path, size: file.size, type: file.type };
 }
 
 function validateAttachment(file) {
   if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) return `"${file.name}" isn't an allowed file type.`;
-  const isImage = file.type.startsWith("image/");
-  if (isImage) {
-    if (file.size > MAX_IMAGE_INPUT_BYTES) {
-      return `"${file.name}" is too large to process — try a smaller image.`;
-    }
-  } else if (file.size > MAX_NONIMAGE_BYTES) {
-    return `"${file.name}" is too large — non-image files are capped at ${formatBytes(MAX_NONIMAGE_BYTES)} since they're stored directly in the database (no Firebase Storage on the free plan).`;
-  }
+  if (file.size > MAX_ATTACHMENT_BYTES) return `"${file.name}" is too large — 10MB max per file.`;
   return null;
 }
 
@@ -450,13 +359,13 @@ async function handleSubmit(e) {
       editingId = taskId;
     }
 
-    // Processed in parallel, each with its own progress row. One
-    // file failing (compression can't hit budget, a rejected type
-    // server-side, etc.) doesn't lose the others — whatever succeeded
-    // still gets saved, and the failure is reported by name so
-    // nothing disappears silently.
+    // Uploaded in parallel, each with its own progress row. One
+    // file failing (a stall, a rejected type server-side, etc.)
+    // doesn't lose the others — whatever succeeded still gets saved,
+    // and the failure is reported by name so nothing disappears
+    // silently.
     const results = await Promise.allSettled(
-      newFiles.map((file, i) => processAttachment(taskId, file, (pct) => updateProgressRow(progressRows, i, pct)))
+      newFiles.map((file, i) => uploadAttachment(taskId, file, (pct) => updateProgressRow(progressRows, i, pct)))
     );
     const uploaded = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
     const failed = results
@@ -466,12 +375,12 @@ async function handleSubmit(e) {
     const attachments = [...existingAttachments, ...uploaded];
     await updateDoc(doc(db, "tasks", taskId), { ...payload, attachments });
 
-    // Clean up taskAttachments docs for attachments the admin removed
+    // Clean up Storage files for attachments the admin removed
     // during this edit — staged removals only take effect once the
     // save actually succeeds.
     await Promise.allSettled(
-      removedExistingIds.map((id) =>
-        deleteDoc(doc(db, "taskAttachments", id)).catch((err) => console.error("Failed to delete removed attachment:", err))
+      removedExistingPaths.map((path) =>
+        deleteObject(ref(storage, path)).catch((err) => console.error("Failed to delete removed attachment:", err))
       )
     );
 
@@ -481,7 +390,7 @@ async function handleSubmit(e) {
       // file(s) — further submits from here are edits to this same
       // task, so relabel the button accordingly.
       existingAttachments = attachments;
-      removedExistingIds = [];
+      removedExistingPaths = [];
       attachmentsDropzone?.reset();
       renderExistingAttachmentsPreview();
       refreshAttachmentCap();

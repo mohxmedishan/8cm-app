@@ -3,58 +3,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Shared admin check, used by every match block below: either the
-    // allow-listed owner email, or a user whose own profile doc has
-    // admin == true.
-    function isAdmin() {
-      return request.auth != null &&
+    // Tasks: public — anyone, signed in or not, can read the daily
+    // task/homework/announcement list. Only the allow-listed admin
+    // email, or a user whose profile doc has admin == true, can write.
+    match /tasks/{taskId} {
+      allow read: if true;
+      allow write: if request.auth != null &&
         (
           request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true
         );
     }
 
-    // Tasks: public — anyone, signed in or not, can read the daily
-    // task/homework/announcement list. Only admins can write. The
-    // `attachments` field here is just light metadata
-    // ({id, name, type, size} per file) — the actual base64 bytes
-    // live on the taskAttachments docs below, so no size guard is
-    // needed on the task doc itself.
-    match /tasks/{taskId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Task attachments: there's no Firebase Storage on the Spark
-    // (free) plan, so each attachment is its own small doc here —
-    // {taskId, name, type, size, dataUrl, createdAt} — instead of a
-    // Storage object. Public read (task attachments have always been
-    // visible to everyone), admin-only write, and a hard cap on the
-    // base64 payload so a single attachment can't approach
-    // Firestore's ~1 MiB per-document limit. Splitting attachments
-    // into their own docs (rather than embedding dataUrl arrays on
-    // the task) is what lets multiple attachments per task each get
-    // their own budget instead of sharing one.
-    match /taskAttachments/{attachmentId} {
-      allow read: if true;
-      allow create: if isAdmin() &&
-        request.resource.data.dataUrl is string &&
-        request.resource.data.dataUrl.size() < 950000;
-      allow delete: if isAdmin();
-      allow update: if false; // immutable — remove and re-add instead of editing in place
-    }
-
     // Gallery: public — the photo grid is visible to every visitor,
-    // signed in or not. Only admins can add or remove photos. The
-    // image itself is a base64 data: URL on the `dataUrl` field (no
-    // Storage object to reference), capped the same way as task
-    // attachments so a photo can't blow past the document size limit.
+    // signed in or not. Only admins can add or remove photos; the
+    // actual image bytes live in Storage (see storage.rules), this
+    // doc just carries the URL/caption/storage path.
     match /gallery/{photoId} {
       allow read: if true;
-      allow create, update: if isAdmin() &&
-        request.resource.data.dataUrl is string &&
-        request.resource.data.dataUrl.size() < 950000;
-      allow delete: if isAdmin();
+      allow write: if request.auth != null &&
+        (
+          request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true
+        );
     }
 
     // User profiles: any signed-in user can read (needed so the
@@ -75,7 +46,11 @@ service cloud.firestore {
       // rules can't query "does any other doc already have this
       // value" without a dedicated claims collection keyed by
       // student id.
-      allow update: if request.auth != null && (isAdmin() || request.auth.uid == userId);
+      allow update: if request.auth != null && (
+        request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true ||
+        request.auth.uid == userId
+      );
 
       allow delete: if false;
     }

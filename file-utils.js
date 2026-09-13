@@ -2,38 +2,18 @@
 // 8CM — Shared file helpers
 // ------------------------------------------------
 // Used by both tasks.js (task attachments) and gallery.js (photos):
-// byte formatting, small colored file-type icons (no external icon
-// fetches — everything is inline SVG), and the Base64 pipeline that
-// replaced Firebase Storage:
-//
-//   - fileToDataUrl(): read any file straight to a base64 data: URL.
-//   - compressImageToDataUrl(): for images, resize/re-encode via
-//     canvas until the result fits under a byte budget, then read
-//     that compressed blob to a data: URL.
-//   - estimateEncodedBytes(): the actual byte size of a data: URL's
-//     base64 payload, since that (not the original file size) is
-//     what counts against Firestore's per-document limit.
-//
-// Why this exists at all: the Spark (free) plan doesn't include
-// Firebase Storage, so attachments/photos are stored as base64
-// strings directly on Firestore documents instead of as Storage
-// blobs. Firestore caps a single document at ~1 MiB total, and
-// base64 inflates raw bytes by ~4/3 — MAX_ENCODED_BYTES below is the
-// shared ceiling every caller validates or compresses against to
-// stay safely under that limit (with headroom for the doc's other
-// fields). There is no equivalent of the old "resumable upload with
-// progress events" here — reading/encoding a file is fast, local CPU
-// work, not a network transfer — so progress reporting is now a
-// simple few-step indicator (reading/compressing → writing to
-// Firestore) rather than a byte-level transfer percentage.
+// byte formatting, filename sanitizing, small colored file-type
+// icons (no external icon fetches — everything is inline SVG), and
+// uploadFileWithProgress(), which wraps Firebase's resumable upload
+// so callers get real progress events AND a guarantee the promise
+// always settles — the root cause of the old "stuck on Uploading…"
+// bug was that a plain uploadBytes() call with no timeout just hangs
+// forever if the network stalls mid-transfer, with zero feedback.
 // ============================================
-
-// Firestore documents are capped at 1,048,487 bytes total. This is
-// the shared safety ceiling for a single attachment/photo's encoded
-// (base64) payload, leaving headroom for the doc's other fields
-// (name, type, caption, timestamps, etc.) and Firestore's own
-// storage overhead.
-export const MAX_ENCODED_BYTES = 900 * 1024; // 900 KB
+import {
+  uploadBytesResumable,
+  getDownloadURL,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 export function formatBytes(bytes) {
   if (!bytes && bytes !== 0) return "";
@@ -42,118 +22,8 @@ export function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * The actual byte size of a data: URL's base64 payload — what really
- * counts against Firestore's document-size limit, as opposed to the
- * original file's byte size (which base64 inflates by ~4/3).
- */
-export function estimateEncodedBytes(dataUrl) {
-  const commaIndex = dataUrl.indexOf(",");
-  const base64 = commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : dataUrl;
-  const padding = (base64.match(/=+$/) || [""])[0].length;
-  return Math.floor((base64.length * 3) / 4) - padding;
-}
-
-/**
- * Reads a file straight to a base64 data: URL, no compression. Used
- * for file types canvas can't re-encode (PDFs, Office docs, text) —
- * callers are responsible for capping file.size beforehand, since
- * there's no way to shrink these client-side.
- */
-export function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error(`Couldn't read "${file.name}".`));
-    reader.readAsDataURL(file);
-  });
-}
-
-/**
- * Resizes and re-encodes an image via <canvas> until it fits under
- * maxBytes, then reads the result to a base64 data: URL.
- *
- * PNGs are kept as PNG (to preserve transparency) and shrunk by
- * dimension only, since canvas has no lossy "quality" knob for PNG.
- * Everything else is re-encoded as JPEG, tightening quality first and
- * then dimensions if it's still too big. Animated GIFs and WEBP are
- * flattened to a single static JPEG frame in the process — there's no
- * way to keep animation within this byte budget.
- *
- * Rejects (rather than looping forever) if the image still can't fit
- * after several attempts, so a caller's Promise.allSettled sees this
- * as a clean per-file failure like any other.
- */
-export function compressImageToDataUrl(file, { maxDimension = 1600, maxBytes = MAX_ENCODED_BYTES } = {}) {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const img = new Image();
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      const outputType = file.type === "image/png" ? "image/png" : "image/jpeg";
-      let dimensionScale = Math.min(1, maxDimension / Math.max(img.naturalWidth, img.naturalHeight));
-      let quality = 0.82;
-      let attempts = 0;
-
-      const attemptEncode = () => {
-        attempts += 1;
-        const width = Math.max(1, Math.round(img.naturalWidth * dimensionScale));
-        const height = Math.max(1, Math.round(img.naturalHeight * dimensionScale));
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
-
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error(`Couldn't process "${file.name}".`));
-              return;
-            }
-
-            const fitsBudget = blob.size <= maxBytes;
-            const outOfMoves =
-              attempts >= 8 ||
-              (dimensionScale <= 0.15 && (outputType === "image/png" || quality <= 0.3));
-
-            if (fitsBudget || outOfMoves) {
-              if (!fitsBudget) {
-                reject(new Error(`"${file.name}" is still too large even after compression — try a smaller image.`));
-                return;
-              }
-              const reader = new FileReader();
-              reader.onload = () => resolve({ dataUrl: reader.result, size: blob.size });
-              reader.onerror = () => reject(new Error(`Couldn't finalize "${file.name}".`));
-              reader.readAsDataURL(blob);
-              return;
-            }
-
-            // Still over budget: tighten JPEG quality first, then
-            // fall back to shrinking dimensions further (the only
-            // lever PNG has), and try again.
-            if (outputType === "image/jpeg" && quality > 0.3) {
-              quality = Math.max(0.3, quality - 0.12);
-            } else {
-              dimensionScale *= 0.75;
-            }
-            attemptEncode();
-          },
-          outputType,
-          outputType === "image/jpeg" ? quality : undefined
-        );
-      };
-
-      attemptEncode();
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error(`Couldn't read "${file.name}" as an image.`));
-    };
-
-    img.src = objectUrl;
-  });
+export function sanitizeFilename(name) {
+  return name.toLowerCase().replace(/[^a-z0-9.]+/g, "-");
 }
 
 function getExt(filename = "") {
@@ -198,4 +68,81 @@ export function fileIconSvg(filename, mime = "") {
   `;
 }
 
+/**
+ * Uploads a file with real progress reporting, and — unlike a bare
+ * uploadBytes() call — guarantees the returned promise always settles:
+ *  - if the transfer visibly stalls (no new bytes for `stallTimeoutMs`)
+ *  - or if the whole thing runs past `hardTimeoutMs` regardless
+ * the in-flight upload is cancelled and the promise rejects with a
+ * clear error, instead of leaving the caller (and the "Uploading…"
+ * button) hanging indefinitely.
+ */
+export function uploadFileWithProgress(
+  fileRef,
+  file,
+  { onProgress, stallTimeoutMs = 20000, hardTimeoutMs = 120000 } = {}
+) {
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(fileRef, file);
+    let lastBytes = 0;
+    let lastProgressAt = Date.now();
+    let settled = false;
 
+    const stallCheck = setInterval(() => {
+      if (Date.now() - lastProgressAt > stallTimeoutMs) {
+        fail(new Error("Upload stalled — check your connection and try again."));
+      }
+    }, 2000);
+
+    const hardCap = setTimeout(() => {
+      fail(new Error("Upload took too long and was cancelled."));
+    }, hardTimeoutMs);
+
+    function cleanup() {
+      clearInterval(stallCheck);
+      clearTimeout(hardCap);
+    }
+
+    function fail(err) {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      task.cancel();
+      reject(err);
+    }
+
+    task.on(
+      "state_changed",
+      (snapshot) => {
+        if (snapshot.bytesTransferred !== lastBytes) {
+          lastBytes = snapshot.bytesTransferred;
+          lastProgressAt = Date.now();
+        }
+        if (onProgress) {
+          const pct = snapshot.totalBytes
+            ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+            : 0;
+          onProgress(pct);
+        }
+      },
+      (err) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(err);
+      },
+      async () => {
+        if (settled) return; // already stalled/timed out and cancelled
+        settled = true;
+        cleanup();
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          if (onProgress) onProgress(100);
+          resolve(url);
+        } catch (err) {
+          reject(err);
+        }
+      }
+    );
+  });
+}
