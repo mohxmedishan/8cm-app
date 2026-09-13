@@ -1119,7 +1119,8 @@ h1, h2, h3 {
   font-size: 0.75rem;
 }
 
-.task-attachment-chip a {
+.task-attachment-chip a,
+.task-attachment-download {
   color: var(--text-muted);
   text-decoration: none;
   display: inline-flex;
@@ -1129,8 +1130,17 @@ h1, h2, h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* Attachments are downloaded on click via a fetch + Blob (the file
+     lives in a separate Firestore doc, not a plain URL), so this is a
+     <button>, not an <a> — reset it back to looking like a link. */
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }
-.task-attachment-chip a:hover { color: var(--accent-strong); }
+.task-attachment-chip a:hover,
+.task-attachment-download:hover { color: var(--accent-strong); }
 
 .task-attachment-size {
   color: var(--text-faint);
