@@ -13,14 +13,6 @@
 //      "Google" and "Email/Password".
 //   3. Build → Firestore Database → Create database.
 //   4. Rules tab → paste in firestore.rules from this project → Publish.
-//
-// No Firebase Storage here on purpose — it isn't included on the
-// Spark (free) plan. Task attachments and gallery photos are instead
-// stored as base64 strings directly on Firestore documents (see the
-// comments in tasks.js, gallery.js, and file-utils.js for how that
-// works and what it caps file sizes at). Firestore alone is what
-// firestore.rules needs to protect; there's no separate Storage
-// rules file to keep in sync with it anymore.
 // ============================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -34,6 +26,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDOaFX6jYFLxfH_9zf0XhvwZfTFfxkjUyY",
   authDomain: "8cm.vercel.app",
   projectId: "cm-app-1644e",
+  storageBucket: "cm-app-1644e.firebasestorage.app",
   messagingSenderId: "984229007988",
   appId: "1:984229007988:web:cce453b7206aa1d7dd3721",
 };

@@ -8,9 +8,17 @@
 import { students } from "./students.js";
 import { initAuthUI } from "./auth-ui.js";
 import { initTasks } from "./tasks.js";
-import { initGallery } from "./gallery.js";
 import { changelog } from "./changelog.js";
-import "./confirm-modal.js"; // wires up the shared delete-confirmation overlay
+import {
+  playToggleOn,
+  playToggleOff,
+  playClick,
+  playOpen,
+  playClose,
+  playExternal,
+  playNav,
+  initSoundToggle,
+} from "./sound.js";
 
 // ============================================
 // Fallback error logging
@@ -126,16 +134,20 @@ function syncPillStates() {
 
 function toggleFilter(filter) {
   if (filter === "all") {
+    const hadFilters = activeFilters.size > 0;
     activeFilters.clear();
+    if (hadFilters) playToggleOff();
   } else if (filter.startsWith("house:")) {
     // Houses are single-select among themselves, but combine (AND)
     // freely with the transport pill and the language pills below.
     const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
     if (activeFilters.has(filter)) {
       activeFilters.delete(filter);
+      playToggleOff();
     } else {
       houseFilters.forEach((h) => activeFilters.delete(h));
       activeFilters.add(filter);
+      playToggleOn();
     }
   } else if (filter.startsWith("language:")) {
     // Languages are single-select among themselves too, and combine
@@ -146,20 +158,25 @@ function toggleFilter(filter) {
     const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
     if (activeFilters.has(filter)) {
       activeFilters.delete(filter);
+      playToggleOff();
     } else {
       languageFilters.forEach((l) => activeFilters.delete(l));
       activeFilters.add(filter);
+      playToggleOn();
     }
   } else if (activeFilters.has(filter)) {
     activeFilters.delete(filter);
+    playToggleOff();
   } else {
     activeFilters.add(filter);
+    playToggleOn();
   }
   syncPillStates();
   applyFilters();
 }
 
 function jumpToHouse(house) {
+  playClick();
   activeFilters.clear();
   activeFilters.add(`house:${house}`);
   syncPillStates();
@@ -218,6 +235,7 @@ resources.forEach((r) => {
     <p>${r.description}</p>
     <span class="resource-note">Open →</span>
   `;
+  card.addEventListener("click", () => playExternal());
   resourceGrid.appendChild(card);
 });
 
@@ -243,6 +261,7 @@ function openLightbox(photo) {
 
   lightboxOverlay.hidden = false;
   document.body.classList.add("lightbox-locked");
+  playOpen();
   // Two-step so the browser registers [hidden] removal before the
   // transition class flips — otherwise the fade/scale-in never plays.
   requestAnimationFrame(() => {
@@ -254,19 +273,17 @@ function closeLightbox() {
   if (!lightboxOverlay || lightboxOverlay.hidden) return;
   lightboxOverlay.classList.remove("open");
   document.body.classList.remove("lightbox-locked");
+  playClose();
   setTimeout(() => {
     lightboxOverlay.hidden = true;
     lightboxImage.src = "";
   }, 220);
 }
 
-// The grid is rendered dynamically by gallery.js (seed photos +
-// Firestore uploads, re-rendered on every snapshot/admin-state
-// change), so photos can't be wired up individually at page load —
-// a fresh render would leave newly-added figures unbound. Delegating
-// the click/keydown listeners to the grid container instead means
-// every photo works regardless of when it was added, with no
-// re-wiring needed after each render.
+// Delegating the click/keydown listeners to the grid container
+// (rather than each figure individually) keeps this resilient to any
+// future changes to how the grid's contents are produced, at no cost
+// today.
 const galleryGrid = document.getElementById("galleryGrid");
 if (galleryGrid) {
   galleryGrid.addEventListener("click", (e) => {
@@ -304,12 +321,14 @@ window.addEventListener("scroll", () => {
 const burger = document.getElementById("burger");
 const navLinks = document.getElementById("navLinks");
 burger.addEventListener("click", () => {
-  burger.classList.toggle("open");
+  const isOpen = burger.classList.toggle("open");
   navLinks.classList.toggle("open");
+  isOpen ? playOpen() : playClose();
 });
 
 navLinks.querySelectorAll("a.nav-link").forEach((link) => {
   link.addEventListener("click", () => {
+    playNav();
     burger.classList.remove("open");
     navLinks.classList.remove("open");
   });
@@ -324,6 +343,11 @@ function wireDropdown(triggerId) {
     e.stopPropagation();
     const isOpen = item.classList.toggle("open");
     trigger.setAttribute("aria-expanded", isOpen);
+    isOpen ? playOpen() : playClose();
+  });
+
+  trigger.nextElementSibling?.querySelectorAll("a")?.forEach((link) => {
+    link.addEventListener("click", () => playNav());
   });
 
   document.addEventListener("click", (e) => {
@@ -417,8 +441,8 @@ function renderChangelog() {
 renderChangelog();
 
 // ============================================
-// Boot auth UI + task hub
+// Boot auth UI + task hub + sound toggle
 // ============================================
 initAuthUI();
 initTasks();
-initGallery();
+initSoundToggle();

@@ -19,6 +19,7 @@ import {
   switchStudentIdentity,
   isFirebaseConfigured,
 } from "./auth.js";
+import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
 let latestState = { user: null, profile: null, admin: false };
@@ -35,10 +36,12 @@ const $ = (id) => document.getElementById(id);
 function showAuthModal(startMode) {
   setMode(startMode || "signin");
   $("authOverlay").hidden = false;
+  playOpen();
 }
 
 function hideAuthModal() {
   $("authOverlay").hidden = true;
+  playClose();
   $("authForm").reset();
   setAuthError(null);
   $("authResetNote").hidden = true;
@@ -159,6 +162,7 @@ function waitForAuthUser(uid, timeoutMs = 6000) {
 function wirePasswordToggles() {
   document.querySelectorAll(".password-toggle").forEach((btn) => {
     btn.addEventListener("click", () => {
+      playClick();
       const input = document.querySelector(`input[name="${btn.dataset.target}"]`);
       if (!input) return;
       const nowVisible = input.type === "password"; // about to become visible
@@ -181,6 +185,7 @@ async function handleAuthSubmit(e) {
   setAuthError(null);
 
   if (mode === "signup" && password !== confirmPassword) {
+    playError();
     setAuthError("Those passwords don't match — check and try again.");
     return;
   }
@@ -208,6 +213,7 @@ async function runSignIn(email, password) {
   } catch (err) {
     hideLoading();
     console.error(err);
+    playError();
     setAuthError(getFriendlyAuthError(err), () => runSignIn(email, password));
     return;
   }
@@ -222,6 +228,7 @@ async function runSignUp(email, password) {
   } catch (err) {
     hideLoading();
     console.error(err);
+    playError();
     setAuthError(getFriendlyAuthError(err), () => runSignUp(email, password));
     return;
   }
@@ -233,11 +240,13 @@ async function runReset(email) {
   try {
     await resetPassword(email);
     hideLoading();
+    playSuccess();
     $("authResetNote").hidden = false;
     $("authResetNote").textContent = "Reset link sent — check your inbox.";
   } catch (err) {
     hideLoading();
     console.error(err);
+    playError();
     setAuthError(getFriendlyAuthError(err), () => runReset(email));
   }
 }
@@ -251,6 +260,7 @@ async function handleGoogleSignIn() {
   } catch (err) {
     hideLoading();
     console.error(err);
+    playError();
     setAuthError(getFriendlyAuthError(err), handleGoogleSignIn);
     return;
   }
@@ -273,10 +283,12 @@ async function finishAfterAuth(user) {
     await ensureProfileDoc(user);
     await waitForAuthUser(user.uid);
     hideLoading();
+    playSuccess();
     hideAuthModal();
   } catch (err) {
     hideLoading();
     console.error(err);
+    playError();
     setAuthError(
       "Signed in, but we couldn't finish syncing your profile. Try again.",
       () => finishAfterAuth(user)
@@ -317,10 +329,12 @@ function openClaimModal(nextMode = "initial", preselectId = null) {
   $("claimClose").hidden = !isSwitch;
 
   $("claimOverlay").hidden = false;
+  playOpen();
 }
 
 function closeClaimModal() {
   $("claimOverlay").hidden = true;
+  playClose();
 }
 
 async function handleClaimConfirm() {
@@ -352,8 +366,10 @@ async function handleClaimConfirm() {
       },
     };
     renderAuthSlot();
+    playSuccess();
     closeClaimModal();
   } catch (err) {
+    playError();
     $("claimError").hidden = false;
     $("claimError").textContent =
       err.code === "identity/already-claimed"
@@ -389,7 +405,7 @@ function renderAuthSlot() {
 
   if (!user) {
     slot.innerHTML = `<button class="btn btn-primary btn-small" id="signInTriggerBtn">Sign in</button>`;
-    $("signInTriggerBtn").addEventListener("click", () => showAuthModal("signin"));
+    $("signInTriggerBtn").addEventListener("click", () => showAuthModal("signin")); // showAuthModal() plays the "open" sound
     return;
   }
 
@@ -430,14 +446,17 @@ function renderAuthSlot() {
     e.stopPropagation();
     const open = item.classList.toggle("open");
     trigger.setAttribute("aria-expanded", open);
+    open ? playOpen() : playClose();
   });
 
   $("switchStudentBtn").addEventListener("click", () => {
+    playClick();
     item.classList.remove("open");
     openClaimModal("switch", profile && profile.claimedStudentId);
   });
 
   $("signOutBtn").addEventListener("click", () => {
+    playClose();
     signOutUser();
     item.classList.remove("open");
   });
@@ -459,13 +478,19 @@ export function initAuthUI() {
   }
 
   document.querySelectorAll(".auth-tab").forEach((tab) => {
-    tab.addEventListener("click", () => setMode(tab.dataset.mode));
+    tab.addEventListener("click", () => {
+      playClick();
+      setMode(tab.dataset.mode);
+    });
   });
 
   $("authClose").addEventListener("click", hideAuthModal);
   $("authForm").addEventListener("submit", handleAuthSubmit);
   $("googleSignInBtn").addEventListener("click", handleGoogleSignIn);
-  $("forgotPasswordBtn").addEventListener("click", () => setMode("reset"));
+  $("forgotPasswordBtn").addEventListener("click", () => {
+    playClick();
+    setMode("reset");
+  });
   $("authOverlay").addEventListener("click", (e) => {
     if (e.target === $("authOverlay")) hideAuthModal();
   });

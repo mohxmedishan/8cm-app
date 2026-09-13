@@ -204,6 +204,29 @@ h1, h2, h3 {
 }
 .dropdown a:hover { background: var(--bg-elevated-2); color: var(--text); }
 
+.sound-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+.sound-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  transform: scale(1.06);
+}
+.sound-toggle:active { transform: scale(0.94); }
+.sound-toggle svg { width: 17px; height: 17px; }
+.sound-toggle[aria-pressed="true"] { color: var(--text-faint); }
+
 .burger {
   display: none;
   flex-direction: column;
@@ -326,18 +349,6 @@ h1, h2, h3 {
   backdrop-filter: blur(6px);
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
-
-.btn-danger {
-  background: linear-gradient(135deg, var(--danger), #d97b6c);
-  color: #fff;
-  border: 1px solid transparent;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset, 0 6px 18px -10px rgba(193, 102, 90, 0.6);
-}
-.btn-danger:hover {
-  background: linear-gradient(135deg, #d97b6c, var(--danger));
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 10px 24px -10px rgba(193, 102, 90, 0.8);
-}
-.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .hero-visual {
   background: var(--bg-elevated);
@@ -1078,17 +1089,10 @@ h1, h2, h3 {
 }
 .task-icon-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
 
-/* Shared "clear, red-styled delete" treatment for admin-only
-   destructive icon buttons (task delete, attachment remove). */
-.icon-btn-danger {
-  border-color: rgba(193, 102, 90, 0.45) !important;
-  background: var(--danger-soft) !important;
-  color: var(--danger) !important;
-}
-.icon-btn-danger:hover {
-  border-color: var(--danger) !important;
-  background: rgba(193, 102, 90, 0.3) !important;
-  color: var(--danger) !important;
+.task-icon-btn-danger:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
 }
 
 .task-empty {
@@ -1099,224 +1103,30 @@ h1, h2, h3 {
 }
 
 /* ============================================
-   Task attachments
+   Task resource link — a small chip on the task
+   card that opens wherever the resource actually
+   lives (Google Form, Drive folder, worksheet…)
    ============================================ */
-.task-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.task-attachment-chip {
+.task-link-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  margin-top: 8px;
   background: var(--bg-elevated-2);
   border: 1px solid var(--border);
   border-radius: 100px;
-  padding: 3px 4px 3px 10px;
+  padding: 4px 12px 4px 10px;
   font-size: 0.75rem;
-}
-
-.task-attachment-chip a,
-.task-attachment-download {
   color: var(--text-muted);
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* Attachments are downloaded on click via a fetch + Blob (the file
-     lives in a separate Firestore doc, not a plain URL), so this is a
-     <button>, not an <a> — reset it back to looking like a link. */
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
+  width: fit-content;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), transform 0.15s var(--ease);
 }
-.task-attachment-chip a:hover,
-.task-attachment-download:hover { color: var(--accent-strong); }
-
-.task-attachment-size {
-  color: var(--text-faint);
-  font-size: 0.7rem;
-}
-
-.task-attachment-remove {
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 0.7rem;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-.task-attachment-remove:hover {
-  background: var(--bg-elevated);
-  color: var(--accent-strong);
-}
-
-.task-form-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: -6px 0 14px;
-}
-.task-form-attachments:empty { margin: 0; }
-
-/* File-type badge icon — inline SVG from file-utils.js, used in
-   attachment chips, staged file previews, and upload progress rows. */
-.file-icon {
-  vertical-align: -4px;
-  flex-shrink: 0;
-}
-
-/* ============================================
-   Drag-and-drop file picker
-   ============================================ */
-.dropzone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  text-align: center;
-  padding: 22px 16px;
-  border: 1.5px dashed var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg-elevated-2);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), color 0.2s var(--ease);
-}
-.dropzone:hover,
-.dropzone:focus-visible {
+.task-link-chip svg { width: 14px; height: 14px; flex-shrink: 0; }
+.task-link-chip:hover {
   border-color: var(--accent);
-  color: var(--text);
-  outline: none;
-}
-.dropzone.dropzone-active {
-  border-color: var(--accent-strong);
-  background: var(--accent-soft);
   color: var(--accent-strong);
-}
-.dropzone.dropzone-full {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.dropzone-compact { padding: 16px; }
-.dropzone-icon { color: var(--text-faint); transition: color 0.2s var(--ease); }
-.dropzone:hover .dropzone-icon,
-.dropzone.dropzone-active .dropzone-icon { color: currentColor; }
-.dropzone-text { margin: 0; font-size: 0.85rem; }
-.dropzone-text strong { color: var(--text); font-weight: 600; }
-.dropzone-hint { margin: 0; font-size: 0.72rem; color: var(--text-faint); }
-
-/* Staged file preview chips (before upload) */
-.file-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.file-chip-list:empty { margin-top: 0; }
-.file-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  background: var(--bg-elevated-2);
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 4px 4px 4px 8px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-.file-chip-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-.file-chip-name {
-  max-width: 160px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.file-chip-size { color: var(--text-faint); font-size: 0.7rem; flex-shrink: 0; }
-.file-chip-remove {
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 0.7rem;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease);
-}
-.file-chip-remove:hover { background: var(--danger-soft); color: var(--danger); }
-
-/* ============================================
-   Upload progress (real progress via uploadBytesResumable, with a
-   stall/timeout watchdog behind it — see file-utils.js)
-   ============================================ */
-.upload-progress-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 4px 0 14px;
-}
-.upload-progress-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(60px, 2fr) auto;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-.upload-progress-name {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.upload-progress {
-  height: 6px;
-  border-radius: 100px;
-  background: var(--bg-elevated-2);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-.upload-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-  transition: width 0.2s var(--ease);
-}
-.upload-progress-pct {
-  font-size: 0.72rem;
-  color: var(--text-faint);
-  width: 34px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-@media (max-width: 480px) {
-  .upload-progress-row { grid-template-columns: 1fr; row-gap: 4px; }
-  .upload-progress-pct { text-align: left; }
+  transform: translateY(-1px);
 }
 
 /* ============================================
@@ -1518,11 +1328,6 @@ h1, h2, h3 {
   gap: 10px;
   margin-top: 4px;
 }
-
-/* Delete-confirmation variant — a subtle red cue so it reads as
-   destructive at a glance, without being alarming. */
-.modal-card-danger { border-color: rgba(193, 102, 90, 0.4); }
-.modal-card-danger h3 { color: var(--danger); }
 
 /* ============================================
    Auth tabs + form
@@ -1944,25 +1749,8 @@ body.lightbox-locked { overflow: hidden; }
 }
 
 /* ============================================
-   Gallery photos — real field trip images mixed
-   with the still-empty placeholders
+   Gallery photos
    ============================================ */
-.gallery-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.gallery-upload-form {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  background: var(--bg-elevated-2);
-  margin-bottom: 20px;
-}
-.gallery-upload-form .task-form-grid { margin-bottom: 0; }
-.gallery-upload-form .task-form-actions { padding-top: 14px; }
-
 .gallery-photo {
   position: relative;
   margin: 0;
@@ -1996,30 +1784,6 @@ body.lightbox-locked { overflow: hidden; }
   background: linear-gradient(to top, rgba(10, 11, 12, 0.75), transparent);
 }
 
-.gallery-delete-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 10px 5px 9px;
-  background: rgba(193, 102, 90, 0.85);
-  backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 100px;
-  color: #fff;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition: background 0.2s var(--ease), transform 0.15s var(--ease);
-}
-.gallery-delete-btn:hover {
-  background: var(--danger);
-  transform: scale(1.05);
-}
-
 /* ============================================
    Profile card stats — house + transportation
    ============================================ */
@@ -2046,8 +1810,4 @@ body.lightbox-locked { overflow: hidden; }
    ============================================ */
 @media (max-width: 720px) {
   .nav-auth { margin-left: auto; margin-right: 10px; }
-}
-
-@media (max-width: 640px) {
-  .gallery-head { flex-wrap: wrap; }
 }

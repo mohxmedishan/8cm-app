@@ -64,6 +64,18 @@
     <!-- auth-ui.js renders either a Sign in button or the profile pill here -->
     <div class="nav-auth" id="authSlot"></div>
 
+    <button class="sound-toggle" id="soundToggleBtn" type="button" aria-label="Mute sounds" aria-pressed="false" title="Sound effects">
+      <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor"/>
+        <path d="M16.5 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M19 6a9 9 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" aria-hidden="true" hidden>
+        <path d="M4 9v6h4l5 5V4L8 9H4z" fill="currentColor"/>
+        <path d="M16.5 9.5 21 14M21 9.5l-4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+
     <button class="burger" id="burger" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
@@ -148,22 +160,11 @@
               <span>Due</span>
               <input type="text" name="due" placeholder="Tomorrow" required>
             </label>
-            <div class="field field-wide">
-              <span>Attachments (up to 5 files — images compressed automatically, other files 650KB each)</span>
-              <div class="dropzone" id="taskAttachmentsZone" tabindex="0" role="button" aria-label="Add attachments — click or drop files">
-                <svg class="dropzone-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-                  <path d="M12 16V4M12 4l-4 4M12 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                </svg>
-                <p class="dropzone-text"><strong>Drag files here</strong> or click to browse</p>
-                <p class="dropzone-hint">PDF, Word, PowerPoint, Excel, images, or text</p>
-                <input type="file" name="attachments" id="taskAttachmentsInput" multiple hidden accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt">
-              </div>
-              <div class="file-chip-list" id="taskAttachmentsPreview"></div>
-            </div>
+            <label class="field field-wide">
+              <span>Link (optional)</span>
+              <input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url">
+            </label>
           </div>
-          <div class="task-form-attachments" id="taskFormExistingAttachments"></div>
-          <div class="upload-progress-list" id="taskFormUploadProgress" hidden></div>
           <p class="auth-error" id="taskFormError" hidden></p>
           <div class="task-form-actions">
             <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
@@ -350,40 +351,38 @@
   <!-- GALLERY -->
   <section class="gallery" id="gallery">
     <div class="section-inner">
-      <div class="section-head gallery-head">
-        <h2>Gallery</h2>
-        <button class="btn btn-add-task btn-small admin-only" id="addPhotoBtn" hidden>+ Add photo</button>
+      <div class="section-head"><h2>Gallery</h2></div>
+
+      <div class="gallery-grid" id="galleryGrid">
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/5cm-motion-gate.jpg" alt="5CM class field trip at Motion Gate" loading="lazy">
+          <figcaption>5CM Field Trip · Motion Gate</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/6cm-warner-bros.jpg" alt="6CM class field trip at Warner Bros World" loading="lazy">
+          <figcaption>6CM Field Trip · Warner Bros</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/7cm-assembly-1.jpg" alt="7CM class assembly presentation" loading="lazy">
+          <figcaption>7CM Assembly</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/7cm-assembly-2.jpg" alt="7CM class assembly presentation" loading="lazy">
+          <figcaption>7CM Assembly</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/7cm-english-1.jpg" alt="7CM English class activity" loading="lazy">
+          <figcaption>7CM English</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/7cm-english-2.jpg" alt="7CM English class activity" loading="lazy">
+          <figcaption>7CM English</figcaption>
+        </figure>
+        <figure class="gallery-photo" tabindex="0" role="button" aria-label="View larger photo">
+          <img src="assets/gallery/7cm-field-trip-garvit.jpg" alt="7CM class field trip" loading="lazy">
+          <figcaption>7CM Field Trip · Garvit</figcaption>
+        </figure>
       </div>
-
-      <form class="task-form gallery-upload-form" id="galleryUploadForm" hidden>
-        <div class="task-form-grid">
-          <label class="field field-wide">
-            <span>Caption</span>
-            <input type="text" name="caption" placeholder="7CM Field Trip · Motion Gate" required>
-          </label>
-          <div class="field field-wide">
-            <span>Photo (.png or .jpg, compressed automatically)</span>
-            <div class="dropzone dropzone-compact" id="galleryPhotoZone" tabindex="0" role="button" aria-label="Add a photo — click or drop an image">
-              <svg class="dropzone-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-                <path d="M12 16V4M12 4l-4 4M12 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-              </svg>
-              <p class="dropzone-text"><strong>Drag a photo here</strong> or click to browse</p>
-              <p class="dropzone-hint">PNG or JPG — resized and compressed automatically</p>
-              <input type="file" name="photo" id="galleryPhotoInput" hidden accept="image/png,image/jpeg">
-            </div>
-            <div class="file-chip-list" id="galleryPhotoPreview"></div>
-          </div>
-        </div>
-        <div class="upload-progress-list" id="galleryUploadProgress" hidden></div>
-        <p class="auth-error" id="galleryUploadError" hidden></p>
-        <div class="task-form-actions">
-          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
-          <button type="submit" class="btn btn-add-task btn-small" id="galleryUploadSubmit">Upload</button>
-        </div>
-      </form>
-
-      <div class="gallery-grid" id="galleryGrid"></div>
       <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
     </div>
   </section>
@@ -537,23 +536,6 @@
     <div class="modal-actions">
       <button type="button" class="link-btn" id="claimCancelBtn" hidden>Cancel</button>
       <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================
-     Shared destructive-action confirmation — driven by
-     confirm-modal.js's confirmDelete(). One overlay, reused for
-     gallery photo deletes, task attachment removal, and task deletes.
-     ============================================ -->
-<div class="modal-overlay" id="deleteConfirmOverlay" hidden>
-  <div class="modal-card modal-card-danger">
-    <button class="modal-close" id="deleteConfirmClose" aria-label="Close">✕</button>
-    <h3 id="deleteConfirmTitle">Delete this item?</h3>
-    <p class="modal-sub" id="deleteConfirmMessage">This action cannot be undone.</p>
-    <div class="modal-actions">
-      <button type="button" class="btn btn-ghost btn-small" id="deleteConfirmCancel">Cancel</button>
-      <button type="button" class="btn btn-danger btn-small" id="deleteConfirmOk">Delete</button>
     </div>
   </div>
 </div>
