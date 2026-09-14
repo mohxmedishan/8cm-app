@@ -232,7 +232,10 @@ export function initTasks() {
     if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());
   }
 
-  document.getElementById("todayDate").textContent =
-    new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) +
-    " — homework, tasks, and announcements, kept current.";
+  const todayDateEl = document.getElementById("todayDate");
+  if (todayDateEl) {
+    todayDateEl.textContent =
+      new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) +
+      " — homework, tasks, and announcements, kept current.";
+  }
 }

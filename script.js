@@ -2,23 +2,27 @@
 // 8CM — Site interactions (entry module)
 // ------------------------------------------------
 // Imports the auth/task modules and wires up everything else: nav,
-// student directory filters, house shortcuts, resources, stats,
-// and the loading splash.
+// student directory filters, house shortcuts, resources, stats, the
+// loading splash, and appearance settings.
+//
+// This one file is shared by every page in the site (dashboard +
+// every sub-page), so each section below checks that its markup is
+// actually present before touching it — a page that doesn't have the
+// student directory on it just skips that block instead of throwing.
 // ============================================
 import { students } from "./students.js";
 import { initAuthUI } from "./auth-ui.js";
 import { initTasks } from "./tasks.js";
 import { changelog } from "./changelog.js";
-import {
-  playToggleOn,
-  playToggleOff,
-  playClick,
-  playOpen,
-  playClose,
-  playExternal,
-  playNav,
-  initSoundToggle,
-} from "./sound.js";
+import { applyStoredTheme, initThemeUI } from "./theme.js";
+import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
+
+// Applied as early as possible so a custom accent is on screen from
+// first paint rather than flashing the default green first. (The
+// tiny inline script in <head> already set --accent synchronously
+// before this module ran; this fills in the derived --accent-strong
+// / --accent-soft shades and syncs the settings UI.)
+applyStoredTheme();
 
 // ============================================
 // Fallback error logging
@@ -53,239 +57,241 @@ window.addEventListener("error", (event) => {
 });
 
 // ============================================
-// Student directory: render + filter
+// Student directory: render + filter — dashboard only
 // ============================================
-const grid = document.getElementById("studentGrid");
-const resultCount = document.getElementById("resultCount");
+function initStudentDirectory() {
+  const grid = document.getElementById("studentGrid");
+  const resultCount = document.getElementById("resultCount");
+  const searchInput = document.getElementById("searchInput");
+  if (!grid || !resultCount || !searchInput) return;
 
-function transportLabel(t) {
-  return t === "OT" ? "Own transport" : `Bus ${t}`;
-}
-
-function houseLabel(house) {
-  return house.charAt(0).toUpperCase() + house.slice(1);
-}
-
-function rollLabel(rollNumber) {
-  return String(rollNumber).padStart(2, "0");
-}
-
-function renderStudents(list) {
-  grid.innerHTML = "";
-  grid.classList.toggle("empty", list.length === 0);
-
-  list.forEach((s, i) => {
-    const card = document.createElement("div");
-    card.className = "student-card";
-    card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
-    card.innerHTML = `
-      <div class="student-top">
-        <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
-        <span class="house-dot ${s.house}"></span>
-        <span class="student-name">${s.name}</span>
-      </div>
-      <div class="student-meta">
-        <span>${houseLabel(s.house)}</span>
-        <span>${s.language || "—"}</span>
-        <span>${transportLabel(s.transport)}</span>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
-}
-
-let activeFilters = new Set();
-let searchTerm = "";
-
-function matchesFilters(student) {
-  if (activeFilters.size === 0) return true;
-  return [...activeFilters].every((filter) => {
-    if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
-    if (filter.startsWith("house:")) return student.house === filter.slice(6);
-    if (filter.startsWith("language:")) {
-      return (student.language || "").toLowerCase() === filter.slice(9);
-    }
-    return true;
-  });
-}
-
-function applyFilters() {
-  let list = students.filter(matchesFilters);
-  if (searchTerm.trim() !== "") {
-    const q = searchTerm.trim().toLowerCase();
-    list = list.filter((s) => s.name.toLowerCase().includes(q));
+  function transportLabel(t) {
+    return t === "OT" ? "Own transport" : `Bus ${t}`;
   }
-  renderStudents(list);
-}
 
-function syncPillStates() {
-  document.querySelectorAll(".pill").forEach((pill) => {
-    const isAll = pill.dataset.filter === "all";
-    pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter));
+  function houseLabel(house) {
+    return house.charAt(0).toUpperCase() + house.slice(1);
+  }
 
-    if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
-    if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
-    if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
-    if (pill.dataset.filter === "house:summer") pill.style.setProperty("--pill-house-color", "var(--house-summer)");
-  });
-}
+  function rollLabel(rollNumber) {
+    return String(rollNumber).padStart(2, "0");
+  }
 
-function toggleFilter(filter) {
-  if (filter === "all") {
-    const hadFilters = activeFilters.size > 0;
+  function renderStudents(list) {
+    grid.innerHTML = "";
+    grid.classList.toggle("empty", list.length === 0);
+
+    list.forEach((s, i) => {
+      const card = document.createElement("div");
+      card.className = "student-card";
+      card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+      card.innerHTML = `
+        <div class="student-top">
+          <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
+          <span class="house-dot ${s.house}"></span>
+          <span class="student-name">${s.name}</span>
+        </div>
+        <div class="student-meta">
+          <span>${houseLabel(s.house)}</span>
+          <span>${s.language || "—"}</span>
+          <span>${transportLabel(s.transport)}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
+  }
+
+  let activeFilters = new Set();
+  let searchTerm = "";
+
+  function matchesFilters(student) {
+    if (activeFilters.size === 0) return true;
+    return [...activeFilters].every((filter) => {
+      if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
+      if (filter.startsWith("house:")) return student.house === filter.slice(6);
+      if (filter.startsWith("language:")) {
+        return (student.language || "").toLowerCase() === filter.slice(9);
+      }
+      return true;
+    });
+  }
+
+  function applyFilters() {
+    let list = students.filter(matchesFilters);
+    if (searchTerm.trim() !== "") {
+      const q = searchTerm.trim().toLowerCase();
+      list = list.filter((s) => s.name.toLowerCase().includes(q));
+    }
+    renderStudents(list);
+  }
+
+  function syncPillStates() {
+    document.querySelectorAll(".pill").forEach((pill) => {
+      const isAll = pill.dataset.filter === "all";
+      pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter));
+
+      if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
+      if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
+      if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
+      if (pill.dataset.filter === "house:summer") pill.style.setProperty("--pill-house-color", "var(--house-summer)");
+    });
+  }
+
+  function toggleFilter(filter) {
+    if (filter === "all") {
+      const hadFilters = activeFilters.size > 0;
+      activeFilters.clear();
+      if (hadFilters) playToggleOff();
+    } else if (filter.startsWith("house:")) {
+      // Houses are single-select among themselves, but combine (AND)
+      // freely with the transport pill and the language pills below.
+      const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
+      if (activeFilters.has(filter)) {
+        activeFilters.delete(filter);
+        playToggleOff();
+      } else {
+        houseFilters.forEach((h) => activeFilters.delete(h));
+        activeFilters.add(filter);
+        playToggleOn();
+      }
+    } else if (filter.startsWith("language:")) {
+      // Languages are single-select among themselves too, and combine
+      // (AND) with house and OT — e.g. "Autumn + Hindi" is a valid,
+      // narrower filter, but "Hindi + French" together would always
+      // return zero students since each student has exactly one
+      // language track.
+      const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
+      if (activeFilters.has(filter)) {
+        activeFilters.delete(filter);
+        playToggleOff();
+      } else {
+        languageFilters.forEach((l) => activeFilters.delete(l));
+        activeFilters.add(filter);
+        playToggleOn();
+      }
+    } else if (activeFilters.has(filter)) {
+      activeFilters.delete(filter);
+      playToggleOff();
+    } else {
+      activeFilters.add(filter);
+      playToggleOn();
+    }
+    syncPillStates();
+    applyFilters();
+  }
+
+  function jumpToHouse(house) {
+    playNav();
     activeFilters.clear();
-    if (hadFilters) playToggleOff();
-  } else if (filter.startsWith("house:")) {
-    // Houses are single-select among themselves, but combine (AND)
-    // freely with the transport pill and the language pills below.
-    const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
-    if (activeFilters.has(filter)) {
-      activeFilters.delete(filter);
-      playToggleOff();
-    } else {
-      houseFilters.forEach((h) => activeFilters.delete(h));
-      activeFilters.add(filter);
-      playToggleOn();
-    }
-  } else if (filter.startsWith("language:")) {
-    // Languages are single-select among themselves too, and combine
-    // (AND) with house and OT — e.g. "Autumn + Hindi" is a valid,
-    // narrower filter, but "Hindi + French" together would always
-    // return zero students since each student has exactly one
-    // language track.
-    const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
-    if (activeFilters.has(filter)) {
-      activeFilters.delete(filter);
-      playToggleOff();
-    } else {
-      languageFilters.forEach((l) => activeFilters.delete(l));
-      activeFilters.add(filter);
-      playToggleOn();
-    }
-  } else if (activeFilters.has(filter)) {
-    activeFilters.delete(filter);
-    playToggleOff();
-  } else {
-    activeFilters.add(filter);
-    playToggleOn();
+    activeFilters.add(`house:${house}`);
+    syncPillStates();
+    applyFilters();
+    document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  renderStudents(students);
   syncPillStates();
-  applyFilters();
-}
 
-function jumpToHouse(house) {
-  playClick();
-  activeFilters.clear();
-  activeFilters.add(`house:${house}`);
-  syncPillStates();
-  applyFilters();
-  document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-renderStudents(students);
-syncPillStates();
-
-document.querySelectorAll(".pill").forEach((pill) => {
-  pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
-});
-
-document.getElementById("searchInput").addEventListener("input", (e) => {
-  searchTerm = e.target.value;
-  applyFilters();
-});
-
-document.querySelectorAll(".house-card, .bar-row").forEach((el) => {
-  const trigger = () => jumpToHouse(el.dataset.house);
-  el.addEventListener("click", trigger);
-  el.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      trigger();
-    }
+  document.querySelectorAll(".pill").forEach((pill) => {
+    pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
   });
-});
+
+  searchInput.addEventListener("input", (e) => {
+    searchTerm = e.target.value;
+    applyFilters();
+  });
+
+  document.querySelectorAll(".house-card, .bar-row").forEach((el) => {
+    const trigger = () => jumpToHouse(el.dataset.house);
+    el.addEventListener("click", trigger);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        trigger();
+      }
+    });
+  });
+}
 
 // ============================================
 // Resources — quick links to school platforms
 // ============================================
-const resources = [
-  {
-    name: "Google Classroom",
-    description: "Assignments, materials, and class-wide posts.",
-    url: "https://classroom.google.com",
-  },
-  {
-    name: "Digital Campus (DC)",
-    description: "School portal for grades, attendance, and notices.",
-    url: "https://ict.adiswathba.com/ADIS1/",
-  },
-];
+function initResources() {
+  const resourceGrid = document.getElementById("resourceGrid");
+  if (!resourceGrid) return;
 
-const resourceGrid = document.getElementById("resourceGrid");
-resources.forEach((r) => {
-  const card = document.createElement("a");
-  card.className = "resource-card";
-  card.href = r.url;
-  card.target = "_blank";
-  card.rel = "noopener";
-  card.innerHTML = `
-    <h3>${r.name}</h3>
-    <p>${r.description}</p>
-    <span class="resource-note">Open →</span>
-  `;
-  card.addEventListener("click", () => playExternal());
-  resourceGrid.appendChild(card);
-});
+  const resources = [
+    {
+      name: "Google Classroom",
+      description: "Assignments, materials, and class-wide posts.",
+      url: "https://classroom.google.com",
+    },
+    {
+      name: "Digital Campus (DC)",
+      description: "School portal for grades, attendance, and notices.",
+      url: "https://ict.adiswathba.com/ADIS1/",
+    },
+  ];
 
-// ============================================
-// Gallery lightbox — 4KWallpapers-style zoom view
-// Click any real gallery photo to open a centered, animated
-// enlargement with the caption pinned to the bottom on a
-// frosted-glass strip.
-// ============================================
-const lightboxOverlay = document.getElementById("lightboxOverlay");
-const lightboxImage = document.getElementById("lightboxImage");
-const lightboxCaption = document.getElementById("lightboxCaption");
-const lightboxClose = document.getElementById("lightboxClose");
-
-function openLightbox(photo) {
-  const img = photo.querySelector("img");
-  const caption = photo.querySelector("figcaption");
-  if (!img || !lightboxOverlay) return;
-
-  lightboxImage.src = img.currentSrc || img.src;
-  lightboxImage.alt = img.alt || "";
-  lightboxCaption.textContent = caption ? caption.textContent : "";
-
-  lightboxOverlay.hidden = false;
-  document.body.classList.add("lightbox-locked");
-  playOpen();
-  // Two-step so the browser registers [hidden] removal before the
-  // transition class flips — otherwise the fade/scale-in never plays.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => lightboxOverlay.classList.add("open"));
+  resources.forEach((r) => {
+    const card = document.createElement("a");
+    card.className = "resource-card";
+    card.href = r.url;
+    card.target = "_blank";
+    card.rel = "noopener";
+    card.innerHTML = `
+      <h3>${r.name}</h3>
+      <p>${r.description}</p>
+      <span class="resource-note">Open →</span>
+    `;
+    card.addEventListener("click", () => playExternal());
+    resourceGrid.appendChild(card);
   });
 }
 
-function closeLightbox() {
-  if (!lightboxOverlay || lightboxOverlay.hidden) return;
-  lightboxOverlay.classList.remove("open");
-  document.body.classList.remove("lightbox-locked");
-  playClose();
-  setTimeout(() => {
-    lightboxOverlay.hidden = true;
-    lightboxImage.src = "";
-  }, 220);
-}
+// ============================================
+// Gallery lightbox — 4KWallpapers-style zoom view — gallery page only
+// ============================================
+function initGalleryLightbox() {
+  const galleryGrid = document.getElementById("galleryGrid");
+  const lightboxOverlay = document.getElementById("lightboxOverlay");
+  const lightboxImage = document.getElementById("lightboxImage");
+  const lightboxCaption = document.getElementById("lightboxCaption");
+  const lightboxClose = document.getElementById("lightboxClose");
+  if (!galleryGrid || !lightboxOverlay) return;
 
-// Delegating the click/keydown listeners to the grid container
-// (rather than each figure individually) keeps this resilient to any
-// future changes to how the grid's contents are produced, at no cost
-// today.
-const galleryGrid = document.getElementById("galleryGrid");
-if (galleryGrid) {
+  function openLightbox(photo) {
+    const img = photo.querySelector("img");
+    const caption = photo.querySelector("figcaption");
+    if (!img) return;
+
+    lightboxImage.src = img.currentSrc || img.src;
+    lightboxImage.alt = img.alt || "";
+    lightboxCaption.textContent = caption ? caption.textContent : "";
+
+    lightboxOverlay.hidden = false;
+    document.body.classList.add("lightbox-locked");
+    playOpen();
+    // Two-step so the browser registers [hidden] removal before the
+    // transition class flips — otherwise the fade/scale-in never plays.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => lightboxOverlay.classList.add("open"));
+    });
+  }
+
+  function closeLightbox() {
+    if (lightboxOverlay.hidden) return;
+    lightboxOverlay.classList.remove("open");
+    document.body.classList.remove("lightbox-locked");
+    playClose();
+    setTimeout(() => {
+      lightboxOverlay.hidden = true;
+      lightboxImage.src = "";
+    }, 220);
+  }
+
   galleryGrid.addEventListener("click", (e) => {
     const photo = e.target.closest(".gallery-photo");
     if (photo) openLightbox(photo);
@@ -298,130 +304,140 @@ if (galleryGrid) {
       openLightbox(photo);
     }
   });
-}
 
-if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
-if (lightboxOverlay) {
+  if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
   lightboxOverlay.addEventListener("click", (e) => {
     if (e.target === lightboxOverlay) closeLightbox();
   });
-}
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") closeLightbox();
-});
-
-// ============================================
-// Nav: scroll shadow, mobile menu, Home + More dropdowns
-// ============================================
-const nav = document.getElementById("nav");
-window.addEventListener("scroll", () => {
-  nav.classList.toggle("scrolled", window.scrollY > 8);
-});
-
-const burger = document.getElementById("burger");
-const navLinks = document.getElementById("navLinks");
-burger.addEventListener("click", () => {
-  const isOpen = burger.classList.toggle("open");
-  navLinks.classList.toggle("open");
-  isOpen ? playOpen() : playClose();
-});
-
-navLinks.querySelectorAll("a.nav-link").forEach((link) => {
-  link.addEventListener("click", () => {
-    playNav();
-    burger.classList.remove("open");
-    navLinks.classList.remove("open");
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeLightbox();
   });
-});
+}
 
-function wireDropdown(triggerId) {
-  const trigger = document.getElementById(triggerId);
-  if (!trigger) return;
-  const item = trigger.closest(".nav-item");
+// ============================================
+// Nav: scroll shadow, mobile menu, Home + More dropdowns — every page
+// ============================================
+function initNav() {
+  const nav = document.getElementById("nav");
+  const burger = document.getElementById("burger");
+  const navLinks = document.getElementById("navLinks");
+  if (!nav || !burger || !navLinks) return;
 
-  trigger.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isOpen = item.classList.toggle("open");
-    trigger.setAttribute("aria-expanded", isOpen);
+  window.addEventListener("scroll", () => {
+    nav.classList.toggle("scrolled", window.scrollY > 8);
+  });
+
+  burger.addEventListener("click", () => {
+    const isOpen = burger.classList.toggle("open");
+    navLinks.classList.toggle("open");
     isOpen ? playOpen() : playClose();
   });
 
-  trigger.nextElementSibling?.querySelectorAll("a")?.forEach((link) => {
-    link.addEventListener("click", () => playNav());
+  navLinks.querySelectorAll("a.nav-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      playNav();
+      burger.classList.remove("open");
+      navLinks.classList.remove("open");
+    });
   });
 
-  document.addEventListener("click", (e) => {
-    if (!item.contains(e.target)) {
-      item.classList.remove("open");
-      trigger.setAttribute("aria-expanded", "false");
-    }
-  });
-}
+  function wireDropdown(triggerId) {
+    const trigger = document.getElementById(triggerId);
+    if (!trigger) return;
+    const item = trigger.closest(".nav-item");
 
-wireDropdown("moreTrigger");
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = item.classList.toggle("open");
+      trigger.setAttribute("aria-expanded", isOpen);
+      isOpen ? playOpen() : playClose();
+    });
 
-// ============================================
-// Hero bar chart — grow on load
-// ============================================
-window.addEventListener("DOMContentLoaded", () => {
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      document.querySelectorAll(".bar-fill").forEach((bar) => {
-        const value = parseFloat(bar.dataset.value);
-        const max = parseFloat(bar.dataset.max);
-        bar.style.width = `${(value / max) * 100}%`;
-      });
-    }, 300);
-  });
-});
+    trigger.nextElementSibling?.querySelectorAll("a")?.forEach((link) => {
+      link.addEventListener("click", () => playNav());
+    });
 
-// ============================================
-// Stat count-up — triggered once, on scroll into view
-// ============================================
-const statNumbers = document.querySelectorAll(".stat-number[data-count]");
-
-function countUp(el) {
-  const target = parseInt(el.dataset.count, 10);
-  const duration = 900;
-  const start = performance.now();
-
-  function tick(now) {
-    const progress = Math.min((now - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(eased * target);
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
-const statObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        countUp(entry.target);
-        statObserver.unobserve(entry.target);
+    document.addEventListener("click", (e) => {
+      if (!item.contains(e.target)) {
+        item.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
       }
     });
-  },
-  { threshold: 0.5 }
-);
-statNumbers.forEach((el) => statObserver.observe(el));
+  }
+
+  wireDropdown("moreTrigger");
+}
 
 // ============================================
-// Loading splash — brief on first paint, then fades
+// Hero bar chart — grow on load — dashboard only
 // ============================================
-const splash = document.getElementById("splash");
-window.addEventListener("load", () => {
-  setTimeout(() => {
-    splash.classList.add("hide");
-    setTimeout(() => splash.remove(), 500);
-  }, 400);
-});
+function initHeroChart() {
+  window.addEventListener("DOMContentLoaded", () => {
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        document.querySelectorAll(".bar-fill").forEach((bar) => {
+          const value = parseFloat(bar.dataset.value);
+          const max = parseFloat(bar.dataset.max);
+          bar.style.width = `${(value / max) * 100}%`;
+        });
+      }, 300);
+    });
+  });
+}
 
 // ============================================
-// Changelog — its own always-visible section, filled from changelog.js
+// Stat count-up — triggered once, on scroll into view — stats page only
 // ============================================
-function renderChangelog() {
+function initStatCountUp() {
+  const statNumbers = document.querySelectorAll(".stat-number[data-count]");
+  if (statNumbers.length === 0) return;
+
+  function countUp(el) {
+    const target = parseInt(el.dataset.count, 10);
+    const duration = 900;
+    const start = performance.now();
+
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(eased * target);
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  const statObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          countUp(entry.target);
+          statObserver.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+  statNumbers.forEach((el) => statObserver.observe(el));
+}
+
+// ============================================
+// Loading splash — brief on first paint, then fades — every page
+// ============================================
+function initSplash() {
+  const splash = document.getElementById("splash");
+  if (!splash) return;
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      splash.classList.add("hide");
+      setTimeout(() => splash.remove(), 500);
+    }, 400);
+  });
+}
+
+// ============================================
+// Changelog — changelog page only, filled from changelog.js
+// ============================================
+function initChangelog() {
   const container = document.getElementById("changelogEntries");
   if (!container) return;
 
@@ -438,11 +454,18 @@ function renderChangelog() {
     )
     .join("");
 }
-renderChangelog();
 
 // ============================================
-// Boot auth UI + task hub + sound toggle
+// Boot — every page
 // ============================================
+initNav();
+initSplash();
+initStudentDirectory();
+initResources();
+initGalleryLightbox();
+initHeroChart();
+initStatCountUp();
+initChangelog();
 initAuthUI();
 initTasks();
-initSoundToggle();
+initThemeUI();

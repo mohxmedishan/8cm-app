@@ -20,6 +20,7 @@ import {
   isFirebaseConfigured,
 } from "./auth.js";
 import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
+import { syncThemeFromProfile } from "./theme.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
 let latestState = { user: null, profile: null, admin: false };
@@ -519,6 +520,7 @@ export function initAuthUI() {
   subscribeAuth((state) => {
     latestState = state;
     renderAuthSlot();
+    syncThemeFromProfile(state.user ? state.user.uid : null, state.profile);
 
     // Single source of truth for "does the MANDATORY claim modal need
     // to be open right now?" — runs for every sign-in path (email,

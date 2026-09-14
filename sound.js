@@ -4,20 +4,21 @@
 // Every sound here is synthesized on the fly with the Web Audio API
 // (short sine/triangle blips shaped with a quick volume envelope) —
 // there are no audio files to host or load, so this stays fast and
-// has zero network dependency. Browsers won't let a page make sound
-// before the user has interacted with it at all, so the shared
-// AudioContext is created lazily on first use rather than at load.
+// has zero network dependency.
+//
+// There's no manual mute toggle: sounds just play. The shared
+// AudioContext is still created lazily on first use rather than at
+// load, which isn't a UX gate — it's the browser's own autoplay rule
+// (no page may make sound before *some* user interaction has
+// happened), and every play* call already only ever happens from
+// inside a click/keydown handler, so the very first real interaction
+// on the page is enough to unlock it. Nothing extra required.
 //
 // Import the play* functions anywhere a click/open/close/success/
-// error should have a sound, and call initSoundToggle() once (from
-// script.js) to wire up the mute button in the nav.
+// error should have a sound.
 // ============================================
 
-const STORAGE_KEY = "8cm-sound-muted";
-const $ = (id) => document.getElementById(id);
-
 let ctx = null;
-let muted = localStorage.getItem(STORAGE_KEY) === "true";
 
 function getContext() {
   if (!ctx) {
@@ -35,7 +36,7 @@ function getContext() {
 // so nothing ever clicks or pops.
 function tone(freq, { duration = 0.12, type = "sine", delay = 0, gain = 0.09, glideTo = null } = {}) {
   const audio = getContext();
-  if (!audio || muted) return;
+  if (!audio) return;
   const start = audio.currentTime + delay;
   const osc = audio.createOscillator();
   const g = audio.createGain();
@@ -110,37 +111,4 @@ export function playNav() {
 export function playExternal() {
   tone(600, { duration: 0.06, type: "sine", gain: 0.05 });
   tone(950, { duration: 0.07, type: "sine", gain: 0.045, delay: 0.045 });
-}
-
-export function isMuted() {
-  return muted;
-}
-
-function updateToggleUI() {
-  const btn = $("soundToggleBtn");
-  if (!btn) return;
-  btn.setAttribute("aria-pressed", String(muted));
-  btn.setAttribute("aria-label", muted ? "Unmute sounds" : "Mute sounds");
-  btn.title = muted ? "Sound effects (off)" : "Sound effects (on)";
-  const onIcon = btn.querySelector(".sound-icon-on");
-  const offIcon = btn.querySelector(".sound-icon-off");
-  if (onIcon) onIcon.hidden = muted;
-  if (offIcon) offIcon.hidden = !muted;
-}
-
-/** Wires up the nav's mute/unmute button. Safe to call once at boot. */
-export function initSoundToggle() {
-  updateToggleUI();
-  const btn = $("soundToggleBtn");
-  if (!btn) return;
-  btn.addEventListener("click", () => {
-    // Play the confirmation chime *before* flipping the flag when
-    // muting, so the person hears that it worked; skip it when
-    // unmuting into silence would be the whole point of the click.
-    if (!muted) tone(440, { duration: 0.09, type: "sine", gain: 0.07, glideTo: 220 });
-    muted = !muted;
-    localStorage.setItem(STORAGE_KEY, String(muted));
-    updateToggleUI();
-    if (!muted) tone(660, { duration: 0.09, type: "sine", gain: 0.07 });
-  });
 }

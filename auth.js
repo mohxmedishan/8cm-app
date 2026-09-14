@@ -276,6 +276,14 @@ export async function switchStudentIdentity(uid, student) {
   }
 }
 
+// Saves the picked accent color to the user's profile doc so it
+// follows them to other devices. Called from theme.js, debounced by
+// nothing in particular — a color input fires often, but a merge
+// write of one small field is cheap and last-write-wins is fine here.
+export async function saveThemePreference(uid, theme) {
+  await setDoc(profileRef(uid), { theme, updatedAt: serverTimestamp() }, { merge: true });
+}
+
 // ------------------------------------------------
 // Global auth state
 // ------------------------------------------------

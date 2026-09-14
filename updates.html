@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>8CM.</title>
-<meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba. Students, houses, and what's due today.">
+<title>Updates — 8CM</title>
+<meta name="description" content="Announcements for 8CM.">
 <meta name="theme-color" content="#16171a">
-<link rel="canonical" href="https://8cm.vercel.app/">
-<meta property="og:url" content="https://8cm.vercel.app/">
+<link rel="canonical" href="https://8cm.vercel.app/updates.html">
+<meta property="og:url" content="https://8cm.vercel.app/updates.html">
 <meta property="og:site_name" content="8CM">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -44,14 +44,14 @@
 <div class="grain"></div>
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="#top" class="brand" aria-label="8CM home">
+    <a href="index.html#top" class="brand" aria-label="8CM home">
       <img src="assets/cm-logo.png" alt="8CM">
     </a>
 
     <nav class="nav-links" id="navLinks">
-      <a href="#today" class="nav-link">Today</a>
-      <a href="#students" class="nav-link">Students</a>
-      <a href="#houses" class="nav-link">Houses</a>
+      <a href="index.html#today" class="nav-link">Today</a>
+      <a href="index.html#students" class="nav-link">Students</a>
+      <a href="index.html#houses" class="nav-link">Houses</a>
       <a href="timetable.html" class="nav-link">Timetable</a>
 
       <div class="nav-item has-dropdown">
@@ -96,175 +96,20 @@
   </div>
 </header>
 
-<main id="top">
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-grid">
-      <div class="hero-text">
-        <p class="hero-kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
-        <h1 class="hero-title">Thirty desks,<br>four houses,<br>one classroom that's ours.</h1>
-        <p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
-        <div class="hero-actions">
-          <a href="#students" class="btn btn-primary">Meet the class</a>
-          <a href="#houses" class="btn btn-ghost">See the houses</a>
-          <a href="timetable.html" class="btn btn-ghost">See the timetable</a>
-        </div>
-      </div>
-
-      <div class="hero-visual">
-        <p class="hero-visual-label">Houses, by headcount</p>
-        <div class="bar-chart" id="heroChart">
-          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Filter Autumn students">
-            <span class="bar-name">Autumn</span>
-            <div class="bar-track"><div class="bar-fill" data-value="11" data-max="11"></div></div>
-            <span class="bar-count">11</span>
-          </div>
-          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Filter Spring students">
-            <span class="bar-name">Spring</span>
-            <div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div>
-            <span class="bar-count">8</span>
-          </div>
-          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Filter Winter students">
-            <span class="bar-name">Winter</span>
-            <div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div>
-            <span class="bar-count">8</span>
-          </div>
-          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Filter Summer students">
-            <span class="bar-name">Summer</span>
-            <div class="bar-track"><div class="bar-fill" data-value="3" data-max="11"></div></div>
-            <span class="bar-count">3</span>
-          </div>
-        </div>
-      </div>
+<main>
+  <section class="page-hero">
+    <div class="section-inner">
+      <a href="index.html#top" class="back-to-dashboard">← Dashboard</a>
     </div>
   </section>
 
-  <!-- TODAY / TASK HUB -->
-  <section class="today" id="today">
+  <section class="empty-section" id="updates">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>What's for today</h2>
-        <p class="section-sub" id="todayDate">Homework, tasks, and announcements — kept current so anyone checking knows what's due.</p>
+      <div class="section-head"><h2>Updates</h2></div>
+      <div class="empty-state">
+        <p class="empty-title">No announcements right now.</p>
+        <p class="empty-body">Anything the class needs to know will be posted here first.</p>
       </div>
-
-      <div class="today-panel">
-        <div class="today-panel-head">
-          <span class="today-note">Synced from Firestore — sign in as admin to edit.</span>
-          <button class="btn btn-add-task btn-small admin-only" id="addTaskBtn" hidden>+ Add task</button>
-        </div>
-
-        <form class="task-form" id="taskForm" hidden>
-          <div class="task-form-grid">
-            <label class="field">
-              <span>Subject</span>
-              <input type="text" name="subject" placeholder="Math" required>
-            </label>
-            <label class="field">
-              <span>Type</span>
-              <select name="type">
-                <option value="homework">Homework</option>
-                <option value="announcement">Announcement</option>
-              </select>
-            </label>
-            <label class="field field-wide">
-              <span>Detail</span>
-              <input type="text" name="detail" placeholder="Exercise 4.3, questions 1–10" required>
-            </label>
-            <label class="field">
-              <span>Due</span>
-              <input type="text" name="due" placeholder="Tomorrow" required>
-            </label>
-            <label class="field field-wide">
-              <span>Link (optional)</span>
-              <input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url">
-            </label>
-          </div>
-          <p class="auth-error" id="taskFormError" hidden></p>
-          <div class="task-form-actions">
-            <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
-            <button type="submit" class="btn btn-add-task btn-small">Add task</button>
-          </div>
-        </form>
-
-        <div class="task-list" id="taskList"></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- HOUSES -->
-  <section class="houses" id="houses">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>The four houses</h2>
-        <p class="section-sub">Every student in 8CM belongs to one. Click a house to jump straight to its filtered student list.</p>
-      </div>
-
-      <div class="house-grid">
-        <article class="house-card" data-house="winter" tabindex="0" role="button" aria-label="View Winter students">
-          <div class="house-bar"></div>
-          <div class="house-card-body">
-            <h3>Winter</h3>
-            <p class="house-count">8 students</p>
-            <p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
-          </div>
-        </article>
-        <article class="house-card" data-house="autumn" tabindex="0" role="button" aria-label="View Autumn students">
-          <div class="house-bar"></div>
-          <div class="house-card-body">
-            <h3>Autumn</h3>
-            <p class="house-count">11 students</p>
-            <p class="house-desc">The biggest house in the room, and it acts like it.</p>
-          </div>
-        </article>
-        <article class="house-card" data-house="spring" tabindex="0" role="button" aria-label="View Spring students">
-          <div class="house-bar"></div>
-          <div class="house-card-body">
-            <h3>Spring</h3>
-            <p class="house-count">8 students</p>
-            <p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
-          </div>
-        </article>
-        <article class="house-card" data-house="summer" tabindex="0" role="button" aria-label="View Summer students">
-          <div class="house-bar"></div>
-          <div class="house-card-body">
-            <h3>Summer</h3>
-            <p class="house-count">3 students</p>
-            <p class="house-desc">Smallest house in the batch. Every point counts more.</p>
-          </div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- STUDENTS -->
-  <section class="students" id="students">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>Find someone</h2>
-        <p class="section-sub">Search a name, or filter by house, transport, and language.</p>
-      </div>
-
-      <div class="controls">
-        <div class="search-wrap">
-          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
-        </div>
-        <div class="filter-pills" id="filterPills">
-          <button class="pill active" data-filter="all">All</button>
-          <button class="pill" data-filter="transport:OT">OT</button>
-          <button class="pill" data-filter="house:winter">Winter</button>
-          <button class="pill" data-filter="house:autumn">Autumn</button>
-          <button class="pill" data-filter="house:spring">Spring</button>
-          <button class="pill" data-filter="house:summer">Summer</button>
-          <span class="pill-divider" aria-hidden="true"></span>
-          <button class="pill" data-filter="language:hindi">Hindi</button>
-          <button class="pill" data-filter="language:malayalam">Malayalam</button>
-          <button class="pill" data-filter="language:french">French</button>
-        </div>
-      </div>
-
-      <p class="result-count" id="resultCount">30 students</p>
-
-      <div class="student-grid" id="studentGrid"></div>
     </div>
   </section>
 
