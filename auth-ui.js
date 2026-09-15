@@ -529,25 +529,15 @@ export function initAuthUI() {
       closeClaimModal();
     }
   });
-
-  subscribeAuth((state) => {
+    subscribeAuth((state) => {
     latestState = state;
     renderAuthSlot();
     syncThemeFromProfile(state.user ? state.user.uid : null, state.profile);
 
-    // Single source of truth for "does the MANDATORY claim modal need
-    // to be open right now?" — runs for every sign-in path (email,
-    // sign-up, Google) *and* for a session restored on page load,
-    // instead of each call site deciding for itself. A signed-in user
-    // with no linked student is forced through this until they
-    // complete it; there is no skip. This only ever opens/closes the
-    // "initial" claim — it leaves an open "switch" modal alone, since
-    // that one is the user's own optional action.
-    const overlay = $("claimOverlay");
-    const needsInitialClaim = state.user && (!state.profile || !state.profile.claimedStudentId);
-    if (needsInitialClaim) {
-      if (overlay.hidden || claimMode !== "initial") openClaimModal("initial");
-    } else if (!overlay.hidden && claimMode === "initial") {
+    // Single source of truth for "does the mandatory identity claim modal need to show?"
+    if (state.user && (!state.profile || !state.profile.claimedStudentId)) {
+      openClaimModal("initial");
+    } else if (claimMode === "initial" && !$("claimOverlay").hidden) {
       closeClaimModal();
     }
   });
