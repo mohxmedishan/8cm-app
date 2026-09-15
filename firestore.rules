@@ -1,208 +1,54 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ================================================================
-    // Helpers
-    // ================================================================
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Exactly 3 people are ever monitors for this class. Their emails
-    // are a permanent bootstrap allowlist so there's always at least
-    // one way to manage the `monitors` collection below without
-    // anyone needing direct Firestore console access. Add the other
-    // two monitors' emails here.
-    function isMonitorEmail() {
-      return isSignedIn() && request.auth.token.email in [
-        'mohamedishankunnummal@gmail.com'
-        // , 'monitor2@example.com'
-        // , 'monitor3@example.com'
-      ];
-    }
-
-    // The dynamic path: a doc existing at monitors/{uid} IS the
-    // monitor role for that account. Only monitors can write here
-    // (see the match block below), so this can never be granted by
-    // anyone other than an existing monitor.
-    function isMonitorDoc() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/monitors/$(request.auth.uid));
-    }
-
-    // The ONLY definition of "monitor" anywhere in this project.
-    // Deliberately there is NO admin/monitor boolean field on
-    // users/{uid} — a field like that is exactly what let a student
-    // grant themselves access by editing their own profile doc. Role
-    // lives here, and only here.
+    function signedIn() { return request.auth != null; }
     function isMonitor() {
-      return isMonitorEmail() || isMonitorDoc();
+      return signedIn() &&
+        (request.auth.token.email == "mohamedishankunnummal@gmail.com" ||
+         exists(/databases/$(database)/documents/monitors/$(request.auth.uid)));
     }
 
-    // A claimedStudentId written onto a user's own profile is only
-    // legitimate if a matching claims/{id} doc already names them as
-    // its owner — i.e. it came from the atomic claim transaction in
-    // auth.js, not a direct profile edit. Two variants because
-    // `resource` doesn't exist yet on create.
-    function claimedIdOnCreateIsValid() {
-      return !('claimedStudentId' in request.resource.data) ||
-        (request.resource.data.claimedStudentId is string &&
-         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid);
-    }
-
-    function claimedIdOnUpdateIsValid() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimedStudentId']) ||
-        (request.resource.data.claimedStudentId is string &&
-         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid);
-    }
-
-    // ================================================================
-    // monitors/{uid} — existence of the doc IS the monitor role.
-    // ================================================================
-    match /monitors/{uid} {
-      allow read: if isSignedIn();
-      allow write: if isMonitor();
-    }
-
-    // ================================================================
-    // users/{uid} — profile docs
-    // ================================================================
     match /users/{uid} {
-      allow read: if isSignedIn();
-
-      allow create: if isSignedIn() && request.auth.uid == uid &&
-        claimedIdOnCreateIsValid();
-
-      allow update: if isSignedIn() && (
-        isMonitor() ||
-        (request.auth.uid == uid && claimedIdOnUpdateIsValid())
-      );
-
-      allow delete: if false;
+      allow read: if signedIn() && (request.auth.uid == uid || isMonitor());
+      allow create, update: if signedIn() && request.auth.uid == uid;
     }
 
-    // ================================================================
-    // students/{studentId} — the class directory. Monitor-managed.
-    // Public read: this mirrors the fact that the old students.js
-    // array shipped to every visitor's browser regardless of sign-in.
-    // Only classmate-appropriate fields belong in these docs — see
-    // section 6 of the project spec for what's safe to store here.
-    // ================================================================
-    match /students/{studentId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    // ================================================================
-    // claims/{studentId} — one doc per student identity, doc ID =
-    // studentId. Firestore itself guarantees only one "create" can
-    // ever succeed per student: a second attempt against an existing
-    // doc is a write of type "update", which is blocked below unless
-    // it's a monitor resolving a bad claim or the current owner
-    // releasing their own claim (switching identity). This is what
-    // makes claiming atomic instead of relying on a client-side
-    // "check then write" race.
-    // ================================================================
     match /claims/{studentId} {
-      allow read: if isSignedIn();
+      allow read: if signedIn();
+      allow create: if signedIn() &&
+        (!exists(/databases/$(database)/documents/claims/$(studentId)) ||
+         resource.data.uid == request.auth.uid);
+      allow update: if signedIn() && resource.data.uid == request.auth.uid;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
 
-      allow create: if isSignedIn() &&
+    match /monitors/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isMonitor());
+      allow write: if isMonitor();
+    }
+
+    match /students/{id} {
+      allow read: if signedIn();
+      allow write: if isMonitor();
+    }
+
+    match /tasks/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isMonitor();
+    }
+
+    match /announcements/{id} {
+      allow read: if signedIn();
+      allow create, update, delete: if isMonitor();
+    }
+
+    match /messages/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() &&
         request.resource.data.uid == request.auth.uid &&
-        request.resource.data.keys().hasOnly(['uid', 'studentName', 'claimedAt']);
-
-      allow update: if isMonitor();
-
-      allow delete: if isMonitor() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-    }
-
-    // ================================================================
-    // Class content. Read: signed-in students (public where the old
-    // behavior was public). Write: monitors only.
-    // ================================================================
-
-    // Legacy daily task/announcement list — kept for backward
-    // compatibility with the existing UI. `assignments` below is the
-    // dedicated homework collection for the new system.
-    match /tasks/{taskId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    match /assignments/{assignmentId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    // Per-student homework completion, split out from the shared
-    // assignment doc so a student's write can only ever touch their
-    // own row, never anyone else's and never the assignment itself.
-    match /assignmentStatus/{statusId} {
-      allow read: if isMonitor() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-      allow create, update: if isSignedIn() &&
-        request.resource.data.uid == request.auth.uid;
-      allow delete: if isMonitor() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-    }
-
-    match /announcements/{announcementId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    match /events/{eventId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    match /achievements/{achievementId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    // No Firebase Storage on the free plan — gallery docs hold an
-    // externally-hosted image URL, not a file.
-    match /gallery/{imageId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    match /timetable/{docId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    match /settings/{docId} {
-      allow read: if true;
-      allow write: if isMonitor();
-    }
-
-    // ================================================================
-    // notifications/{id} — scoped to the recipient. Monitors create
-    // them (real class events only); a student can read/ack their own
-    // but can never create one addressed to somebody else.
-    // ================================================================
-    match /notifications/{notificationId} {
-      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
-      allow create: if isMonitor();
-      allow delete: if isMonitor() ||
-        (isSignedIn() && resource.data.uid == request.auth.uid);
-    }
-
-    // ================================================================
-    // activityLogs/{id} — the monitor audit log. Monitor-only,
-    // append-only (no update/delete) so it can't be quietly edited
-    // after the fact.
-    // ================================================================
-    match /activityLogs/{logId} {
-      allow read: if isMonitor();
-      allow create: if isMonitor();
-      allow update, delete: if false;
+        request.resource.data.text is string &&
+        request.resource.data.text.size() <= 280;
+      allow update, delete: if isMonitor() || (signedIn() && resource.data.uid == request.auth.uid);
     }
   }
 }
