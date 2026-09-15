@@ -112,7 +112,16 @@
         <div class="legend-item"><span class="legend-swatch" style="background:var(--house-spring)"></span>Humanities and PE</div>
         <div class="legend-item"><span class="legend-swatch" style="background:var(--house-summer)"></span>Creative arts</div>
         <div class="legend-item"><span class="legend-swatch is-break"></span>Break</div>
+        <div class="legend-item"><span class="legend-swatch tt-legend-hw"></span>Has homework</div>
       </div>
+
+      <div class="tt-day-nav">
+        <button type="button" class="tt-day-nav-btn" id="ttPrevDay" aria-label="Previous day">‹</button>
+        <span class="tt-selected-day" id="ttSelectedDayLabel">—</span>
+        <button type="button" class="tt-day-nav-btn" id="ttNextDay" aria-label="Next day">›</button>
+        <button type="button" class="link-btn tt-today-btn" id="ttTodayBtn">Today</button>
+      </div>
+      <div class="tt-now-bar" id="ttNowBar"></div>
 
       <div class="tt-scroll">
         <div class="tt-grid">
@@ -128,56 +137,60 @@
         <div class="tt-head tt-col-br2 tt-row-head"><span class="tt-head-label">Break</span><span class="tt-head-time">12:55</span></div>
         <div class="tt-head tt-col-p8 tt-row-head"><span class="tt-head-label">P8</span><span class="tt-head-time">1:15</span></div>
         <div class="tt-head tt-col-p9 tt-row-head"><span class="tt-head-label">P9</span><span class="tt-head-time">1:55</span></div>
-        <div class="tt-cell tt-day-label tt-col-day tt-row-mon">Mon</div>
-        <div class="tt-cell tt-day-label tt-col-day tt-row-tue">Tue</div>
-        <div class="tt-cell tt-day-label tt-col-day tt-row-wed">Wed</div>
-        <div class="tt-cell tt-day-label tt-col-day tt-row-thu">Thu</div>
-        <div class="tt-cell tt-day-label tt-col-day tt-row-fri">Fri</div>
-        <div class="tt-cell cat-math tt-col-p1 tt-row-mon" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-science tt-col-p2 tt-row-mon" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
-        <div class="tt-cell cat-other tt-col-p3 tt-row-mon" title="Library · 40 min"><span class="tt-cell-subject">Lib</span></div>
-        <div class="tt-cell cat-math tt-col-p4 tt-row-mon" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-language tt-col-p5 tt-row-mon" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
-        <div class="tt-cell cat-creative tt-col-p6 tt-row-mon" title="Creative arts · 40 min"><span class="tt-cell-subject">Arts</span></div>
-        <div class="tt-cell cat-language tt-col-p7 tt-row-mon" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
-        <div class="tt-cell cat-other tt-col-p8 tt-row-mon" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
-        <div class="tt-cell cat-science tt-col-p9 tt-row-mon" title="Computer science · 40 min"><span class="tt-cell-subject">CS</span></div>
-        <div class="tt-cell cat-language tt-col-p1 tt-row-tue" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
-        <div class="tt-cell cat-language tt-col-p2 tt-row-tue" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
-        <div class="tt-cell cat-science tt-col-p3 tt-row-tue" title="Artificial intelligence · 40 min"><span class="tt-cell-subject">AI</span></div>
-        <div class="tt-cell cat-language tt-col-p4 tt-row-tue" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
-        <div class="tt-cell cat-language tt-col-p5 tt-row-tue" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
-        <div class="tt-cell cat-science tt-col-p6 tt-row-tue" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
-        <div class="tt-cell cat-science tt-col-p7 tt-row-tue" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
-        <div class="tt-cell cat-science tt-col-p8 tt-row-tue" title="MSCS 1 · 40 min"><span class="tt-cell-subject">MSCS1</span></div>
-        <div class="tt-cell cat-math tt-col-p9 tt-row-tue" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-math tt-col-p1 tt-row-wed" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-language tt-col-p2 tt-row-wed" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
-        <div class="tt-cell cat-language tt-col-p3 tt-row-wed" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
-        <div class="tt-cell cat-science tt-col-p4 tt-row-wed" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
-        <div class="tt-cell cat-science tt-col-p5 tt-row-wed" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
-        <div class="tt-cell cat-other tt-col-p6 tt-row-wed" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
-        <div class="tt-cell cat-other tt-col-p7 tt-row-wed" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
-        <div class="tt-cell cat-language tt-col-p8 tt-row-wed" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
-        <div class="tt-cell cat-language tt-col-p9 tt-row-wed" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
-        <div class="tt-cell cat-science tt-col-p1 tt-row-thu" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
-        <div class="tt-cell cat-language tt-col-p2 tt-row-thu" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
-        <div class="tt-cell cat-other tt-col-p3 tt-row-thu" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
-        <div class="tt-cell cat-math tt-col-p4 tt-row-thu" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-other tt-col-p5 tt-row-thu" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
-        <div class="tt-cell cat-science tt-col-p6 tt-row-thu" title="MSCS 2 · 40 min"><span class="tt-cell-subject">MSCS2</span></div>
-        <div class="tt-cell cat-language tt-col-p7 tt-row-thu" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
-        <div class="tt-cell cat-math tt-col-p8 tt-row-thu" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-language tt-col-p9 tt-row-thu" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
-        <div class="tt-cell cat-language tt-col-p1 tt-row-fri" title="Arabic · 35 min (Friday)"><span class="tt-cell-subject">Arabic</span></div>
-        <div class="tt-cell cat-other tt-col-p2 tt-row-fri" title="Social studies · 35 min (Friday)"><span class="tt-cell-subject">SST</span></div>
-        <div class="tt-cell cat-other tt-col-p3 tt-row-fri" title="Physical education · 35 min (Friday)"><span class="tt-cell-subject">PE</span></div>
-        <div class="tt-cell cat-math tt-col-p4 tt-row-fri" title="Math · 35 min (Friday)"><span class="tt-cell-subject">Math</span></div>
-        <div class="tt-cell cat-science tt-col-p5 tt-row-fri" title="Chemistry · 35 min (Friday)"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-mon" data-day="mon">Mon</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-tue" data-day="tue">Tue</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-wed" data-day="wed">Wed</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-thu" data-day="thu">Thu</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-fri" data-day="fri">Fri</div>
+        <div class="tt-cell cat-math tt-col-p1 tt-row-mon" data-day="mon" data-period="p1" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-science tt-col-p2 tt-row-mon" data-day="mon" data-period="p2" data-subject="Phys" data-full="Physics" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-mon" data-day="mon" data-period="p3" data-subject="Lib" data-full="Library" title="Library · 40 min"><span class="tt-cell-subject">Lib</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-mon" data-day="mon" data-period="p4" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p5 tt-row-mon" data-day="mon" data-period="p5" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-creative tt-col-p6 tt-row-mon" data-day="mon" data-period="p6" data-subject="Arts" data-full="Creative arts" title="Creative arts · 40 min"><span class="tt-cell-subject">Arts</span></div>
+        <div class="tt-cell cat-language tt-col-p7 tt-row-mon" data-day="mon" data-period="p7" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-other tt-col-p8 tt-row-mon" data-day="mon" data-period="p8" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-science tt-col-p9 tt-row-mon" data-day="mon" data-period="p9" data-subject="CS" data-full="Computer science" title="Computer science · 40 min"><span class="tt-cell-subject">CS</span></div>
+        <div class="tt-cell cat-language tt-col-p1 tt-row-tue" data-day="tue" data-period="p1" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-tue" data-day="tue" data-period="p2" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-science tt-col-p3 tt-row-tue" data-day="tue" data-period="p3" data-subject="AI" data-full="Artificial intelligence" title="Artificial intelligence · 40 min"><span class="tt-cell-subject">AI</span></div>
+        <div class="tt-cell cat-language tt-col-p4 tt-row-tue" data-day="tue" data-period="p4" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p5 tt-row-tue" data-day="tue" data-period="p5" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-science tt-col-p6 tt-row-tue" data-day="tue" data-period="p6" data-subject="Chem" data-full="Chemistry" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell cat-science tt-col-p7 tt-row-tue" data-day="tue" data-period="p7" data-subject="Phys" data-full="Physics" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
+        <div class="tt-cell cat-science tt-col-p8 tt-row-tue" data-day="tue" data-period="p8" data-subject="MSCS1" data-full="MSCS 1" title="MSCS 1 · 40 min"><span class="tt-cell-subject">MSCS1</span></div>
+        <div class="tt-cell cat-math tt-col-p9 tt-row-tue" data-day="tue" data-period="p9" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-math tt-col-p1 tt-row-wed" data-day="wed" data-period="p1" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-wed" data-day="wed" data-period="p2" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p3 tt-row-wed" data-day="wed" data-period="p3" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-science tt-col-p4 tt-row-wed" data-day="wed" data-period="p4" data-subject="Chem" data-full="Chemistry" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell cat-science tt-col-p5 tt-row-wed" data-day="wed" data-period="p5" data-subject="Bio" data-full="Biology" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
+        <div class="tt-cell cat-other tt-col-p6 tt-row-wed" data-day="wed" data-period="p6" data-subject="IVE" data-full="Islamic and value education" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
+        <div class="tt-cell cat-other tt-col-p7 tt-row-wed" data-day="wed" data-period="p7" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-language tt-col-p8 tt-row-wed" data-day="wed" data-period="p8" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-language tt-col-p9 tt-row-wed" data-day="wed" data-period="p9" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-science tt-col-p1 tt-row-thu" data-day="thu" data-period="p1" data-subject="Bio" data-full="Biology" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-thu" data-day="thu" data-period="p2" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-thu" data-day="thu" data-period="p3" data-subject="IVE" data-full="Islamic and value education" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-thu" data-day="thu" data-period="p4" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-other tt-col-p5 tt-row-thu" data-day="thu" data-period="p5" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-science tt-col-p6 tt-row-thu" data-day="thu" data-period="p6" data-subject="MSCS2" data-full="MSCS 2" title="MSCS 2 · 40 min"><span class="tt-cell-subject">MSCS2</span></div>
+        <div class="tt-cell cat-language tt-col-p7 tt-row-thu" data-day="thu" data-period="p7" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-math tt-col-p8 tt-row-thu" data-day="thu" data-period="p8" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p9 tt-row-thu" data-day="thu" data-period="p9" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p1 tt-row-fri" data-day="fri" data-period="p1" data-subject="Arabic" data-full="Arabic" title="Arabic · 35 min (Friday)"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-other tt-col-p2 tt-row-fri" data-day="fri" data-period="p2" data-subject="SST" data-full="Social studies" title="Social studies · 35 min (Friday)"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-fri" data-day="fri" data-period="p3" data-subject="PE" data-full="Physical education" title="Physical education · 35 min (Friday)"><span class="tt-cell-subject">PE</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-fri" data-day="fri" data-period="p4" data-subject="Math" data-full="Math" title="Math · 35 min (Friday)"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-science tt-col-p5 tt-row-fri" data-day="fri" data-period="p5" data-subject="Chem" data-full="Chemistry" title="Chemistry · 35 min (Friday)"><span class="tt-cell-subject">Chem</span></div>
         <div class="tt-cell is-break tt-col-br1 tt-row-all" title="Break"><span class="tt-cell-subject">Break</span></div>
         <div class="tt-cell is-break tt-col-br2 tt-row-mon-thu" title="Break · Monday–Thursday only"><span class="tt-cell-subject">Break</span></div>
-        <div class="tt-cell is-tail tt-col-tail tt-row-fri" title="Friday ends at 11:10"><span class="tt-cell-subject">School ends · 11:10</span></div>
+        <div class="tt-cell is-tail tt-col-tail tt-row-fri" data-day="fri" title="Friday ends at 11:10"><span class="tt-cell-subject">School ends · 11:10</span></div>
         </div>
+      </div>
+
+      <div class="tt-detail-panel" id="ttDetailPanel">
+        <p class="tt-detail-hint">Tap any period for its full name and linked homework.</p>
       </div>
 
       <p class="timetable-note">Phys — physics · Lib — library · Eng — English · Arts — creative arts (dance, music, visual art) · L2 — second language (Hindi, Malayalam, or French) · SST — social studies · CS — computer science · AI — artificial intelligence · Chem — chemistry · Bio — biology · IVE — Islamic and value education · PE — physical education · MSCS 1/2 — as listed in the class schedule.</p>

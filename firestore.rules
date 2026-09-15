@@ -132,7 +132,7 @@ service cloud.firestore {
     }
 
     match /assignments/{assignmentId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isMonitor();
     }
 
@@ -149,17 +149,17 @@ service cloud.firestore {
     }
 
     match /announcements/{announcementId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isMonitor();
     }
 
     match /events/{eventId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isMonitor();
     }
 
     match /achievements/{achievementId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isMonitor();
     }
 

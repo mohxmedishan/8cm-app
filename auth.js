@@ -1,9 +1,9 @@
 // ============================================
 // 8CM — Authentication & profile logic
 // ------------------------------------------------
-// UI code (auth-ui.js, tasks.js) imports from here rather than
-// touching Firebase directly, so the auth/Firestore surface area
-// stays in one place.
+// UI code (auth-ui.js, assignments.js, announcements.js, events.js)
+// imports from here rather than touching Firebase directly, so the
+// auth/Firestore surface area stays in one place.
 // ============================================
 import {
   GoogleAuthProvider,

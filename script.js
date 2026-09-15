@@ -12,7 +12,11 @@
 // ============================================
 import { students } from "./students.js";
 import { initAuthUI } from "./auth-ui.js";
-import { initTasks } from "./tasks.js";
+import { initAssignments } from "./assignments.js";
+import { initAnnouncements } from "./announcements.js";
+import { initEvents } from "./events.js";
+import { initTimetableLive } from "./timetable-live.js";
+import { initDashboard } from "./dashboard.js";
 import { changelog } from "./changelog.js";
 import { applyStoredTheme, initThemeUI } from "./theme.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
@@ -456,6 +460,17 @@ function initChangelog() {
 }
 
 // ============================================
+// "Today" date line — dashboard + events page
+// ============================================
+function initTodayDate() {
+  const el = document.getElementById("todayDate");
+  if (!el) return;
+  el.textContent =
+    new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) +
+    " — homework and announcements, kept current.";
+}
+
+// ============================================
 // Boot — every page
 // ============================================
 initNav();
@@ -467,5 +482,10 @@ initHeroChart();
 initStatCountUp();
 initChangelog();
 initAuthUI();
-initTasks();
+initTodayDate();
+initAssignments();
+initAnnouncements();
+initEvents();
+initTimetableLive();
+initDashboard();
 initThemeUI();

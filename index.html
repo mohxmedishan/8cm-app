@@ -139,57 +139,133 @@
     </div>
   </section>
 
-  <!-- TODAY / TASK HUB -->
+  <!-- TODAY / MY DAY DASHBOARD -->
   <section class="today" id="today">
     <div class="section-inner">
       <div class="section-head">
         <h2>What's for today</h2>
-        <p class="section-sub" id="todayDate">Homework, tasks, and announcements — kept current so anyone checking knows what's due.</p>
+        <p class="section-sub" id="todayDate">Homework and announcements — kept current so anyone checking knows what's due.</p>
       </div>
 
-      <div class="today-panel">
-        <div class="today-panel-head">
-          <span class="today-note">Synced from Firestore — sign in as monitor to edit.</span>
-          <button class="btn btn-add-task btn-small monitor-only" id="addTaskBtn" hidden>+ Add task</button>
+      <!-- Personalized "My Day" — only shown once signed in and claimed -->
+      <div class="my-day-card" id="myDayCard" hidden>
+        <p class="my-day-greeting" id="myDayGreeting"></p>
+        <div class="my-day-stats" id="myDayStats"></div>
+        <div class="my-day-class" id="myDayClass"></div>
+        <div class="my-day-teasers" id="myDayTeasers"></div>
+      </div>
+
+      <div class="today-grid">
+        <div class="today-panel" id="homeworkPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Homework</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addHomeworkBtn" hidden>+ Add homework</button>
+          </div>
+          <div class="filter-pills" id="homeworkFilters">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="pending">Pending</button>
+            <button class="pill" data-filter="due-soon">Due soon</button>
+            <button class="pill" data-filter="overdue">Overdue</button>
+            <button class="pill" data-filter="completed">Completed</button>
+          </div>
+
+          <form class="task-form" id="homeworkForm" hidden>
+            <div class="task-form-grid">
+              <label class="field">
+                <span>Subject</span>
+                <select name="subject" required></select>
+              </label>
+              <label class="field">
+                <span>Priority</span>
+                <select name="priority">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+              <label class="field field-wide">
+                <span>Title</span>
+                <input type="text" name="title" placeholder="Exercise 4.3" required>
+              </label>
+              <label class="field field-wide">
+                <span>Description (optional)</span>
+                <input type="text" name="description" placeholder="Questions 1–10">
+              </label>
+              <label class="field">
+                <span>Due date</span>
+                <input type="date" name="dueDate" required>
+              </label>
+              <label class="field field-wide">
+                <span>Link (optional)</span>
+                <input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url">
+              </label>
+            </div>
+            <p class="auth-error" id="homeworkFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Add homework</button>
+            </div>
+          </form>
+
+          <div class="task-list" id="homeworkList"></div>
         </div>
 
-        <form class="task-form" id="taskForm" hidden>
-          <div class="task-form-grid">
-            <label class="field">
-              <span>Subject</span>
-              <input type="text" name="subject" placeholder="Math" required>
-            </label>
-            <label class="field">
-              <span>Type</span>
-              <select name="type">
-                <option value="homework">Homework</option>
-                <option value="announcement">Announcement</option>
-              </select>
-            </label>
-            <label class="field field-wide">
-              <span>Detail</span>
-              <input type="text" name="detail" placeholder="Exercise 4.3, questions 1–10" required>
-            </label>
-            <label class="field">
-              <span>Due</span>
-              <input type="text" name="due" placeholder="Tomorrow" required>
-            </label>
-            <label class="field field-wide">
-              <span>Link (optional)</span>
-              <input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url">
-            </label>
+        <div class="today-panel" id="announcementPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Announcements</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addAnnouncementBtn" hidden>+ Post announcement</button>
           </div>
-          <p class="auth-error" id="taskFormError" hidden></p>
-          <div class="task-form-actions">
-            <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
-            <button type="submit" class="btn btn-add-task btn-small">Add task</button>
-          </div>
-        </form>
 
-        <div class="task-list" id="taskList"></div>
+          <form class="task-form" id="announcementForm" hidden>
+            <div class="task-form-grid">
+              <label class="field field-wide">
+                <span>Title</span>
+                <input type="text" name="title" placeholder="Sports day moved to Thursday" required>
+              </label>
+              <label class="field field-wide">
+                <span>Content</span>
+                <input type="text" name="content" placeholder="Details students need to know" required>
+              </label>
+              <label class="field">
+                <span>Category</span>
+                <select name="category">
+                  <option>Important</option>
+                  <option>Class</option>
+                  <option>Exam</option>
+                  <option>Homework</option>
+                  <option>Event</option>
+                  <option selected>General</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Priority</span>
+                <select name="priority">
+                  <option value="normal" selected>Normal</option>
+                  <option value="important">Important</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Expires on (optional)</span>
+                <input type="date" name="expiresOn">
+              </label>
+              <label class="field field-checkbox">
+                <input type="checkbox" name="pinned">
+                <span>Pin to top</span>
+              </label>
+            </div>
+            <p class="auth-error" id="announcementFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Post announcement</button>
+            </div>
+          </form>
+
+          <div class="task-list" id="announcementList"></div>
+        </div>
       </div>
     </div>
   </section>
+
 
   <!-- HOUSES -->
   <section class="houses" id="houses">

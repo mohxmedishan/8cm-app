@@ -103,10 +103,63 @@
     </div>
   </section>
 
-  <section class="empty-section" id="events">
+  <section class="events-page" id="events">
     <div class="section-inner">
-      <div class="section-head"><h2>Events</h2></div>
-      <div class="empty-state">
+      <div class="section-head">
+        <h2>Events</h2>
+        <p class="section-sub">Trips, competitions, and anything else worth marking on 8CM's calendar.</p>
+      </div>
+
+      <div class="next-event-banner" id="nextEventBanner" hidden></div>
+
+      <div class="today-panel-head">
+        <span class="today-note">Synced from Firestore — sign in as monitor to edit.</span>
+        <button class="btn btn-add-task btn-small monitor-only" id="addEventBtn" hidden>+ Add event</button>
+      </div>
+
+      <form class="task-form" id="eventForm" hidden>
+        <div class="task-form-grid">
+          <label class="field field-wide">
+            <span>Title</span>
+            <input type="text" name="title" placeholder="Inter-school science fair" required>
+          </label>
+          <label class="field">
+            <span>Date</span>
+            <input type="date" name="date" required>
+          </label>
+          <label class="field">
+            <span>Time (optional)</span>
+            <input type="text" name="time" placeholder="9:00 AM">
+          </label>
+          <label class="field">
+            <span>Location</span>
+            <input type="text" name="location" placeholder="Main hall">
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <select name="category">
+              <option>General</option>
+              <option>Trip</option>
+              <option>Competition</option>
+              <option>Exam</option>
+              <option>Celebration</option>
+            </select>
+          </label>
+          <label class="field field-wide">
+            <span>Description (optional)</span>
+            <input type="text" name="description" placeholder="What to bring, what to expect">
+          </label>
+        </div>
+        <p class="auth-error" id="eventFormError" hidden></p>
+        <div class="task-form-actions">
+          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn btn-add-task btn-small">Add event</button>
+        </div>
+      </form>
+
+      <div class="event-list" id="eventList"></div>
+
+      <div class="empty-state" id="eventsEmptyState" hidden>
         <p class="empty-title">Nothing scheduled yet.</p>
         <p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
       </div>

@@ -1204,6 +1204,7 @@ h1, h2, h3 {
   .task-due { grid-area: due; justify-self: end; }
   .task-body { grid-area: body; }
   .task-monitor-actions { grid-area: monitor; justify-self: end; }
+  .hw-actions { grid-area: monitor; justify-self: end; }
   .today-panel-head { flex-direction: column; align-items: flex-start; }
 }
 
@@ -2049,3 +2050,292 @@ body.lightbox-locked { overflow: hidden; }
   max-width: 34ch;
   margin: 0;
 }
+
+/* ============================================
+   P1 — My Day dashboard (index.html, signed-in + claimed only)
+   ============================================ */
+.my-day-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-m);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.my-day-greeting {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 10px;
+}
+
+.my-day-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+
+.profile-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 100px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+}
+
+.my-day-class { margin-bottom: 12px; }
+.my-day-class-line {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+.my-day-class-line strong { color: var(--accent-strong); font-weight: 500; }
+
+.my-day-teasers { display: flex; flex-direction: column; gap: 8px; }
+
+.my-day-teaser {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-s);
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: border-color 0.2s var(--ease);
+}
+.my-day-teaser:hover { border-color: var(--accent); }
+
+.my-day-teaser-label {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.my-day-teaser-body.is-overdue { color: var(--danger); }
+.my-day-teaser-empty { color: var(--text-faint); font-size: 0.85rem; margin: 0; }
+
+/* ============================================
+   P1 — Homework + Announcements panels (index.html)
+   ============================================ */
+.today-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .today-grid { grid-template-columns: 1fr; }
+}
+
+.today-panel-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+#homeworkFilters, #announcementPanel .filter-pills {
+  padding: 14px 20px 0;
+}
+
+.task-tag.homework.hw-priority-high { border-color: var(--danger); color: var(--danger); background: var(--danger-soft); }
+
+.hw-meta-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.hw-due-overdue { color: var(--danger); font-weight: 500; }
+.hw-due-due-soon { color: var(--house-summer); font-weight: 500; }
+.hw-due-completed { color: var(--text-faint); text-decoration: line-through; }
+
+.hw-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+.hw-complete-btn {
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.hw-complete-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
+.hw-complete-btn.is-done {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.hw-complete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.announcement-row {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.announcement-row:last-child { border-bottom: none; }
+.announcement-row.is-important { background: rgba(193, 102, 90, 0.06); }
+
+.announcement-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.announcement-head .task-subject { margin: 0; }
+.pin-badge { font-size: 0.85rem; }
+
+.field-checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+.field-checkbox input { width: auto; }
+
+/* ============================================
+   P1 — Events page
+   ============================================ */
+.events-page { padding: 80px 0; border-top: 1px solid var(--border-soft); }
+
+.next-event-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-m);
+  padding: 14px 20px;
+  margin-bottom: 20px;
+}
+.next-event-countdown {
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.next-event-title { font-weight: 500; }
+.next-event-meta { color: var(--text-muted); font-size: 0.85rem; }
+
+.event-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+
+.event-card {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 16px 20px;
+}
+@media (max-width: 640px) {
+  .event-card { grid-template-columns: 1fr; }
+}
+
+.event-card-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.event-countdown { font-size: 0.78rem; color: var(--accent-strong); font-weight: 500; }
+.event-date-full { font-size: 0.72rem; color: var(--text-faint); }
+
+.event-card-body h3 { margin: 4px 0 4px; font-size: 1rem; }
+.event-meta { color: var(--text-muted); font-size: 0.82rem; margin: 0 0 4px; }
+.event-desc { color: var(--text-muted); font-size: 0.85rem; margin: 0; }
+
+/* ============================================
+   P1 — Timetable live behavior
+   ============================================ */
+.tt-day-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 10px;
+}
+.tt-day-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+}
+.tt-day-nav-btn:hover { border-color: var(--accent); color: var(--accent-strong); }
+.tt-selected-day { font-family: var(--font-display); font-size: 1rem; min-width: 90px; }
+.tt-today-btn { font-size: 0.8rem; }
+
+.tt-now-bar {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.tt-now-item strong { color: var(--text); font-weight: 500; }
+
+.tt-legend-hw {
+  background: transparent;
+  border: 2px solid var(--accent-strong);
+  border-radius: 50%;
+}
+
+.tt-cell[data-subject] { cursor: pointer; transition: outline 0.15s var(--ease); }
+.tt-cell[data-subject]:hover { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+.tt-row-selected { filter: brightness(1.12); }
+
+.tt-cell-current {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  position: relative;
+}
+.tt-cell-next {
+  outline: 1px dashed var(--accent-strong);
+  outline-offset: -1px;
+}
+
+.tt-cell-has-homework::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-strong);
+}
+.tt-cell { position: relative; }
+
+.tt-detail-panel {
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  min-height: 20px;
+}
+.tt-detail-hint { color: var(--text-faint); font-size: 0.85rem; margin: 0; }
+.tt-detail-subject { font-weight: 500; margin: 0 0 6px; }
+.tt-detail-hw { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 4px; }
+.tt-detail-hw-none { color: var(--text-faint); font-style: italic; }
+.tt-detail-due { color: var(--house-summer); margin-left: 6px; }
