@@ -5,7 +5,7 @@
 // profile dropdown in the navbar to the logic in auth.js. Nothing in
 // here talks to Firebase directly — it only calls exported functions.
 // ============================================
-import { students } from "./students.js";
+import { getStudentsSync, onStudents, loadStudents } from "./students.js";
 import {
   subscribeAuth,
   signInGoogle,
@@ -302,15 +302,24 @@ async function finishAfterAuth(user) {
 // ------------------------------------------------
 function populateClaimSelect() {
   const select = $("claimSelect");
-  select.innerHTML = "";
-  [...students]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .forEach((s) => {
-      const opt = document.createElement("option");
-      opt.value = s.id;
-      opt.textContent = `${s.rollNumber}. ${s.name}`;
-      select.appendChild(opt);
-    });
+  if (!select) return;
+
+  const fill = (list) => {
+    select.innerHTML = "";
+    [...list]
+      .filter((s) => s.active !== false)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach((s) => {
+        const opt = document.createElement("option");
+        opt.value = s.id;
+        opt.textContent = `${s.rollNumber}. ${s.name}`;
+        select.appendChild(opt);
+      });
+  };
+
+  fill(getStudentsSync());
+  // Then upgrade silently when Firestore resolves.
+  loadStudents().then(fill).catch(() => {});
 }
 
 function openClaimModal(nextMode = "initial", preselectId = null) {
@@ -340,7 +349,7 @@ function closeClaimModal() {
 
 async function handleClaimConfirm() {
   const studentId = $("claimSelect").value;
-  const student = students.find((s) => s.id === studentId);
+  const student = getStudentsSync().find((s) => s.id === studentId);
   if (!student || !latestState.user) return;
 
   const btn = $("claimConfirmBtn");
@@ -412,7 +421,7 @@ function renderAuthSlot() {
 
   const name = (profile && profile.claimedStudentName) || user.displayName || user.email || "Account";
   const student = profile && profile.claimedStudentId
-    ? students.find((s) => s.id === profile.claimedStudentId)
+    ? getStudentsSync().find((s) => s.id === profile.claimedStudentId)
     : null;
 
   slot.innerHTML = `
@@ -435,6 +444,7 @@ function renderAuthSlot() {
             <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
           </div>
         ` : ""}
+        ${monitor ? `<a href="manage.html" class="dropdown-action">Monitor panel</a>` : ""}
         <button class="dropdown-action" id="switchStudentBtn">Switch student</button>
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
@@ -473,6 +483,9 @@ document.addEventListener("click", (e) => {
 // ------------------------------------------------
 export function initAuthUI() {
   wirePasswordToggles();
+  // Re-render profile pill if Firestore students arrive/resolve after
+  // first paint, so the claimed name updates without a reload.
+  onStudents(() => renderAuthSlot());
 
   if (!isFirebaseConfigured) {
     $("configBanner").hidden = false;

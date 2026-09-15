@@ -18,6 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
+import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
@@ -78,9 +79,15 @@ function startListener() {
 
 async function handleDelete(id) {
   if (!confirm("Delete this event?")) return;
+  const ev = cache.find((x) => x.id === id);
   try {
     await deleteDoc(doc(db, "events", id));
     playDelete();
+    await logAction("deleted", {
+      resourceType: "event",
+      resourceId: id,
+      summary: `Deleted event: ${ev ? ev.title : id}`,
+    });
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
@@ -144,8 +151,21 @@ async function handleSubmit(e) {
   try {
     if (editingId) {
       await updateDoc(doc(db, "events", editingId), payload);
+      await logAction("updated", {
+        resourceType: "event",
+        resourceId: editingId,
+        summary: `Updated event: ${payload.title}`,
+      });
     } else {
-      await addDoc(collection(db, "events"), { ...payload, createdAt: serverTimestamp() });
+      const ref = await addDoc(collection(db, "events"), {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+      await logAction("created", {
+        resourceType: "event",
+        resourceId: ref.id,
+        summary: `Added event: ${payload.title}`,
+      });
     }
     playSuccess();
     closeForm({ silent: true });
@@ -229,7 +249,9 @@ function render() {
 }
 
 function applyMonitorVisibility() {
-  document.querySelectorAll("#eventList .monitor-only, #eventsPanel .monitor-only").forEach((el) => {
+  document.querySelectorAll(
+    "#eventList .monitor-only, .events-page .monitor-only, .manage-panel[data-panel='events'] .monitor-only"
+  ).forEach((el) => {
     el.hidden = !isCurrentMonitor;
   });
 }

@@ -19,6 +19,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
+import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
@@ -79,9 +80,15 @@ function startListener() {
 
 async function handleDelete(id) {
   if (!confirm("Delete this announcement?")) return;
+  const a = cache.find((x) => x.id === id);
   try {
     await deleteDoc(doc(db, "announcements", id));
     playDelete();
+    await logAction("deleted", {
+      resourceType: "announcement",
+      resourceId: id,
+      summary: `Deleted announcement: ${a ? a.title : id}`,
+    });
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
@@ -154,8 +161,21 @@ async function handleSubmit(e) {
   try {
     if (editingId) {
       await updateDoc(doc(db, "announcements", editingId), payload);
+      await logAction("updated", {
+        resourceType: "announcement",
+        resourceId: editingId,
+        summary: `Updated announcement: ${payload.title}`,
+      });
     } else {
-      await addDoc(collection(db, "announcements"), { ...payload, createdAt: serverTimestamp() });
+      const ref = await addDoc(collection(db, "announcements"), {
+        ...payload,
+        createdAt: serverTimestamp(),
+      });
+      await logAction("created", {
+        resourceType: "announcement",
+        resourceId: ref.id,
+        summary: `Posted announcement: ${payload.title}`,
+      });
     }
     playSuccess();
     closeForm({ silent: true });

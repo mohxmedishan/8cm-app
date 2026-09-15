@@ -2339,3 +2339,170 @@ body.lightbox-locked { overflow: hidden; }
 .tt-detail-hw { font-size: 0.85rem; color: var(--text-muted); margin: 0 0 4px; }
 .tt-detail-hw-none { color: var(--text-faint); font-style: italic; }
 .tt-detail-due { color: var(--house-summer); margin-left: 6px; }
+
+/* ============================================
+   P2 — Monitor panel
+   ============================================ */
+.manage { padding: 40px 0 80px; }
+
+.manage-locked {
+  padding: 40px 24px;
+  text-align: center;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.manage-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 6px;
+  margin-bottom: 20px;
+}
+
+.manage-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+  white-space: nowrap;
+}
+.manage-tab:hover { color: var(--text); background: var(--bg-elevated-2); }
+.manage-tab.active { background: var(--accent-soft); color: var(--accent-strong); }
+
+.manage-panel { display: none; }
+.manage-panel.active { display: block; }
+
+.manage-hint {
+  padding: 16px 20px;
+  background: var(--bg-elevated-2);
+  border-top: 1px solid var(--border-soft);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.manage-hint p { margin: 0 0 10px; }
+
+/* Generic two-or-three column row used by student / gallery /
+   achievement management lists */
+.manage-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.manage-row:last-child { border-bottom: none; }
+.manage-row.is-inactive { opacity: 0.55; }
+
+.manage-row-body { flex: 1; min-width: 0; }
+.manage-row-body .task-subject { margin: 0 0 2px; }
+
+.manage-thumb {
+  width: 56px;
+  height: 42px;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  background: var(--bg-elevated-2);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.manage-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.inactive-tag,
+.claimed-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 100px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.inactive-tag {
+  color: var(--text-faint);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+}
+.claimed-tag {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+}
+
+/* ============================================
+   P2 — Audit log
+   ============================================ */
+.audit-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 0.85rem;
+}
+.audit-row:last-child { border-bottom: none; }
+
+.audit-when {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  min-width: 110px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.audit-body { flex: 1; min-width: 0; }
+.audit-what { margin: 0 0 2px; color: var(--text); }
+.audit-who { margin: 0; color: var(--text-faint); font-size: 0.76rem; }
+
+/* ============================================
+   P2 — Achievements page
+   ============================================ */
+.achievements { padding: 80px 0; border-top: 1px solid var(--border-soft); }
+
+.achievement-group {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+.achievement-student {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+
+.achievement-list { list-style: none; margin: 0; padding: 0; }
+.achievement-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-soft);
+}
+.achievement-item:first-child { border-top: none; padding-top: 0; }
+
+.achievement-body { flex: 1; min-width: 0; }
+.achievement-body .task-subject { margin: 0 0 2px; }
+.achievement-date { color: var(--text-faint); font-size: 0.76rem; margin: 4px 0 0; }
+
+/* Inline link used on the changelog page */
+.inline-link {
+  color: var(--accent-strong);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s var(--ease);
+}
+.inline-link:hover { border-bottom-color: var(--accent-strong); }

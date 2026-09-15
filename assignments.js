@@ -28,6 +28,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
+import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
 
@@ -176,9 +177,15 @@ async function toggleComplete(uid, assignment) {
 
 async function handleDelete(id) {
   if (!confirm("Delete this homework item?")) return;
+  const item = assignmentsCache.find((a) => a.id === id);
   try {
     await deleteDoc(doc(db, "assignments", id));
     playDelete();
+    await logAction("deleted", {
+      resourceType: "assignment",
+      resourceId: id,
+      summary: `Deleted homework: ${item ? item.title : id}`,
+    });
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
@@ -252,11 +259,21 @@ async function handleSubmit(e) {
   try {
     if (editingId) {
       await updateDoc(doc(db, "assignments", editingId), payload);
+      await logAction("updated", {
+        resourceType: "assignment",
+        resourceId: editingId,
+        summary: `Updated homework: ${payload.title}`,
+      });
     } else {
-      await addDoc(collection(db, "assignments"), {
+      const ref = await addDoc(collection(db, "assignments"), {
         ...payload,
         assignedDate: todayStr(),
         createdAt: serverTimestamp(),
+      });
+      await logAction("created", {
+        resourceType: "assignment",
+        resourceId: ref.id,
+        summary: `Added homework: ${payload.title}`,
       });
     }
     playSuccess();
