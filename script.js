@@ -340,13 +340,21 @@ function initStatCountUp() {
 function initSplash() {
   const splash = document.getElementById("splash");
   if (!splash) return;
-  window.addEventListener("load", () => {
+
+  const hideSplash = () => {
     setTimeout(() => {
       splash.classList.add("hide");
       setTimeout(() => splash.remove(), 500);
     }, 400);
-  });
+  };
+
+  if (document.readyState === "complete") {
+    hideSplash();
+  } else {
+    window.addEventListener("load", hideSplash);
+  }
 }
+
 
 function initChangelog() {
   const container = document.getElementById("changelogEntries");
