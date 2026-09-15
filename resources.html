@@ -41,6 +41,20 @@
   </div>
 </div>
 
+<script>
+(function(){
+  function hideSplash(){
+    var s=document.getElementById("splash");
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
 <div class="grain"></div>
 <header class="nav" id="nav">
   <div class="nav-inner">

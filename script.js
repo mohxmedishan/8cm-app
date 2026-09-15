@@ -1,27 +1,16 @@
 // ============================================
 // 8CM — Site interactions (entry module)
 // ============================================
-import { getStudentsSync, onStudents, loadStudents } from "./students.js";
-import { initAuthUI } from "./auth-ui.js";
-import { initAssignments } from "./assignments.js";
-import { initAnnouncements } from "./announcements.js";
-import { initEvents } from "./events.js";
-import { initTimetableLive } from "./timetable-live.js";
-import { initDashboard } from "./dashboard.js";
-import { initStudentManagement } from "./student-manage.js";
-import { initGallery } from "./gallery.js";
-import { initAchievements } from "./achievements.js";
-import { initManagePage } from "./manage.js";
+import { getStudentsSync, onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
-import { applyStoredTheme, initThemeUI } from "./theme.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
 
-applyStoredTheme();
-
-// Warm the Firestore student cache once per page load — cheap (one
-// collection read, ~30 docs), and lets every sync read from
-// getStudentsSync() return real data instead of the seed fallback.
-loadStudents().catch(() => {});
+(function applyStoredAccentImmediately() {
+  try {
+    const accent = localStorage.getItem("8cm-theme-accent");
+    if (accent) document.documentElement.style.setProperty("--accent", accent);
+  } catch (_) {}
+})();
 
 // Fallback error toast (unchanged)
 function showErrorToast(message) {
@@ -341,20 +330,23 @@ function initSplash() {
   const splash = document.getElementById("splash");
   if (!splash) return;
 
-  const hideSplash = () => {
-    setTimeout(() => {
-      splash.classList.add("hide");
-      setTimeout(() => splash.remove(), 500);
-    }, 400);
+  let hidden = false;
+  const hide = () => {
+    if (hidden) return;
+    hidden = true;
+    splash.classList.add("hide");
+    window.setTimeout(() => splash.remove(), 550);
   };
 
   if (document.readyState === "complete") {
-    hideSplash();
+    window.setTimeout(hide, 350);
   } else {
-    window.addEventListener("load", hideSplash);
+    window.addEventListener("load", () => window.setTimeout(hide, 350), { once: true });
   }
+  // Hard timeout: no dependency, no promise, no Firebase. The splash can
+  // never permanently cover the site because a module failed to load.
+  window.setTimeout(hide, 3000);
 }
-
 
 function initChangelog() {
   const container = document.getElementById("changelogEntries");
@@ -382,24 +374,38 @@ function initTodayDate() {
 // ============================================
 // Boot — every page
 // ============================================
-initNav();
 initSplash();
+initNav();
 initStudentDirectory();
 initResources();
 initGalleryLightbox();
 initHeroChart();
 initStatCountUp();
 initChangelog();
-initAuthUI();
 initTodayDate();
-initAssignments();
-initAnnouncements();
-initEvents();
-initTimetableLive();
-initDashboard();
-initThemeUI();
-// P2 additions
-initStudentManagement();
-initGallery();
-initAchievements();
-initManagePage();
+
+// Firebase-backed modules are lazy. A blocked third-party SDK must not stop
+// static navigation, the directory, splash handling, or other local UI.
+const OPTIONAL_MODULES = [
+  ["auth", "./auth-ui.js", "initAuthUI"],
+  ["assignments", "./assignments.js", "initAssignments"],
+  ["announcements", "./announcements.js", "initAnnouncements"],
+  ["events", "./events.js", "initEvents"],
+  ["timetable", "./timetable-live.js", "initTimetableLive"],
+  ["dashboard", "./dashboard.js", "initDashboard"],
+  ["student management", "./student-manage.js", "initStudentManagement"],
+  ["gallery", "./gallery.js", "initGallery"],
+  ["achievements", "./achievements.js", "initAchievements"],
+  ["manage page", "./manage.js", "initManagePage"],
+  ["theme", "./theme.js", null],
+];
+
+OPTIONAL_MODULES.forEach(([label, path, initializer]) => {
+  import(path).then((mod) => {
+    if (label === "theme" && typeof mod.applyStoredTheme === "function") mod.applyStoredTheme();
+    if (initializer && typeof mod[initializer] === "function") mod[initializer]();
+  }).catch((err) => {
+    console.error(`[8CM] Optional ${label} module failed to load:`, err);
+    if (label !== "theme") showErrorToast(`${label[0].toUpperCase() + label.slice(1)} features are temporarily unavailable.`);
+  });
+});

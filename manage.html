@@ -39,6 +39,20 @@ if (a) document.documentElement.style.setProperty('--accent', a);
 </div>
 </div>
 
+<script>
+(function(){
+  function hideSplash(){
+    var s=document.getElementById("splash");
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
 <div class="grain"></div>
 <header class="nav" id="nav">
 <div class="nav-inner">
@@ -148,7 +162,7 @@ if (a) document.documentElement.style.setProperty('--accent', a);
             <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Exercise 4.3" required></label>
             <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="Questions 1–10"></label>
             <label class="field"><span>Due date</span><input type="date" name="dueDate" required></label>
-            <label class="field field-wide"><span>Link (optional)</span><input type="url" name="link" placeholder="[https://forms.google.com/…](https://forms.google.com/…)" inputmode="url"></label>
+            <label class="field field-wide"><span>Link (optional)</span><input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url"></label>
           </div>
           <p class="auth-error" id="homeworkFormError" hidden></p>
           <div class="task-form-actions">

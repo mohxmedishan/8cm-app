@@ -70,7 +70,7 @@ service cloud.firestore {
     // users/{uid} — profile docs
     // ================================================================
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (request.auth.uid == uid || isMonitor());
 
       allow create: if isSignedIn() && request.auth.uid == uid &&
         claimedIdOnCreateIsValid();
