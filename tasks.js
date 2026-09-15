@@ -3,7 +3,7 @@
 // ------------------------------------------------
 // Tasks live in Firestore (collection: tasks) so they update for
 // everyone in real time. Add/edit/delete controls only render for
-// admins client-side — the real enforcement is firestore.rules,
+// monitors client-side — the real enforcement is firestore.rules,
 // which reject the write server-side regardless of what the UI shows.
 //
 // Each task can optionally carry a single external `link` (a Google
@@ -29,7 +29,7 @@ import { playOpen, playClose, playSuccess, playError, playDelete, playExternal }
 
 const $ = (id) => document.getElementById(id);
 
-let isCurrentAdmin = false;
+let isCurrentMonitor = false;
 let tasksCache = [];
 let editingId = null;
 
@@ -84,7 +84,7 @@ function renderTasks() {
         ${linkMarkup(task)}
       </div>
       <span class="task-due">${task.due}</span>
-      <div class="task-admin-actions admin-only" ${isCurrentAdmin ? "" : "hidden"}>
+      <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn" data-action="edit" data-id="${task.id}" aria-label="Edit task">✎</button>
         <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${task.id}" aria-label="Delete task">✕</button>
       </div>
@@ -122,9 +122,9 @@ function startTasksListener() {
   );
 }
 
-function applyAdminVisibility() {
-  document.querySelectorAll(".admin-only").forEach((el) => {
-    el.hidden = !isCurrentAdmin;
+function applyMonitorVisibility() {
+  document.querySelectorAll(".monitor-only").forEach((el) => {
+    el.hidden = !isCurrentMonitor;
   });
 }
 
@@ -169,7 +169,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert("Couldn't delete that task — check your admin access and try again.");
+    alert("Couldn't delete that task — check your monitor access and try again.");
   }
 }
 
@@ -202,7 +202,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setTaskFormError("Couldn't save that task — check your admin access and try again.");
+    setTaskFormError("Couldn't save that task — check your monitor access and try again.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalLabel;
@@ -212,14 +212,14 @@ async function handleSubmit(e) {
 export function initTasks() {
   // Tasks are public (firestore.rules allows read: if true), so the
   // listener starts immediately — no need to wait on auth state or
-  // gate the list behind a sign-in wall. Admin-only controls (add /
+  // gate the list behind a sign-in wall. Monitor-only controls (add /
   // edit / delete) still react to auth state separately below.
   startTasksListener();
 
-  subscribeAuth(({ admin }) => {
-    isCurrentAdmin = admin;
-    applyAdminVisibility();
-    renderTasks(); // re-render so edit/delete controls appear/disappear with admin state
+  subscribeAuth(({ monitor }) => {
+    isCurrentMonitor = monitor;
+    applyMonitorVisibility();
+    renderTasks(); // re-render so edit/delete controls appear/disappear with monitor state
   });
 
   const addBtn = $("addTaskBtn");

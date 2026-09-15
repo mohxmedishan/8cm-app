@@ -23,7 +23,7 @@ import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.
 import { syncThemeFromProfile } from "./theme.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
-let latestState = { user: null, profile: null, admin: false };
+let latestState = { user: null, profile: null, monitor: false };
 // "initial" = mandatory first-time pick, no way out but signing out.
 // "switch" = the optional, cancelable "Switch student" action from
 // the profile dropdown on an account that's already claimed.
@@ -349,7 +349,7 @@ async function handleClaimConfirm() {
 
   try {
     if (claimMode === "switch") {
-      await switchStudentIdentity(latestState.user.uid, student);
+      await switchStudentIdentity(latestState.user.uid, student, latestState.profile);
     } else {
       await claimStudentIdentity(latestState.user.uid, student, latestState.profile);
     }
@@ -402,7 +402,7 @@ function transportLabel(t) {
 function renderAuthSlot() {
   const slot = $("authSlot");
   if (!slot) return;
-  const { user, profile, admin } = latestState;
+  const { user, profile, monitor } = latestState;
 
   if (!user) {
     slot.innerHTML = `<button class="btn btn-primary btn-small" id="signInTriggerBtn">Sign in</button>`;
@@ -424,7 +424,7 @@ function renderAuthSlot() {
       <div class="dropdown profile-dropdown" id="profileDropdown">
         <p class="profile-name">${name}</p>
         <p class="profile-email">${user.email || ""}</p>
-        ${admin ? `<span class="admin-pill">Admin</span>` : ""}
+        ${monitor ? `<span class="monitor-pill">Monitor</span>` : ""}
         ${student ? `
           <div class="profile-stats">
             <span class="profile-stat-pill">Roll #${student.rollNumber}</span>

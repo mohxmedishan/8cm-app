@@ -1090,7 +1090,7 @@ h1, h2, h3 {
   white-space: nowrap;
 }
 
-.task-admin-actions { display: flex; gap: 6px; }
+.task-monitor-actions { display: flex; gap: 6px; }
 
 .task-icon-btn {
   background: var(--bg-elevated-2);
@@ -1197,13 +1197,13 @@ h1, h2, h3 {
     grid-template-areas:
       "tag due"
       "body body"
-      "admin admin";
+      "monitor monitor";
     row-gap: 6px;
   }
   .task-tag { grid-area: tag; justify-self: start; }
   .task-due { grid-area: due; justify-self: end; }
   .task-body { grid-area: body; }
-  .task-admin-actions { grid-area: admin; justify-self: end; }
+  .task-monitor-actions { grid-area: monitor; justify-self: end; }
   .today-panel-head { flex-direction: column; align-items: flex-start; }
 }
 
@@ -1257,7 +1257,7 @@ h1, h2, h3 {
   word-break: break-word;
 }
 
-.admin-pill {
+.monitor-pill {
   display: inline-block;
   background: var(--accent-soft);
   color: var(--accent-strong);

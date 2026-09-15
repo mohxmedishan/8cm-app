@@ -108,6 +108,13 @@ const rollByName = new Map(
     .map((s, i) => [s.name, i + 1])
 );
 
+// This array is now SEED DATA and an offline/error fallback, not the
+// live database. Once migrated, students/{id} in Firestore is the
+// primary source — see loadStudents() and migrateStudentsToFirestore()
+// below. Nothing here is sensitive: it's the same name/house/language/
+// transport info that already shipped to every visitor's browser in
+// this file, now just also mirrored into Firestore so monitors can
+// edit it without a code deploy.
 export const students = raw
   .map((s) => {
     const language = languageByName.get(s.name);
@@ -119,6 +126,84 @@ export const students = raw
       id: slug(s.name),
       rollNumber: rollByName.get(s.name),
       language: language || null,
+      active: true,
     };
   })
   .sort((a, b) => a.rollNumber - b.rollNumber);
+
+// ------------------------------------------------
+// Firestore-backed directory, with this file as fallback
+// ------------------------------------------------
+// Deliberately lazy-imported (dynamic import) so pages that only need
+// the static array — like the identity-claim picker, which must be
+// available synchronously before any Firestore round-trip — don't pay
+// for pulling in the Firestore SDK at all.
+let cachedFirestoreStudents = null;
+
+export async function loadStudents({ forceRefresh = false } = {}) {
+  if (cachedFirestoreStudents && !forceRefresh) return cachedFirestoreStudents;
+
+  try {
+    const { db } = await import("./firebase-config.js");
+    const { collection, getDocs } = await import(
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    );
+    // A plain collection read of ~30 docs, filtered client-side — an
+    // inequality query here would need a composite index and would
+    // silently exclude any doc missing the `active` field, which is
+    // an easy way to lose a student from the directory by accident.
+    const snap = await getDocs(collection(db, "students"));
+    if (snap.empty) {
+      // Collection not migrated yet (or a monitor cleared it out) —
+      // fall back rather than showing an empty directory.
+      return students;
+    }
+    const fromFirestore = [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.active === false) return;
+      fromFirestore.push({ id: docSnap.id, ...data });
+    });
+    fromFirestore.sort((a, b) => (a.rollNumber || 0) - (b.rollNumber || 0));
+    cachedFirestoreStudents = fromFirestore;
+    return fromFirestore;
+  } catch (err) {
+    console.error("[8CM] Falling back to local student list — Firestore read failed:", err);
+    return students;
+  }
+}
+
+// One-time, idempotent migration: writes every student in the local
+// seed array into Firestore as students/{id}, skipping any id that's
+// already there. Run this once from the browser console while signed
+// in as a monitor:
+//
+//   import("./students.js").then(m => m.migrateStudentsToFirestore());
+//
+// Safe to re-run — it never overwrites an existing doc, so any edits
+// a monitor has since made in Firestore are left alone.
+export async function migrateStudentsToFirestore() {
+  const { db } = await import("./firebase-config.js");
+  const { doc, getDoc, writeBatch } = await import(
+    "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+  );
+
+  let written = 0;
+  let skipped = 0;
+  const batch = writeBatch(db);
+
+  for (const student of students) {
+    const ref = doc(db, "students", student.id);
+    const existing = await getDoc(ref);
+    if (existing.exists()) {
+      skipped++;
+      continue;
+    }
+    batch.set(ref, student);
+    written++;
+  }
+
+  await batch.commit();
+  console.log(`[8CM] Migration complete — ${written} student(s) written, ${skipped} already present.`);
+  return { written, skipped };
+}

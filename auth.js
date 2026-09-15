@@ -19,21 +19,51 @@ import {
   doc,
   getDoc,
   setDoc,
-  collection,
-  query,
-  where,
-  getDocs,
+  runTransaction,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db, isFirebaseConfigured } from "./firebase-config.js";
 
 export { isFirebaseConfigured };
 
-// This must match the email allow-listed in firestore.rules for the
-// tasks collection. Keeping it here too lets the UI hide admin
-// controls for everyone else — the rules file is what actually
-// enforces it server-side.
-export const ADMIN_EMAIL = "mohamedishankunnummal@gmail.com";
+// ------------------------------------------------
+// Monitor role
+// ------------------------------------------------
+// There are only 2 roles in this project: student and monitor. There
+// are only ever 3 monitors. Role is NOT a field on users/{uid} — it
+// is entirely determined by firestore.rules (see isMonitor() there),
+// which is the actual authority. This list is a client-side mirror so
+// the UI can react instantly without waiting on an extra Firestore
+// read; it must be kept in sync with the allowlist in firestore.rules.
+// The dynamic path (a doc at monitors/{uid}) is checked via Firestore
+// itself in computeIsMonitor() below, so monitors added later through
+// the monitor-management UI are picked up without a code change here.
+export const MONITOR_EMAILS = [
+  "mohamedishankunnummal@gmail.com",
+  // "monitor2@example.com",
+  // "monitor3@example.com",
+];
+
+function monitorRef(uid) {
+  return doc(db, "monitors", uid);
+}
+
+// Authoritative-enough for UI purposes: checks the email allowlist
+// first (no read needed), then falls back to a single doc read for
+// monitors added dynamically. Firestore rules are what actually
+// enforce this server-side — this function only controls what
+// buttons/panels render.
+export async function computeIsMonitor(user) {
+  if (!user) return false;
+  if (user.email && MONITOR_EMAILS.includes(user.email)) return true;
+  try {
+    const snap = await getDoc(monitorRef(user.uid));
+    return snap.exists();
+  } catch (err) {
+    console.error("Failed to check monitor status:", err);
+    return false;
+  }
+}
 
 const googleProvider = new GoogleAuthProvider();
 // Forces the account chooser every time instead of silently reusing
@@ -55,8 +85,8 @@ const ERROR_MESSAGES = {
   "auth/popup-closed-by-user": "Sign-in was closed before finishing — try again.",
   "auth/cancelled-popup-request": "Sign-in was interrupted — try again.",
   "auth/popup-blocked": "Your browser blocked the sign-in popup — allow popups for this site and try again.",
-  "auth/unauthorized-domain": "This domain isn't authorized for Google sign-in yet — an admin needs to add it in the Firebase console (Authentication → Settings → Authorized domains).",
-  "auth/operation-not-allowed": "Google sign-in isn't enabled for this project yet — an admin needs to turn it on in the Firebase console.",
+  "auth/unauthorized-domain": "This domain isn't authorized for Google sign-in yet — a monitor needs to add it in the Firebase console (Authentication → Settings → Authorized domains).",
+  "auth/operation-not-allowed": "Google sign-in isn't enabled for this project yet — a monitor needs to turn it on in the Firebase console.",
   "auth/network-request-failed": "Network error — check your connection and try again.",
   "auth/too-many-requests": "Too many attempts. Wait a bit before trying again.",
   "auth/account-exists-with-different-credential":
@@ -145,6 +175,9 @@ async function getProfileWithRetry(uid, attempts = 3, baseDelayMs = 200) {
 // retry) — that gap used to mean the picker got shown again on a
 // perfectly normal re-sign-in. A real Firestore claim always takes
 // priority when it's present; this only fills in when it's missing.
+// This is a UI convenience cache only — it is never treated as proof
+// of a claim by anything that grants access to data. The claims/{id}
+// collection in Firestore is the only source of truth for that.
 function claimCacheKey(uid) {
   return `8cm:claimedStudent:${uid}`;
 }
@@ -167,12 +200,6 @@ function getCachedClaim(uid) {
   }
 }
 
-export function computeIsAdmin(user, profile) {
-  if (!user) return false;
-  if (user.email === ADMIN_EMAIL) return true;
-  return !!(profile && profile.admin === true);
-}
-
 // Creates a bare profile doc right after signup/first Google sign-in,
 // before identity claiming happens. Safe to call repeatedly.
 export async function ensureProfileDoc(user) {
@@ -187,15 +214,58 @@ export async function ensureProfileDoc(user) {
   );
 }
 
-// Returns the uid that already claimed this student, or null if free.
-export async function findExistingClaim(studentId) {
-  const q = query(collection(db, "users"), where("claimedStudentId", "==", studentId));
-  const snap = await getDocs(q);
-  let claimedBy = null;
-  snap.forEach((docSnap) => {
-    claimedBy = docSnap.id;
+// ------------------------------------------------
+// Student identity claiming — claims/{studentId}, doc ID = studentId
+// ------------------------------------------------
+// Claiming and switching both go through this one transaction so the
+// "does anyone else already own this student" check and the write
+// that claims it happen atomically — no gap where two accounts can
+// both pass the check and then both write. See firestore.rules for
+// the server-side half of this guarantee (a create against an
+// existing claims/{id} doc is rejected as an unauthorized update).
+async function claimTransaction(uid, student, releaseId) {
+  const claimRef = doc(db, "claims", student.id);
+  const userRef = profileRef(uid);
+  const oldClaimRef = releaseId && releaseId !== student.id ? doc(db, "claims", releaseId) : null;
+
+  await runTransaction(db, async (tx) => {
+    const claimSnap = await tx.get(claimRef);
+    if (claimSnap.exists() && claimSnap.data().uid !== uid) {
+      const err = new Error("That student has already been claimed by another account.");
+      err.code = "identity/already-claimed";
+      throw err;
+    }
+
+    if (oldClaimRef) {
+      tx.delete(oldClaimRef);
+    }
+
+    tx.set(claimRef, {
+      uid,
+      studentName: student.name,
+      claimedAt: serverTimestamp(),
+    });
+
+    tx.set(
+      userRef,
+      {
+        claimedStudentId: student.id,
+        claimedStudentName: student.name,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
   });
-  return claimedBy;
+}
+
+async function syncDisplayName(uid, name) {
+  if (auth.currentUser && auth.currentUser.uid === uid) {
+    try {
+      await updateProfile(auth.currentUser, { displayName: name });
+    } catch (err) {
+      console.error("Failed to sync displayName after claim:", err);
+    }
+  }
 }
 
 // Links a Firebase account to one directory entry for the mandatory
@@ -211,69 +281,24 @@ export async function claimStudentIdentity(uid, student, currentProfile) {
     throw err;
   }
 
-  const existing = await findExistingClaim(student.id);
-  if (existing && existing !== uid) {
-    const err = new Error("That student has already been claimed by another account.");
-    err.code = "identity/already-claimed";
-    throw err;
-  }
-
-  await setDoc(
-    profileRef(uid),
-    {
-      claimedStudentId: student.id,
-      claimedStudentName: student.name,
-      admin: false,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  await claimTransaction(uid, student, null);
   cacheClaim(uid, student.id, student.name);
-
-  // Keep the Firebase Auth displayName (used for e.g. Google-side UI)
-  // in sync with the name the student actually claimed.
-  if (auth.currentUser && auth.currentUser.uid === uid) {
-    try {
-      await updateProfile(auth.currentUser, { displayName: student.name });
-    } catch (err) {
-      console.error("Failed to sync displayName after claim:", err);
-    }
-  }
+  await syncDisplayName(uid, student.name);
 }
 
 // Changes an ALREADY-claimed account to a different student, on
 // purpose — this is the explicit "Switch student" action, distinct
 // from claimStudentIdentity above (which is the mandatory first-time
 // pick and refuses to overwrite an existing claim). Still refuses if
-// someone else already has the target student linked. Deliberately
-// does not touch the `admin` field, so switching students never
-// silently strips admin access.
-export async function switchStudentIdentity(uid, student) {
-  const existing = await findExistingClaim(student.id);
-  if (existing && existing !== uid) {
-    const err = new Error("That student has already been claimed by another account.");
-    err.code = "identity/already-claimed";
-    throw err;
-  }
-
-  await setDoc(
-    profileRef(uid),
-    {
-      claimedStudentId: student.id,
-      claimedStudentName: student.name,
-      updatedAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+// someone else already has the target student linked. Releases the
+// previous claims/{id} doc in the same transaction so a student can
+// never end up owning two identities, and no window opens where the
+// old identity is claimed by no one and free for a race.
+export async function switchStudentIdentity(uid, student, currentProfile) {
+  const releaseId = currentProfile && currentProfile.claimedStudentId;
+  await claimTransaction(uid, student, releaseId || null);
   cacheClaim(uid, student.id, student.name);
-
-  if (auth.currentUser && auth.currentUser.uid === uid) {
-    try {
-      await updateProfile(auth.currentUser, { displayName: student.name });
-    } catch (err) {
-      console.error("Failed to sync displayName after switch:", err);
-    }
-  }
+  await syncDisplayName(uid, student.name);
 }
 
 // Saves the picked accent color to the user's profile doc so it
@@ -287,13 +312,14 @@ export async function saveThemePreference(uid, theme) {
 // ------------------------------------------------
 // Global auth state
 // ------------------------------------------------
-// callback receives { user, profile, admin }. `user` is the raw
+// callback receives { user, profile, monitor }. `user` is the raw
 // Firebase user (or null when signed out); `profile` is the Firestore
-// users/{uid} doc (or null until it loads / if it doesn't exist yet).
+// users/{uid} doc (or null until it loads / if it doesn't exist yet);
+// `monitor` is a UI-only convenience flag — see computeIsMonitor().
 export function subscribeAuth(callback) {
   return onAuthStateChanged(auth, async (user) => {
     if (!user) {
-      callback({ user: null, profile: null, admin: false });
+      callback({ user: null, profile: null, monitor: false });
       return;
     }
 
@@ -325,6 +351,7 @@ export function subscribeAuth(callback) {
       cacheClaim(user.uid, profile.claimedStudentId, profile.claimedStudentName);
     }
 
-    callback({ user, profile, admin: computeIsAdmin(user, profile) });
+    const monitor = await computeIsMonitor(user);
+    callback({ user, profile, monitor });
   });
 }
