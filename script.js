@@ -1,42 +1,29 @@
 // ============================================
 // 8CM — Site interactions (entry module)
-// ------------------------------------------------
-// Imports the auth/task modules and wires up everything else: nav,
-// student directory filters, house shortcuts, resources, stats, the
-// loading splash, and appearance settings.
-//
-// This one file is shared by every page in the site (dashboard +
-// every sub-page), so each section below checks that its markup is
-// actually present before touching it — a page that doesn't have the
-// student directory on it just skips that block instead of throwing.
 // ============================================
-import { students } from "./students.js";
+import { getStudentsSync, onStudents, loadStudents } from "./students.js";
 import { initAuthUI } from "./auth-ui.js";
 import { initAssignments } from "./assignments.js";
 import { initAnnouncements } from "./announcements.js";
 import { initEvents } from "./events.js";
 import { initTimetableLive } from "./timetable-live.js";
 import { initDashboard } from "./dashboard.js";
+import { initStudentManagement } from "./student-manage.js";
+import { initGallery } from "./gallery.js";
+import { initAchievements } from "./achievements.js";
+import { initManagePage } from "./manage.js";
 import { changelog } from "./changelog.js";
 import { applyStoredTheme, initThemeUI } from "./theme.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
 
-// Applied as early as possible so a custom accent is on screen from
-// first paint rather than flashing the default green first. (The
-// tiny inline script in <head> already set --accent synchronously
-// before this module ran; this fills in the derived --accent-strong
-// / --accent-soft shades and syncs the settings UI.)
 applyStoredTheme();
 
-// ============================================
-// Fallback error logging
-// ------------------------------------------------
-// A safety net for anything that slips past the try/catch blocks in
-// auth-ui.js/auth.js (a typo'd .catch(), a promise nobody awaited,
-// etc.) so a bug there degrades to a console entry + a small toast
-// instead of a silent white-screen failure with zero trace of what
-// happened.
-// ============================================
+// Warm the Firestore student cache once per page load — cheap (one
+// collection read, ~30 docs), and lets every sync read from
+// getStudentsSync() return real data instead of the seed fallback.
+loadStudents().catch(() => {});
+
+// Fallback error toast (unchanged)
 function showErrorToast(message) {
   let toast = document.getElementById("globalErrorToast");
   if (!toast) {
@@ -50,18 +37,16 @@ function showErrorToast(message) {
   clearTimeout(showErrorToast._timer);
   showErrorToast._timer = setTimeout(() => toast.classList.remove("show"), 5000);
 }
-
 window.addEventListener("unhandledrejection", (event) => {
   console.error("Unhandled promise rejection:", event.reason);
   showErrorToast("Something went wrong behind the scenes — try that again.");
 });
-
 window.addEventListener("error", (event) => {
   console.error("Uncaught error:", event.error || event.message);
 });
 
 // ============================================
-// Student directory: render + filter — dashboard only
+// Student directory — now driven by the live student cache
 // ============================================
 function initStudentDirectory() {
   const grid = document.getElementById("studentGrid");
@@ -69,22 +54,17 @@ function initStudentDirectory() {
   const searchInput = document.getElementById("searchInput");
   if (!grid || !resultCount || !searchInput) return;
 
-  function transportLabel(t) {
-    return t === "OT" ? "Own transport" : `Bus ${t}`;
-  }
+  let liveStudents = [];
+  let activeFilters = new Set();
+  let searchTerm = "";
 
-  function houseLabel(house) {
-    return house.charAt(0).toUpperCase() + house.slice(1);
-  }
-
-  function rollLabel(rollNumber) {
-    return String(rollNumber).padStart(2, "0");
-  }
+  const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
+  const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
+  const rollLabel = (n) => String(n).padStart(2, "0");
 
   function renderStudents(list) {
     grid.innerHTML = "";
     grid.classList.toggle("empty", list.length === 0);
-
     list.forEach((s, i) => {
       const card = document.createElement("div");
       card.className = "student-card";
@@ -103,12 +83,8 @@ function initStudentDirectory() {
       `;
       grid.appendChild(card);
     });
-
     resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
   }
-
-  let activeFilters = new Set();
-  let searchTerm = "";
 
   function matchesFilters(student) {
     if (activeFilters.size === 0) return true;
@@ -123,7 +99,7 @@ function initStudentDirectory() {
   }
 
   function applyFilters() {
-    let list = students.filter(matchesFilters);
+    let list = liveStudents.filter(matchesFilters);
     if (searchTerm.trim() !== "") {
       const q = searchTerm.trim().toLowerCase();
       list = list.filter((s) => s.name.toLowerCase().includes(q));
@@ -134,8 +110,10 @@ function initStudentDirectory() {
   function syncPillStates() {
     document.querySelectorAll(".pill").forEach((pill) => {
       const isAll = pill.dataset.filter === "all";
-      pill.classList.toggle("active", isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter));
-
+      pill.classList.toggle(
+        "active",
+        isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter)
+      );
       if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
       if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
       if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
@@ -145,42 +123,21 @@ function initStudentDirectory() {
 
   function toggleFilter(filter) {
     if (filter === "all") {
-      const hadFilters = activeFilters.size > 0;
+      const had = activeFilters.size > 0;
       activeFilters.clear();
-      if (hadFilters) playToggleOff();
+      if (had) playToggleOff();
     } else if (filter.startsWith("house:")) {
-      // Houses are single-select among themselves, but combine (AND)
-      // freely with the transport pill and the language pills below.
       const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
-      if (activeFilters.has(filter)) {
-        activeFilters.delete(filter);
-        playToggleOff();
-      } else {
-        houseFilters.forEach((h) => activeFilters.delete(h));
-        activeFilters.add(filter);
-        playToggleOn();
-      }
+      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
+      else { houseFilters.forEach((h) => activeFilters.delete(h)); activeFilters.add(filter); playToggleOn(); }
     } else if (filter.startsWith("language:")) {
-      // Languages are single-select among themselves too, and combine
-      // (AND) with house and OT — e.g. "Autumn + Hindi" is a valid,
-      // narrower filter, but "Hindi + French" together would always
-      // return zero students since each student has exactly one
-      // language track.
       const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
-      if (activeFilters.has(filter)) {
-        activeFilters.delete(filter);
-        playToggleOff();
-      } else {
-        languageFilters.forEach((l) => activeFilters.delete(l));
-        activeFilters.add(filter);
-        playToggleOn();
-      }
+      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
+      else { languageFilters.forEach((l) => activeFilters.delete(l)); activeFilters.add(filter); playToggleOn(); }
     } else if (activeFilters.has(filter)) {
-      activeFilters.delete(filter);
-      playToggleOff();
+      activeFilters.delete(filter); playToggleOff();
     } else {
-      activeFilters.add(filter);
-      playToggleOn();
+      activeFilters.add(filter); playToggleOn();
     }
     syncPillStates();
     applyFilters();
@@ -195,7 +152,12 @@ function initStudentDirectory() {
     document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  renderStudents(students);
+  // Live: re-render whenever Firestore students resolve or get invalidated.
+  onStudents((list) => {
+    liveStudents = list;
+    applyFilters();
+  });
+
   syncPillStates();
 
   document.querySelectorAll(".pill").forEach((pill) => {
@@ -211,32 +173,21 @@ function initStudentDirectory() {
     const trigger = () => jumpToHouse(el.dataset.house);
     el.addEventListener("click", trigger);
     el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        trigger();
-      }
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); trigger(); }
     });
   });
 }
 
 // ============================================
-// Resources — quick links to school platforms
+// Resources — unchanged
 // ============================================
 function initResources() {
   const resourceGrid = document.getElementById("resourceGrid");
   if (!resourceGrid) return;
 
   const resources = [
-    {
-      name: "Google Classroom",
-      description: "Assignments, materials, and class-wide posts.",
-      url: "https://classroom.google.com",
-    },
-    {
-      name: "Digital Campus (DC)",
-      description: "School portal for grades, attendance, and notices.",
-      url: "https://ict.adiswathba.com/ADIS1/",
-    },
+    { name: "Google Classroom", description: "Assignments, materials, and class-wide posts.", url: "https://classroom.google.com" },
+    { name: "Digital Campus (DC)", description: "School portal for grades, attendance, and notices.", url: "https://ict.adiswathba.com/ADIS1/" },
   ];
 
   resources.forEach((r) => {
@@ -245,18 +196,14 @@ function initResources() {
     card.href = r.url;
     card.target = "_blank";
     card.rel = "noopener";
-    card.innerHTML = `
-      <h3>${r.name}</h3>
-      <p>${r.description}</p>
-      <span class="resource-note">Open →</span>
-    `;
+    card.innerHTML = `<h3>${r.name}</h3><p>${r.description}</p><span class="resource-note">Open →</span>`;
     card.addEventListener("click", () => playExternal());
     resourceGrid.appendChild(card);
   });
 }
 
 // ============================================
-// Gallery lightbox — 4KWallpapers-style zoom view — gallery page only
+// Gallery lightbox — unchanged
 // ============================================
 function initGalleryLightbox() {
   const galleryGrid = document.getElementById("galleryGrid");
@@ -270,19 +217,13 @@ function initGalleryLightbox() {
     const img = photo.querySelector("img");
     const caption = photo.querySelector("figcaption");
     if (!img) return;
-
     lightboxImage.src = img.currentSrc || img.src;
     lightboxImage.alt = img.alt || "";
     lightboxCaption.textContent = caption ? caption.textContent : "";
-
     lightboxOverlay.hidden = false;
     document.body.classList.add("lightbox-locked");
     playOpen();
-    // Two-step so the browser registers [hidden] removal before the
-    // transition class flips — otherwise the fade/scale-in never plays.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => lightboxOverlay.classList.add("open"));
-    });
+    requestAnimationFrame(() => requestAnimationFrame(() => lightboxOverlay.classList.add("open")));
   }
 
   function closeLightbox() {
@@ -303,23 +244,15 @@ function initGalleryLightbox() {
   galleryGrid.addEventListener("keydown", (e) => {
     const photo = e.target.closest(".gallery-photo");
     if (!photo) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      openLightbox(photo);
-    }
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(photo); }
   });
-
   if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
-  lightboxOverlay.addEventListener("click", (e) => {
-    if (e.target === lightboxOverlay) closeLightbox();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeLightbox();
-  });
+  lightboxOverlay.addEventListener("click", (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
 }
 
 // ============================================
-// Nav: scroll shadow, mobile menu, Home + More dropdowns — every page
+// Nav — unchanged
 // ============================================
 function initNav() {
   const nav = document.getElementById("nav");
@@ -327,16 +260,12 @@ function initNav() {
   const navLinks = document.getElementById("navLinks");
   if (!nav || !burger || !navLinks) return;
 
-  window.addEventListener("scroll", () => {
-    nav.classList.toggle("scrolled", window.scrollY > 8);
-  });
-
+  window.addEventListener("scroll", () => nav.classList.toggle("scrolled", window.scrollY > 8));
   burger.addEventListener("click", () => {
     const isOpen = burger.classList.toggle("open");
     navLinks.classList.toggle("open");
     isOpen ? playOpen() : playClose();
   });
-
   navLinks.querySelectorAll("a.nav-link").forEach((link) => {
     link.addEventListener("click", () => {
       playNav();
@@ -349,18 +278,15 @@ function initNav() {
     const trigger = document.getElementById(triggerId);
     if (!trigger) return;
     const item = trigger.closest(".nav-item");
-
     trigger.addEventListener("click", (e) => {
       e.stopPropagation();
       const isOpen = item.classList.toggle("open");
       trigger.setAttribute("aria-expanded", isOpen);
       isOpen ? playOpen() : playClose();
     });
-
     trigger.nextElementSibling?.querySelectorAll("a")?.forEach((link) => {
       link.addEventListener("click", () => playNav());
     });
-
     document.addEventListener("click", (e) => {
       if (!item.contains(e.target)) {
         item.classList.remove("open");
@@ -368,12 +294,11 @@ function initNav() {
       }
     });
   }
-
   wireDropdown("moreTrigger");
 }
 
 // ============================================
-// Hero bar chart — grow on load — dashboard only
+// Hero chart, stats count-up, splash, changelog, date line — unchanged
 // ============================================
 function initHeroChart() {
   window.addEventListener("DOMContentLoaded", () => {
@@ -389,18 +314,13 @@ function initHeroChart() {
   });
 }
 
-// ============================================
-// Stat count-up — triggered once, on scroll into view — stats page only
-// ============================================
 function initStatCountUp() {
   const statNumbers = document.querySelectorAll(".stat-number[data-count]");
   if (statNumbers.length === 0) return;
-
   function countUp(el) {
     const target = parseInt(el.dataset.count, 10);
     const duration = 900;
     const start = performance.now();
-
     function tick(now) {
       const progress = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
@@ -409,24 +329,14 @@ function initStatCountUp() {
     }
     requestAnimationFrame(tick);
   }
-
-  const statObserver = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          countUp(entry.target);
-          statObserver.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.5 }
-  );
+  const statObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) { countUp(entry.target); statObserver.unobserve(entry.target); }
+    });
+  }, { threshold: 0.5 });
   statNumbers.forEach((el) => statObserver.observe(el));
 }
 
-// ============================================
-// Loading splash — brief on first paint, then fades — every page
-// ============================================
 function initSplash() {
   const splash = document.getElementById("splash");
   if (!splash) return;
@@ -438,30 +348,21 @@ function initSplash() {
   });
 }
 
-// ============================================
-// Changelog — changelog page only, filled from changelog.js
-// ============================================
 function initChangelog() {
   const container = document.getElementById("changelogEntries");
   if (!container) return;
-
   container.innerHTML = changelog
     .map(
       (entry) => `
         <div class="changelog-entry">
           <p class="changelog-date">${entry.date}</p>
-          <ul>
-            ${entry.items.map((item) => `<li>${item}</li>`).join("")}
-          </ul>
+          <ul>${entry.items.map((item) => `<li>${item}</li>`).join("")}</ul>
         </div>
       `
     )
     .join("");
 }
 
-// ============================================
-// "Today" date line — dashboard + events page
-// ============================================
 function initTodayDate() {
   const el = document.getElementById("todayDate");
   if (!el) return;
@@ -489,3 +390,8 @@ initEvents();
 initTimetableLive();
 initDashboard();
 initThemeUI();
+// P2 additions
+initStudentManagement();
+initGallery();
+initAchievements();
+initManagePage();
