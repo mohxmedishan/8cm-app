@@ -1,0 +1,24 @@
+CM. UI OVERHAUL v2
+===================
+
+This is deliberately a UI-only change.
+
+DO NOT replace your original project files wholesale.
+
+1. Keep the entire original prime-cm repository unchanged.
+2. Add UI-OVERHAUL-v2.css after the existing style.css is loaded.
+   The safest way is to add this one line AFTER the existing
+   <link rel="stylesheet" href="style.css"> in every HTML page:
+
+   <link rel="stylesheet" href="UI-OVERHAUL-v2.css">
+
+3. Do not change app.js, auth.js, auth-ui.js, tasks.js, announcements.js,
+   assignments.js, events.js, students.js, Firebase files, rules, or
+   the HTML IDs/classes used by those scripts.
+
+This stylesheet intentionally keeps the original DOM hooks intact and
+only overrides presentation: colors, typography, layout spacing, cards,
+navigation, forms, dialogs, responsive behavior, motion, and focus states.
+
+The original project's [hidden] behavior is preserved, which is important
+because the existing JS uses hidden attributes for auth/task UI.
