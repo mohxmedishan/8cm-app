@@ -1,12 +1,8 @@
 {
-  "headers": [
+  "rewrites": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {"key":"Cross-Origin-Opener-Policy","value":"same-origin-allow-popups"},
-        {"key":"X-Content-Type-Options","value":"nosniff"},
-        {"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"}
-      ]
+      "source": "/__/auth/:match*",
+      "destination": "https://cm-app-1644e.firebaseapp.com/__/auth/:match*"
     }
   ]
 }
