@@ -82,7 +82,7 @@ export const students = raw
 .map((s) => {
 const language = languageByName.get(s.name);
 if (!language && typeof console !== "undefined") {
-console.error([8CM] No language assigned for student: ${s.name});
+console.error(`[8CM] No language assigned for student: ${s.name}`);
 }
 return {
 ...s,
@@ -204,6 +204,6 @@ written++;
 }
 
 await batch.commit();
-console.log([8CM] Migration complete — ${written} student(s) written, ${skipped} already present.);
+console.log(`[8CM] Migration complete — ${written} student(s) written, ${skipped} already present.`);
 return { written, skipped };
 }
