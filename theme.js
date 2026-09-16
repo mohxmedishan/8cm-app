@@ -60,7 +60,9 @@ function applyTheme(hex) {
   const root = document.documentElement.style;
   const mode = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
   root.setProperty("--accent", hex);
-  root.setProperty("--accent-strong", mode === "light" ? "#4c7a70" : lighten(hex, 0.18));
+  root.setProperty("--accent-strong", mode === "light" ? "#3b675e" : lighten(hex, 0.18));
+  root.setProperty("--accent-vibrant", hex);
+  root.setProperty("--accent-vibrant-2", lighten(hex, mode === "light" ? 0.25 : 0.18));
   const { r, g, b } = hexToRgb(hex);
   root.setProperty("--accent-soft", `rgba(${r}, ${g}, ${b}, ${mode === "light" ? 0.18 : 0.14})`);
   reflectActiveSwatch(hex);
@@ -80,7 +82,9 @@ function applyMode(mode) {
   reflectModeButton(resolved);
   const accent = getStoredAccent();
   const root = document.documentElement.style;
-  root.setProperty("--accent-strong", resolved === "light" ? "#4c7a70" : lighten(accent, 0.18));
+  root.setProperty("--accent-strong", resolved === "light" ? "#3b675e" : lighten(accent, 0.18));
+  root.setProperty("--accent-vibrant", accent);
+  root.setProperty("--accent-vibrant-2", lighten(accent, resolved === "light" ? 0.25 : 0.18));
   const { r, g, b } = hexToRgb(accent);
   root.setProperty("--accent-soft", `rgba(${r}, ${g}, ${b}, ${resolved === "light" ? 0.18 : 0.14})`);
 }

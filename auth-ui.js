@@ -31,6 +31,17 @@ let claimMode = "initial";
 
 const $ = (id) => document.getElementById(id);
 
+const AUTH_CACHE_KEY = "8cm:lastAuth";
+function readCachedAuth() {
+  try { const r = localStorage.getItem(AUTH_CACHE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function writeCachedAuth(state) {
+  try {
+    if (!state) localStorage.removeItem(AUTH_CACHE_KEY);
+    else localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(state));
+  } catch {}
+}
+
 // ------------------------------------------------
 // Sign in / up / reset modal
 // ------------------------------------------------
@@ -445,6 +456,7 @@ function renderAuthSlot() {
         </div>
       ` : ""}
       <div class="profile-actions">
+        ${profile?.claimedStudentId ? `<button class="dropdown-action" id="viewProfileBtn" type="button">View profile</button>` : ""}
         ${monitor ? `<button class="dropdown-action" id="monitorPanelBtn" type="button">Monitor panel</button>` : ""}
         <button class="dropdown-action" id="switchStudentBtn">Switch student</button>
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
@@ -467,6 +479,14 @@ function renderAuthSlot() {
     item.classList.remove("open");
     openClaimModal("switch", profile && profile.claimedStudentId);
   });
+  const viewBtn = $("viewProfileBtn");
+  if (viewBtn && profile?.claimedStudentId) {
+    viewBtn.addEventListener("click", () => {
+      playClick();
+      item.classList.remove("open");
+      window.__cmOpenProfile?.(profile.claimedStudentId);
+    });
+  }
 
   const monitorBtn = $("monitorPanelBtn");
   if (monitorBtn) {
@@ -539,12 +559,34 @@ export function initAuthUI() {
       closeClaimModal();
     }
   });
-    subscribeAuth((state) => {
+  const cached = readCachedAuth();
+  if (cached) {
+    latestState = { user: cached.user, profile: cached.profile, monitor: cached.monitor };
+    renderAuthSlot();
+  }
+
+  subscribeAuth((state) => {
     latestState = state;
+    if (state.user) {
+      writeCachedAuth({
+        user: { uid: state.user.uid, email: state.user.email, displayName: state.user.displayName },
+        profile: state.profile,
+        monitor: state.monitor,
+      });
+    } else {
+      writeCachedAuth(null);
+    }
     renderAuthSlot();
     syncThemeFromProfile(state.user ? state.user.uid : null, state.profile);
 
-    // Single source of truth for "does the mandatory identity claim modal need to show?"
+    if (state.user && state.monitor) {
+      import("./firebase-config.js").then(async ({ db }) => {
+        const { setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        setDoc(doc(db, "settings", "monitors"), { uids: { [state.user.uid]: true } }, { merge: true })
+          .catch((err) => console.error("Monitor marker write failed:", err));
+      }).catch((err) => console.error("Monitor marker setup failed:", err));
+    }
+
     if (state.user && (!state.profile || !state.profile.claimedStudentId)) {
       openClaimModal("initial");
     } else if (claimMode === "initial" && !$("claimOverlay").hidden) {

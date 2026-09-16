@@ -328,7 +328,21 @@ export async function saveThemePreference(uid, theme) {
 // users/{uid} doc (or null until it loads / if it doesn't exist yet);
 // `monitor` is a UI-only convenience flag — see computeIsMonitor().
 export function subscribeAuth(callback) {
+  let initial = true;
+  let nullTimer = null;
   return onAuthStateChanged(auth, async (user) => {
+    if (nullTimer) { clearTimeout(nullTimer); nullTimer = null; }
+
+    if (!user && initial) {
+      initial = false;
+      nullTimer = setTimeout(() => {
+        nullTimer = null;
+        if (!auth.currentUser) callback({ user: null, profile: null, monitor: false });
+      }, 500);
+      return;
+    }
+    initial = false;
+
     if (!user) {
       callback({ user: null, profile: null, monitor: false });
       return;
@@ -341,23 +355,12 @@ export function subscribeAuth(callback) {
       console.error("Failed to load profile after retries:", err);
     }
 
-    // The single source of truth for "has this account already picked
-    // a student" is meant to be Firestore's claimedStudentId — but a
-    // signed-in user should NEVER see the picker again once they've
-    // completed it on this browser, full stop, regardless of whether
-    // this particular Firestore read came back clean, came back
-    // without the field due to a propagation lag, or failed outright.
-    // So: if Firestore didn't give us a claim but this browser has
-    // already seen this uid claim one, trust the cache instead of
-    // re-opening the picker. A genuine Firestore claim always wins
-    // when it's present — this only fills the gap when it's absent.
     if (!profile || !profile.claimedStudentId) {
       const cached = getCachedClaim(user.uid);
       if (cached) {
         profile = { ...(profile || {}), claimedStudentId: cached.id, claimedStudentName: cached.name };
       }
     }
-
     if (profile && profile.claimedStudentId) {
       cacheClaim(user.uid, profile.claimedStudentId, profile.claimedStudentName);
     }

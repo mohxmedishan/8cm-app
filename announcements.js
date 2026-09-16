@@ -42,13 +42,10 @@ function todayStr() {
 }
 
 export function activeAnnouncements() {
-  const today = todayStr();
-  return cache
-    .filter((a) => !a.expiresOn || a.expiresOn >= today)
-    .sort((a, b) => {
-      if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-      return (b.createdAtMs || 0) - (a.createdAtMs || 0);
-    });
+  return cache.sort((a, b) => {
+    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    return (b.createdAtMs || 0) - (a.createdAtMs || 0);
+  });
 }
 
 export function pinnedAnnouncement() {
@@ -113,7 +110,7 @@ function openForm(a) {
   form.content.value = (a && a.content) || "";
   form.category.value = (a && a.category) || "General";
   form.priority.value = (a && a.priority) || "normal";
-  form.expiresOn.value = (a && a.expiresOn) || "";
+  form.eventDate.value = (a && a.eventDate) || "";
   form.pinned.checked = !!(a && a.pinned);
   setFormError(null);
   form.hidden = false;
@@ -147,7 +144,7 @@ async function handleSubmit(e) {
     content: form.content.value.trim(),
     category: form.category.value,
     priority: form.priority.value,
-    expiresOn: form.expiresOn.value || null,
+    eventDate: form.eventDate.value || null,
     pinned: form.pinned.checked,
   };
   if (!payload.title || !payload.content) return;

@@ -243,8 +243,8 @@
 </select>
 </label>
 <label class="field">
-<span>Expires on (optional)</span>
-<input name="expiresOn" type="date"/>
+<span>Date of event (optional)</span>
+<input name="eventDate" type="date"/>
 </label>
 <label class="field field-checkbox">
 <input name="pinned" type="checkbox"/>
@@ -316,25 +316,15 @@
 <div class="search-wrap">
 <input autocomplete="off" id="searchInput" placeholder="Search a name…" type="text"/>
 </div>
-<div class="filter-pills" id="filterPills">
-<button class="pill active" data-filter="all">All</button>
-<button class="pill" data-filter="transport:OT">OT</button>
-<button class="pill" data-filter="house:winter">Winter</button>
-<button class="pill" data-filter="house:autumn">Autumn</button>
-<button class="pill" data-filter="house:spring">Spring</button>
-<button class="pill" data-filter="house:summer">Summer</button>
-<span aria-hidden="true" class="pill-divider"></span>
-<button class="pill" data-filter="language:hindi">Hindi</button>
-<button class="pill" data-filter="language:malayalam">Malayalam</button>
-<button class="pill" data-filter="language:french">French</button>
-<span aria-hidden="true" class="pill-divider"></span>
-<button class="pill" data-filter="islamic:islamic">Islamic Ed</button>
-<button class="pill" data-filter="islamic:value">Value Ed</button>
-<span aria-hidden="true" class="pill-divider"></span>
-<button class="pill" data-filter="creative:dance">Dance</button>
-<button class="pill" data-filter="creative:music">Music</button>
-<button class="pill" data-filter="creative:art">Art</button>
+<div class="filter-row" id="filterRow">
+<button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
+<button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
+<button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
+<button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
+<button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
+<button class="filter-clear" id="filterClear" hidden type="button">Clear</button>
 </div>
+<div class="filter-dropdown-host" id="filterDropdownHost"></div>
 </div>
 <p class="result-count" id="resultCount">30 students</p>
 <div class="student-grid" id="studentGrid"></div>
@@ -605,6 +595,12 @@
 </label>
 <button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
 </div>
+</div>
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
 </div>
 <script src="script.js" type="module"></script>
 <div class="lightbox-overlay" hidden="" id="lightboxOverlay">

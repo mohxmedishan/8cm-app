@@ -11,6 +11,20 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V11.1: The profile pill no longer flashes 'Sign in' on page reload — the last known account is cached and rendered instantly while Firebase restores the session.",
+      "Dark/Light toggle buttons in Settings are now properly styled (the previous CSS wasn't applying).",
+      "Light mode got a full vibrance pass — button gradients, house colors, and accent shades are all noticeably brighter than the previous muted versions.",
+      "Announcements no longer have an 'expires on' field. Instead there's an optional 'Date of event' — if you set it, the timetable highlights that day and the announcement shows under the grid with that date. If you don't set it, the announcement still shows in the list, but nothing on the timetable gets highlighted.",
+      "Fixed announcements highlighting the wrong day on the timetable (it was falling back to the created-at date; now it uses only the explicit event date).",
+      "The student directory filters are now a clean row of dropdown boxes — House, Language, Transport, Islamic/Value, Creative — instead of a long pile of pills. Pick from each, they combine, and there's a Clear button that appears when any filter is on.",
+      "Achievements now have an 'About' field — a student, the class, the school, or something custom. Student achievements show up on that student's profile.",
+      "New profile view: click any student in the directory (or 'View profile' in your own dropdown) to see all their info and their achievements in a popup.",
+      "Students who are monitors now get a small 'Monitor' badge on their card in the directory and on their profile.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V11: Light mode. Settings now has Dark / Light buttons at the top — switches the entire palette, not just the background, with every text, border, and hover state adjusted so nothing goes invisible.",
       "Announcements actually show up on the timetable now — the announcements listener was only opening on pages that had the announcement panel, so the timetable's list never had anything to work with. Now it opens on the timetable page too, and announcements match by day-of-week so a Tuesday posting stays on Tuesday.",
       "Two new student role fields: Islamic Education vs. Value Education, and Dance / Music / Art. Set them in the monitor panel, they show on the student cards, and there are filter pills for both — single-select within each group (like houses), combinable across groups.",

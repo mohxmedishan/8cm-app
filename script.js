@@ -4,6 +4,9 @@
 import { getStudentsSync, onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
+import { onAchievements } from "./achievements.js";
+let achievementsCache = [];
+onAchievements((list) => (achievementsCache = list));
 
 (function applyStoredAccentImmediately() {
   try {
@@ -41,15 +44,54 @@ function initStudentDirectory() {
   const grid = document.getElementById("studentGrid");
   const resultCount = document.getElementById("resultCount");
   const searchInput = document.getElementById("searchInput");
-  if (!grid || !resultCount || !searchInput) return;
+  const filterRow = document.getElementById("filterRow");
+  const dropdownHost = document.getElementById("filterDropdownHost");
+  const clearBtn = document.getElementById("filterClear");
+  if (!grid || !resultCount || !searchInput || !filterRow) return;
 
   let liveStudents = [];
-  let activeFilters = new Set();
   let searchTerm = "";
+  const filters = { house: "", language: "", transport: "", islamic: "", creative: "" };
+  let monitorUids = new Set();
+  const claimUids = new Map();
 
-  const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
+  const OPTIONS = {
+    house: [
+      { value: "", label: "All" }, { value: "winter", label: "Winter" },
+      { value: "autumn", label: "Autumn" }, { value: "spring", label: "Spring" },
+      { value: "summer", label: "Summer" },
+    ],
+    language: [
+      { value: "", label: "All" }, { value: "hindi", label: "Hindi" },
+      { value: "malayalam", label: "Malayalam" }, { value: "french", label: "French" },
+    ],
+    transport: [
+      { value: "", label: "All" }, { value: "OT", label: "Own transport" },
+      { value: "bus", label: "Bus" },
+    ],
+    islamic: [
+      { value: "", label: "All" }, { value: "islamic", label: "Islamic Education" },
+      { value: "value", label: "Value Education" },
+    ],
+    creative: [
+      { value: "", label: "All" }, { value: "dance", label: "Dance" },
+      { value: "music", label: "Music" }, { value: "art", label: "Art" },
+    ],
+  };
+
   const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
+  const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
   const rollLabel = (n) => String(n).padStart(2, "0");
+
+  function matchesFilters(s) {
+    if (filters.house && s.house !== filters.house) return false;
+    if (filters.language && (s.language || "").toLowerCase() !== filters.language) return false;
+    if (filters.transport === "OT" && s.transport !== "OT") return false;
+    if (filters.transport === "bus" && s.transport === "OT") return false;
+    if (filters.islamic && s.islamic !== filters.islamic) return false;
+    if (filters.creative && s.creative !== filters.creative) return false;
+    return true;
+  }
 
   function renderStudents(list) {
     grid.innerHTML = "";
@@ -58,11 +100,14 @@ function initStudentDirectory() {
       const card = document.createElement("div");
       card.className = "student-card";
       card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+      card.dataset.studentId = s.id;
+      const claimedUid = claimUids.get(s.id);
       card.innerHTML = `
         <div class="student-top">
           <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
           <span class="house-dot ${s.house}"></span>
           <span class="student-name">${s.name}</span>
+          ${claimedUid && monitorUids.has(claimedUid) ? `<span class="monitor-badge">Monitor</span>` : ""}
         </div>
         <div class="student-meta">
           <span>${houseLabel(s.house)}</span>
@@ -72,111 +117,157 @@ function initStudentDirectory() {
           ${s.creative ? `<span>${s.creative.charAt(0).toUpperCase() + s.creative.slice(1)}</span>` : ""}
         </div>
       `;
+      card.addEventListener("click", () => openProfile(s.id));
       grid.appendChild(card);
     });
     resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
   }
 
-  function matchesFilters(student) {
-    if (activeFilters.size === 0) return true;
-    return [...activeFilters].every((filter) => {
-      if (filter.startsWith("transport:")) return student.transport === filter.slice(10);
-      if (filter.startsWith("house:")) return student.house === filter.slice(6);
-      if (filter.startsWith("language:")) {
-        return (student.language || "").toLowerCase() === filter.slice(9);
-      }
-      if (filter.startsWith("islamic:")) return student.islamic === filter.slice(8);
-      if (filter.startsWith("creative:")) return student.creative === filter.slice(9);
-      return true;
-    });
-  }
-
   function applyFilters() {
     let list = liveStudents.filter(matchesFilters);
-    if (searchTerm.trim() !== "") {
+    if (searchTerm.trim()) {
       const q = searchTerm.trim().toLowerCase();
       list = list.filter((s) => s.name.toLowerCase().includes(q));
     }
     renderStudents(list);
+    const anyActive = Object.values(filters).some(Boolean) || searchTerm.trim();
+    if (clearBtn) clearBtn.hidden = !anyActive;
   }
 
-  function syncPillStates() {
-    document.querySelectorAll(".pill").forEach((pill) => {
-      const isAll = pill.dataset.filter === "all";
-      pill.classList.toggle(
-        "active",
-        isAll ? activeFilters.size === 0 : activeFilters.has(pill.dataset.filter)
-      );
-      if (pill.dataset.filter === "house:winter") pill.style.setProperty("--pill-house-color", "var(--house-winter)");
-      if (pill.dataset.filter === "house:autumn") pill.style.setProperty("--pill-house-color", "var(--house-autumn)");
-      if (pill.dataset.filter === "house:spring") pill.style.setProperty("--pill-house-color", "var(--house-spring)");
-      if (pill.dataset.filter === "house:summer") pill.style.setProperty("--pill-house-color", "var(--house-summer)");
+  function updateBoxLabel(key) {
+    const valEl = filterRow.querySelector(`[data-value-for="${key}"]`);
+    if (!valEl) return;
+    const opt = OPTIONS[key].find((o) => o.value === filters[key]);
+    valEl.textContent = opt ? opt.label : "All";
+    const box = filterRow.querySelector(`[data-filter-key="${key}"]`);
+    if (box) box.classList.toggle("is-active", !!filters[key]);
+  }
+
+  function closeDropdown() {
+    if (!dropdownHost) return;
+    dropdownHost.innerHTML = "";
+    filterRow.querySelectorAll(".filter-box").forEach((b) => b.classList.remove("open"));
+  }
+
+  function openDropdownFor(box) {
+    if (!dropdownHost) return;
+    const key = box.dataset.filterKey;
+    if (box.classList.contains("open")) { closeDropdown(); return; }
+    closeDropdown();
+    box.classList.add("open");
+    const rect = box.getBoundingClientRect();
+    dropdownHost.style.left = `${rect.left}px`;
+    dropdownHost.style.top = `${rect.bottom + 6}px`;
+    dropdownHost.style.minWidth = `${rect.width}px`;
+    dropdownHost.innerHTML = OPTIONS[key].map((o) => {
+      const active = filters[key] === o.value;
+      return `<button type="button" class="filter-option ${active ? "active" : ""}" data-value="${o.value}">${o.label}</button>`;
+    }).join("");
+    dropdownHost.querySelectorAll(".filter-option").forEach((opt) => {
+      opt.addEventListener("click", () => {
+        filters[key] = opt.dataset.value;
+        updateBoxLabel(key);
+        closeDropdown();
+        applyFilters();
+      });
     });
   }
 
-  function toggleFilter(filter) {
-    if (filter === "all") {
-      const had = activeFilters.size > 0;
-      activeFilters.clear();
-      if (had) playToggleOff();
-    } else if (filter.startsWith("house:")) {
-      const houseFilters = ["house:winter", "house:autumn", "house:spring", "house:summer"];
-      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
-      else { houseFilters.forEach((h) => activeFilters.delete(h)); activeFilters.add(filter); playToggleOn(); }
-    } else if (filter.startsWith("language:")) {
-      const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
-      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
-      else { languageFilters.forEach((l) => activeFilters.delete(l)); activeFilters.add(filter); playToggleOn(); }
-    } else if (filter.startsWith("islamic:")) {
-      const group = ["islamic:islamic", "islamic:value"];
-      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
-      else { group.forEach((f) => activeFilters.delete(f)); activeFilters.add(filter); playToggleOn(); }
-    } else if (filter.startsWith("creative:")) {
-      const group = ["creative:dance", "creative:music", "creative:art"];
-      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
-      else { group.forEach((f) => activeFilters.delete(f)); activeFilters.add(filter); playToggleOn(); }
-    } else if (activeFilters.has(filter)) {
-      activeFilters.delete(filter); playToggleOff();
-    } else {
-      activeFilters.add(filter); playToggleOn();
-    }
-    syncPillStates();
-    applyFilters();
-  }
-
-  function jumpToHouse(house) {
-    playNav();
-    activeFilters.clear();
-    activeFilters.add(`house:${house}`);
-    syncPillStates();
-    applyFilters();
-    document.getElementById("students").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  // Live: re-render whenever Firestore students resolve or get invalidated.
-  onStudents((list) => {
-    liveStudents = list;
-    applyFilters();
+  filterRow.querySelectorAll(".filter-box").forEach((box) => {
+    box.addEventListener("click", (e) => { e.stopPropagation(); openDropdownFor(box); });
   });
-
-  syncPillStates();
-
-  document.querySelectorAll(".pill").forEach((pill) => {
-    pill.addEventListener("click", () => toggleFilter(pill.dataset.filter));
+  document.addEventListener("click", (e) => {
+    if (!dropdownHost || !dropdownHost.contains(e.target)) closeDropdown();
   });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDropdown(); });
 
-  searchInput.addEventListener("input", (e) => {
-    searchTerm = e.target.value;
-    applyFilters();
-  });
-
-  document.querySelectorAll(".house-card, .bar-row").forEach((el) => {
-    const trigger = () => jumpToHouse(el.dataset.house);
-    el.addEventListener("click", trigger);
-    el.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); trigger(); }
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      Object.keys(filters).forEach((k) => (filters[k] = ""));
+      Object.keys(filters).forEach(updateBoxLabel);
+      searchInput.value = "";
+      searchTerm = "";
+      applyFilters();
     });
-  });
+  }
+
+  searchInput.addEventListener("input", (e) => { searchTerm = e.target.value; applyFilters(); });
+
+  onStudents((list) => { liveStudents = list; applyFilters(); });
+  Object.keys(filters).forEach(updateBoxLabel);
+
+  async function loadClaims() {
+    try {
+      const { db } = await import("./firebase-config.js");
+      const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const snap = await getDocs(collection(db, "claims"));
+      snap.forEach((d) => claimUids.set(d.id, d.data().uid));
+      window.__cmClaimUids = claimUids;
+    } catch {}
+  }
+  async function loadMonitorUids() {
+    try {
+      const { db } = await import("./firebase-config.js");
+      const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const snap = await getDoc(doc(db, "settings", "monitors"));
+      if (snap.exists()) monitorUids = new Set(Object.keys(snap.data().uids || {}));
+      window.__cmMonitorUids = monitorUids;
+    } catch {}
+  }
+  Promise.all([loadClaims(), loadMonitorUids()]).then(applyFilters);
+}
+
+export function openProfile(studentId) {
+  const overlay = document.getElementById("profileOverlay");
+  const body = document.getElementById("profileBody");
+  if (!overlay || !body) return;
+  const student = (window.__cmStudents || []).find((s) => s.id === studentId);
+  if (!student) return;
+  const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
+  const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
+  const claimMap = window.__cmClaimUids || new Map();
+  const monitorSet = window.__cmMonitorUids || new Set();
+  const claimedUid = claimMap.get(studentId);
+  const myAchievements = achievementsCache.filter((a) => a.studentId === studentId);
+  body.innerHTML = `
+    <div class="profile-header">
+      <span class="roll-badge">${String(student.rollNumber).padStart(2, "0")}</span>
+      <h3 class="profile-title">${student.name} ${claimedUid && monitorSet.has(claimedUid) ? `<span class="monitor-badge">Monitor</span>` : ""}</h3>
+      <div class="profile-pills">
+        <span class="profile-stat-pill house-${student.house}"><span class="house-dot ${student.house}"></span>${houseLabel(student.house)}</span>
+        ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
+        <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
+        ${student.islamic ? `<span class="profile-stat-pill">${student.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}</span>` : ""}
+        ${student.creative ? `<span class="profile-stat-pill">${student.creative.charAt(0).toUpperCase() + student.creative.slice(1)}</span>` : ""}
+      </div>
+    </div>
+    <h4 class="profile-section-title">Achievements</h4>
+    ${myAchievements.length ? myAchievements.map((a) => `
+      <div class="profile-achievement">
+        <span class="task-tag announcement">${a.category || "General"}</span>
+        <p class="profile-ach-title">${a.title}</p>
+        ${a.description ? `<p class="profile-ach-desc">${a.description}</p>` : ""}
+        ${a.date ? `<p class="profile-ach-date">${a.date}</p>` : ""}
+      </div>`).join("") : `<p class="tt-ann-empty">No achievements logged yet.</p>`}
+  `;
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add("open"));
+}
+function closeProfile() {
+  const overlay = document.getElementById("profileOverlay");
+  if (!overlay || overlay.hidden) return;
+  overlay.classList.remove("open");
+  setTimeout(() => (overlay.hidden = true), 200);
+}
+window.__cmOpenProfile = openProfile;
+onStudents((list) => { window.__cmStudents = list; });
+function initProfileModal() {
+  const overlay = document.getElementById("profileOverlay");
+  const closeBtn = document.getElementById("profileClose");
+  if (!overlay) return;
+  if (closeBtn) closeBtn.addEventListener("click", closeProfile);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeProfile(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeProfile(); });
 }
 
 // ============================================
@@ -389,6 +480,7 @@ function initTodayDate() {
 initSplash();
 initNav();
 initStudentDirectory();
+initProfileModal();
 initResources();
 initGalleryLightbox();
 initHeroChart();

@@ -31,6 +31,11 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+:root {
+  --accent-vibrant: var(--accent);
+  --accent-vibrant-2: var(--accent-strong);
+}
+
 /* ============================================
    V11 — Light theme
    Activated by setting data-theme="light" on <html>.
@@ -38,19 +43,25 @@
 html[data-theme="light"] {
   --bg: #f6f5f1;
   --bg-elevated: #ffffff;
-  --bg-elevated-2: #eeece6;
+  --bg-elevated-2: #efece6;
   --border: #d7d4cc;
   --border-soft: #e3e0d8;
   --text: #1c1c1a;
   --text-muted: #5c5b56;
   --text-faint: #8a8880;
   --accent-soft: rgba(107, 154, 143, 0.18);
-  --accent-strong: #4c7a70;
-  --danger: #a8453c;
-  --danger-soft: rgba(168, 69, 60, 0.12);
+  --accent-strong: #3b675e;
+  --accent-vibrant: #6b9a8f;
+  --accent-vibrant-2: #86b3a8;
+  --house-winter: #4d8fc4;
+  --house-autumn: #d9722c;
+  --house-spring: #6ba844;
+  --house-summer: #e5a623;
+  --danger: #b23b30;
+  --danger-soft: rgba(178, 59, 48, 0.12);
 }
 
-html[data-theme="light"] .grain { opacity: 0.02; }
+html[data-theme="light"] .grain { opacity: 0.015; }
 html[data-theme="light"] .error-toast {
   background: rgba(255, 255, 255, 0.96);
   color: var(--text);
@@ -384,14 +395,14 @@ h1, h2, h3 {
 /* Glassmorphism + glow accent, explicit dark text so it never washes
    out against the light accent fill (the white-on-white contrast bug). */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--accent-vibrant), var(--accent-vibrant-2));
   color: #0e1c18;
   border: 1px solid transparent;
   backdrop-filter: blur(6px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.18) inset, 0 6px 18px -10px rgba(107, 154, 143, 0.55);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  background: linear-gradient(135deg, var(--accent-vibrant-2), var(--accent-vibrant));
   color: #0e1c18;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 10px 24px -10px rgba(107, 154, 143, 0.75);
 }
@@ -1575,7 +1586,7 @@ h1, h2, h3 {
    (fixes the low-contrast ghost-button state)
    ============================================ */
 .btn-add-task {
-  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  background: linear-gradient(135deg, var(--accent-vibrant), var(--accent-vibrant-2));
   color: #0e1c18;
   border: 1px solid transparent;
   font-weight: 500;
@@ -1583,7 +1594,7 @@ h1, h2, h3 {
   transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
 }
 .btn-add-task:hover {
-  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+  background: linear-gradient(135deg, var(--accent-vibrant-2), var(--accent-vibrant));
   border-color: var(--accent-strong);
   transform: translateY(-1px) scale(1.02);
 }
@@ -2673,3 +2684,108 @@ a.tt-detail-hw:hover {
 .announcement-row .task-monitor-actions {
   margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-soft);
 }
+
+
+/* ============================================
+   V11.1 — theme mode buttons (forceful)
+   ============================================ */
+.theme-mode-row {
+  display: flex !important;
+  gap: 4px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  padding: 4px;
+  margin: 18px 0 14px;
+}
+.theme-mode-btn {
+  all: unset;
+  flex: 1;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 8px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.theme-mode-btn:hover { color: var(--text); }
+.theme-mode-btn.active {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+/* ============================================
+   V11.1 — dropdown filter row
+   ============================================ */
+.filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filter-box {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
+  padding: 8px 14px; background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius-s); color: var(--text); font-family: var(--font-body);
+  cursor: pointer; transition: border-color .2s var(--ease), background .2s var(--ease); min-width: 110px;
+}
+.filter-box:hover,.filter-box.open,.filter-box.is-active { border-color: var(--accent); }
+.filter-box.is-active .filter-box-value { color: var(--accent-strong); font-weight: 500; }
+.filter-box-label { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); }
+.filter-box-value { font-size: .88rem; color: var(--text-muted); }
+.filter-clear {
+  align-self: stretch; padding: 0 14px; background: none; border: 1px dashed var(--border);
+  border-radius: var(--radius-s); color: var(--text-faint); font-family: var(--font-body); font-size: .8rem; cursor: pointer;
+}
+.filter-clear:hover { border-color: var(--danger); color: var(--danger); }
+.filter-dropdown-host {
+  position: fixed; z-index: 400; background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--radius-m); padding: 6px; box-shadow: 0 12px 32px -12px rgba(0,0,0,.4);
+  display: flex; flex-direction: column;
+}
+.filter-dropdown-host:empty { display: none; }
+.filter-option {
+  background: none; border: none; text-align: left; padding: 8px 12px; border-radius: var(--radius-s);
+  color: var(--text-muted); font-family: var(--font-body); font-size: .85rem; cursor: pointer; white-space: nowrap;
+}
+.filter-option:hover { background: var(--bg-elevated-2); color: var(--text); }
+.filter-option.active { background: var(--accent-soft); color: var(--accent-strong); }
+
+/* ============================================
+   V11.1 — profile modal + monitor badge
+   ============================================ */
+.profile-card { max-width: 480px; max-height: 82vh; overflow-y: auto; }
+.profile-header { margin-bottom: 20px; }
+.profile-title { font-family: var(--font-display); font-size: 1.4rem; margin: 10px 0 12px; }
+.profile-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.profile-section-title {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 500; margin: 20px 0 12px;
+  padding-top: 16px; border-top: 1px solid var(--border-soft);
+}
+.profile-achievement { padding: 12px 14px; background: var(--bg-elevated-2); border-radius: var(--radius-s); margin-bottom: 8px; }
+.profile-ach-title { font-weight: 500; margin: 6px 0 2px; font-size: .92rem; }
+.profile-ach-desc { color: var(--text-muted); font-size: .83rem; margin: 0; }
+.profile-ach-date { color: var(--text-faint); font-size: .75rem; margin: 4px 0 0; }
+.monitor-badge {
+  display: inline-block; font-size: .6rem; text-transform: uppercase; letter-spacing: .05em;
+  padding: 1px 6px; margin-left: 6px; border-radius: 100px; background: var(--accent-soft);
+  color: var(--accent-strong); border: 1px solid var(--accent); vertical-align: middle;
+}
+
+html[data-theme="light"] .nav { background: rgba(246, 245, 241, 0.75); }
+html[data-theme="light"] .nav.scrolled { background: rgba(246, 245, 241, 0.94); }
+html[data-theme="light"] .grain { opacity: 0.015; }
+html[data-theme="light"] .error-toast { background: rgba(255, 255, 255, 0.96); color: var(--text); }
+html[data-theme="light"] .loading-overlay { background: rgba(246, 245, 241, 0.55); }
+html[data-theme="light"] .loading-card { background: rgba(255, 255, 255, 0.88); }
+
+.modal-overlay#profileOverlay {
+  opacity: 0;
+  transition: opacity .2s var(--ease);
+}
+.modal-overlay#profileOverlay.open { opacity: 1; }
+.modal-overlay#profileOverlay .profile-card {
+  transform: translateY(8px);
+  transition: transform .2s var(--ease);
+}
+.modal-overlay#profileOverlay.open .profile-card { transform: translateY(0); }

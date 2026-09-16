@@ -187,7 +187,7 @@
 <option value="important">Important</option>
 </select>
 </label>
-<label class="field"><span>Expires on (optional)</span><input name="expiresOn" type="date"/></label>
+<label class="field"><span>Date of event (optional)</span><input name="eventDate" type="date"/></label>
 <label class="field field-checkbox"><input name="pinned" type="checkbox"/><span>Pin to top</span></label>
 </div>
 <p class="auth-error" hidden="" id="announcementFormError"></p>
@@ -319,7 +319,16 @@
 </div>
 <form class="task-form" hidden="" id="achievementForm">
 <div class="task-form-grid">
-<label class="field field-wide"><span>Student</span><select name="studentId" required=""></select></label>
+<label class="field field-wide"><span>About</span>
+<select name="about">
+<option value="student">A student</option>
+<option value="class">The whole class</option>
+<option value="school">The school</option>
+<option value="other">Something else</option>
+</select>
+</label>
+<label class="field field-wide"><span>Student</span><select name="studentId"></select></label>
+<label class="field field-wide" hidden><span>Label</span><input type="text" name="aboutLabel" placeholder="e.g. Inter-house quiz"></label>
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Won inter-school quiz" required="" type="text"/></label>
 <label class="field field-wide"><span>Description (optional)</span><input name="description" type="text"/></label>
 <label class="field"><span>Category</span>
@@ -450,6 +459,12 @@ real values.
 <label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
 <button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
 </div>
+</div>
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
 </div>
 <script src="script.js" type="module"></script>
 </body>
