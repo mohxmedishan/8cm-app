@@ -67,6 +67,7 @@ function initStudentDirectory() {
   const claimUids = new Map();       // studentId → uid
   let monitorUids = new Set();
   let currentAuthUid = null;
+  let currentAuthClaimedStudentId = null;
   let currentAuthIsMonitor = false;
 
   function isMonitorStudent(studentId) {
@@ -107,6 +108,7 @@ function initStudentDirectory() {
   import("./auth.js").then(({ subscribeAuth }) => {
     subscribeAuth((state) => {
       currentAuthUid = state.user ? state.user.uid : null;
+      currentAuthClaimedStudentId = state.profile?.claimedStudentId || null;
       currentAuthIsMonitor = !!state.monitor;
       applyFilters();
     });
@@ -175,7 +177,11 @@ function initStudentDirectory() {
 
       const isMonitor = isMonitorStudent(s.id);
       const claimed = claimUids.get(s.id);
-      const avatarId = claimed ? avatarAPI.getAvatarForUid(claimed) : null;
+      // The signed-in user's own profile already knows its claimed student ID.
+      // Use that as a fallback when the public claims cache is still loading or
+      // temporarily unavailable, so the student card matches the navbar avatar.
+      const avatarUid = claimed || (s.id === currentAuthClaimedStudentId ? currentAuthUid : null);
+      const avatarId = avatarUid ? avatarAPI.getAvatarForUid(avatarUid) : null;
       const avatarHtml = avatarAPI.avatarMarkup(avatarId, s.name, 44);
 
       card.innerHTML = `
