@@ -53,9 +53,17 @@ function monitorRef(uid) {
 // monitors added dynamically. Firestore rules are what actually
 // enforce this server-side — this function only controls what
 // buttons/panels render.
+function emailMatchesAllowlist(user) {
+  const candidates = [user.email, user.providerData?.[0]?.email]
+    .filter(Boolean)
+    .map((e) => e.toLowerCase().trim());
+  const allow = MONITOR_EMAILS.map((e) => e.toLowerCase().trim());
+  return candidates.some((e) => allow.includes(e));
+}
+
 export async function computeIsMonitor(user) {
   if (!user) return false;
-  if (user.email && MONITOR_EMAILS.includes(user.email)) return true;
+  if (emailMatchesAllowlist(user)) return true;
   try {
     const snap = await getDoc(monitorRef(user.uid));
     return snap.exists();
