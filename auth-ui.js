@@ -481,15 +481,6 @@ function renderAuthSlot() {
     item.classList.remove("open");
     signOutUser();
   });
-}on.href = "manage.html";
-    });
-  }
-
-  $("signOutBtn").addEventListener("click", () => {
-    playClose();
-    signOutUser();
-    item.classList.remove("open");
-  });
 }
 
 document.addEventListener("click", (e) => {
