@@ -52,36 +52,89 @@ function initStudentDirectory() {
   let liveStudents = [];
   let searchTerm = "";
   const filters = { house: "", language: "", transport: "", islamic: "", creative: "" };
-  let monitorUids = new Set();
+
   const claimUids = new Map();
+  let monitorUids = new Set();
+  let currentAuthUid = null;
+  let currentAuthIsMonitor = false;
+
+  function isMonitorStudent(studentId) {
+    const claimed = claimUids.get(studentId);
+    if (!claimed) return false;
+    if (monitorUids.has(claimed)) return true;
+    return currentAuthIsMonitor && claimed === currentAuthUid;
+  }
+
+  async function loadBadgeData() {
+    try {
+      const { db } = await import("./firebase-config.js");
+      const { doc, getDoc, collection, getDocs } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      );
+      const [claimsSnap, monitorsSnap] = await Promise.all([
+        getDocs(collection(db, "claims")),
+        getDoc(doc(db, "settings", "monitors")),
+      ]);
+      claimUids.clear();
+      claimsSnap.forEach((d) => claimUids.set(d.id, d.data().uid));
+      monitorUids = monitorsSnap.exists()
+        ? new Set(Object.keys(monitorsSnap.data().uids || {}))
+        : new Set();
+      window.__cmClaimUids = claimUids;
+      window.__cmMonitorUids = monitorUids;
+      applyFilters();
+    } catch (err) {
+      console.error("Failed to load badge data:", err);
+    }
+  }
+
+  import("./auth.js").then(({ subscribeAuth }) => {
+    subscribeAuth((state) => {
+      currentAuthUid = state.user ? state.user.uid : null;
+      currentAuthIsMonitor = !!state.monitor;
+      applyFilters();
+    });
+  });
 
   const OPTIONS = {
     house: [
-      { value: "", label: "All" }, { value: "winter", label: "Winter" },
-      { value: "autumn", label: "Autumn" }, { value: "spring", label: "Spring" },
+      { value: "", label: "All" },
+      { value: "winter", label: "Winter" },
+      { value: "autumn", label: "Autumn" },
+      { value: "spring", label: "Spring" },
       { value: "summer", label: "Summer" },
     ],
     language: [
-      { value: "", label: "All" }, { value: "hindi", label: "Hindi" },
-      { value: "malayalam", label: "Malayalam" }, { value: "french", label: "French" },
+      { value: "", label: "All" },
+      { value: "hindi", label: "Hindi" },
+      { value: "malayalam", label: "Malayalam" },
+      { value: "french", label: "French" },
     ],
     transport: [
-      { value: "", label: "All" }, { value: "OT", label: "Own transport" },
+      { value: "", label: "All" },
+      { value: "OT", label: "Own transport" },
       { value: "bus", label: "Bus" },
     ],
     islamic: [
-      { value: "", label: "All" }, { value: "islamic", label: "Islamic Education" },
+      { value: "", label: "All" },
+      { value: "islamic", label: "Islamic Education" },
       { value: "value", label: "Value Education" },
     ],
     creative: [
-      { value: "", label: "All" }, { value: "dance", label: "Dance" },
-      { value: "music", label: "Music" }, { value: "art", label: "Art" },
+      { value: "", label: "All" },
+      { value: "dance", label: "Dance" },
+      { value: "music", label: "Music" },
+      { value: "art", label: "Art" },
     ],
   };
 
   const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
   const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
   const rollLabel = (n) => String(n).padStart(2, "0");
+  const escapeHtml = (v) =>
+    String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
 
   function matchesFilters(s) {
     if (filters.house && s.house !== filters.house) return false;
@@ -101,23 +154,31 @@ function initStudentDirectory() {
       card.className = "student-card";
       card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
       card.dataset.studentId = s.id;
-      const claimedUid = claimUids.get(s.id);
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      const isMonitor = isMonitorStudent(s.id);
       card.innerHTML = `
         <div class="student-top">
           <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
-          <span class="house-dot ${s.house}"></span>
-          <span class="student-name">${s.name}</span>
-          ${claimedUid && monitorUids.has(claimedUid) ? `<span class="monitor-badge">Monitor</span>` : ""}
+          <span class="house-dot ${escapeHtml(s.house)}"></span>
+          <span class="student-name">${escapeHtml(s.name)}</span>
+          ${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}
         </div>
         <div class="student-meta">
-          <span>${houseLabel(s.house)}</span>
-          <span>${s.language || "—"}</span>
-          <span>${transportLabel(s.transport)}</span>
+          <span>${escapeHtml(houseLabel(s.house))}</span>
+          <span>${escapeHtml(s.language || "—")}</span>
+          <span>${escapeHtml(transportLabel(s.transport))}</span>
           ${s.islamic ? `<span>${s.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}</span>` : ""}
           ${s.creative ? `<span>${s.creative.charAt(0).toUpperCase() + s.creative.slice(1)}</span>` : ""}
         </div>
       `;
-      card.addEventListener("click", () => openProfile(s.id));
+      card.addEventListener("click", () => window.__cmOpenProfile?.(s.id));
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          window.__cmOpenProfile?.(s.id);
+        }
+      });
       grid.appendChild(card);
     });
     resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
@@ -144,13 +205,11 @@ function initStudentDirectory() {
   }
 
   function closeDropdown() {
-    if (!dropdownHost) return;
     dropdownHost.innerHTML = "";
     filterRow.querySelectorAll(".filter-box").forEach((b) => b.classList.remove("open"));
   }
 
   function openDropdownFor(box) {
-    if (!dropdownHost) return;
     const key = box.dataset.filterKey;
     if (box.classList.contains("open")) { closeDropdown(); return; }
     closeDropdown();
@@ -159,10 +218,9 @@ function initStudentDirectory() {
     dropdownHost.style.left = `${rect.left}px`;
     dropdownHost.style.top = `${rect.bottom + 6}px`;
     dropdownHost.style.minWidth = `${rect.width}px`;
-    dropdownHost.innerHTML = OPTIONS[key].map((o) => {
-      const active = filters[key] === o.value;
-      return `<button type="button" class="filter-option ${active ? "active" : ""}" data-value="${o.value}">${o.label}</button>`;
-    }).join("");
+    dropdownHost.innerHTML = OPTIONS[key]
+      .map((o) => `<button type="button" class="filter-option ${filters[key] === o.value ? "active" : ""}" data-value="${o.value}">${o.label}</button>`)
+      .join("");
     dropdownHost.querySelectorAll(".filter-option").forEach((opt) => {
       opt.addEventListener("click", () => {
         filters[key] = opt.dataset.value;
@@ -177,7 +235,7 @@ function initStudentDirectory() {
     box.addEventListener("click", (e) => { e.stopPropagation(); openDropdownFor(box); });
   });
   document.addEventListener("click", (e) => {
-    if (!dropdownHost || !dropdownHost.contains(e.target)) closeDropdown();
+    if (!dropdownHost.contains(e.target)) closeDropdown();
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDropdown(); });
 
@@ -192,30 +250,42 @@ function initStudentDirectory() {
   }
 
   searchInput.addEventListener("input", (e) => { searchTerm = e.target.value; applyFilters(); });
-
   onStudents((list) => { liveStudents = list; applyFilters(); });
   Object.keys(filters).forEach(updateBoxLabel);
-
-  async function loadClaims() {
-    try {
-      const { db } = await import("./firebase-config.js");
-      const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-      const snap = await getDocs(collection(db, "claims"));
-      snap.forEach((d) => claimUids.set(d.id, d.data().uid));
-      window.__cmClaimUids = claimUids;
-    } catch {}
-  }
-  async function loadMonitorUids() {
-    try {
-      const { db } = await import("./firebase-config.js");
-      const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-      const snap = await getDoc(doc(db, "settings", "monitors"));
-      if (snap.exists()) monitorUids = new Set(Object.keys(snap.data().uids || {}));
-      window.__cmMonitorUids = monitorUids;
-    } catch {}
-  }
-  Promise.all([loadClaims(), loadMonitorUids()]).then(applyFilters);
+  loadBadgeData();
 }
+
+let __claimCache = null;
+let __monitorCache = null;
+
+async function __refreshBadgeCaches() {
+  try {
+    const { db } = await import("./firebase-config.js");
+    const { doc, getDoc, collection, getDocs } = await import(
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    );
+    const [claimsSnap, monitorsSnap] = await Promise.all([
+      getDocs(collection(db, "claims")),
+      getDoc(doc(db, "settings", "monitors")),
+    ]);
+    __claimCache = new Map();
+    claimsSnap.forEach((d) => __claimCache.set(d.id, d.data().uid));
+    __monitorCache = monitorsSnap.exists()
+      ? new Set(Object.keys(monitorsSnap.data().uids || {}))
+      : new Set();
+    window.__cmClaimUids = __claimCache;
+    window.__cmMonitorUids = __monitorCache;
+  } catch (err) {
+    console.error("Failed to refresh profile badge data:", err);
+  }
+}
+
+window.__cmIsMonitorStudent = (studentId) => {
+  const claimed = __claimCache?.get(studentId);
+  return !!claimed && !!__monitorCache?.has(claimed);
+};
+
+__refreshBadgeCaches();
 
 export function openProfile(studentId) {
   const overlay = document.getElementById("profileOverlay");
@@ -225,8 +295,8 @@ export function openProfile(studentId) {
   if (!student) return;
   const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
   const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
-  const claimMap = window.__cmClaimUids || new Map();
-  const monitorSet = window.__cmMonitorUids || new Set();
+  const claimMap = window.__cmClaimUids || __claimCache || new Map();
+  const monitorSet = window.__cmMonitorUids || __monitorCache || new Set();
   const claimedUid = claimMap.get(studentId);
   const myAchievements = achievementsCache.filter((a) => a.studentId === studentId);
   body.innerHTML = `

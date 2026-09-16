@@ -11,6 +11,16 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V11.2: Light-mode accents are now genuinely brighter and more saturated while keeping a darker readable shade for text.",
+      "Gallery and lightbox captions are forced white over image gradients so they remain readable in light mode.",
+      "Student cards now clearly behave like clickable profiles with pointer, hover lift, press, and keyboard focus states.",
+      "Monitor badges now follow the student's current claim instead of being tied to a stale email, so switching students moves the badge with the claim.",
+      "Light-mode pills, inputs, navigation, loading overlays, toasts, and raised panels received a contrast and polish pass.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V11.1: The profile pill no longer flashes 'Sign in' on page reload — the last known account is cached and rendered instantly while Firebase restores the session.",
       "Dark/Light toggle buttons in Settings are now properly styled (the previous CSS wasn't applying).",
       "Light mode got a full vibrance pass — button gradients, house colors, and accent shades are all noticeably brighter than the previous muted versions.",
