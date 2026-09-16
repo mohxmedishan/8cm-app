@@ -1,64 +1,35 @@
 // ============================================
 // 8CM — Student management (monitor-only UI)
-// ------------------------------------------------
-// V10.1 changes:
-//   · Deactivation now requires typing the student's name (GitHub-style)
-//     so a stray ✕ click can't hide the whole roster.
-//   · Inactive students get a ↺ reactivate button instead of a ✕.
-//   · Release-claim action kept, still monitor-only, still logged.
 // ============================================
 import {
-  doc,
-  setDoc,
-  deleteDoc,
-  collection,
-  getDocs,
+  doc, setDoc, deleteDoc, collection, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
 import { loadStudents, onStudents, invalidateStudentsCache } from "./students.js";
 import { logAction } from "./audit.js";
-import {
-  playOpen,
-  playClose,
-  playSuccess,
-  playError,
-  playDelete,
-} from "./sound.js";
+import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
-
 let isCurrentMonitor = false;
 let editingId = null;
 let currentList = [];
 let claimsByStudent = new Map();
 let claimsLoaded = false;
 
-// ------------------------------------------------
-// Helpers
-// ------------------------------------------------
 function newStudentId() {
   return `student-${Date.now().toString(36)}`;
 }
-
 function transportLabel(t) {
   if (!t) return "—";
   return t === "OT" ? "Own transport" : `Bus ${t}`;
 }
-
 function escapeHtml(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
   })[c]);
 }
 
-// ------------------------------------------------
-// Claims (who has claimed which student)
-// ------------------------------------------------
 async function loadClaimsForList() {
   try {
     const snap = await getDocs(collection(db, "claims"));
@@ -76,13 +47,9 @@ async function loadClaimsForList() {
   }
 }
 
-// ------------------------------------------------
-// Render
-// ------------------------------------------------
 function render() {
   const list = $("studentManageList");
   if (!list) return;
-
   if (!isCurrentMonitor) {
     list.innerHTML = `<p class="task-empty">Only monitors can manage students.</p>`;
     return;
@@ -91,7 +58,6 @@ function render() {
     list.innerHTML = `<p class="task-empty">No students loaded yet.</p>`;
     return;
   }
-
   list.innerHTML = "";
   currentList.forEach((s) => {
     const claimed = claimsByStudent.has(s.id);
@@ -101,244 +67,108 @@ function render() {
     row.innerHTML = `
       <span class="roll-badge">${escapeHtml(String(s.rollNumber || "?").padStart(2, "0"))}</span>
       <div class="manage-row-body">
-        <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ""} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ""}</p>
+        <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ''} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ''}</p>
         <p class="task-detail"><span class="house-dot ${escapeHtml(s.house)}"></span> ${escapeHtml(s.house)} · ${escapeHtml(s.language || "—")} · ${escapeHtml(transportLabel(s.transport))}</p>
       </div>
       <div class="task-monitor-actions">
-        ${claimed ? `<button class="task-icon-btn" data-action="release" data-id="${escapeHtml(s.id)}" title="Release this student's claim">⌫</button>` : ""}
+        ${claimed ? `<button class="task-icon-btn" data-action="release" data-id="${escapeHtml(s.id)}" title="Release this student's claim">⌫</button>` : ''}
         <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(s.id)}" aria-label="Edit student">✎</button>
-        ${
-          inactive
-            ? `<button class="task-icon-btn" data-action="reactivate" data-id="${escapeHtml(s.id)}" title="Reactivate this student">↺</button>`
-            : `<button class="task-icon-btn task-icon-btn-danger" data-action="deactivate" data-id="${escapeHtml(s.id)}" aria-label="Deactivate student">✕</button>`
-        }
+        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(s.id)}" aria-label="Deactivate student">✕</button>
       </div>`;
     list.appendChild(row);
   });
-
-  list.querySelectorAll('[data-action="edit"]').forEach((btn) =>
-    btn.addEventListener("click", () => openForm(currentList.find((x) => x.id === btn.dataset.id)))
-  );
-  list.querySelectorAll('[data-action="deactivate"]').forEach((btn) =>
-    btn.addEventListener("click", () => handleDeactivate(btn.dataset.id))
-  );
-  list.querySelectorAll('[data-action="reactivate"]').forEach((btn) =>
-    btn.addEventListener("click", () => handleReactivate(btn.dataset.id))
-  );
-  list.querySelectorAll('[data-action="release"]').forEach((btn) =>
-    btn.addEventListener("click", () => handleReleaseClaim(btn.dataset.id))
-  );
+  list.querySelectorAll('[data-action="edit"]').forEach((btn) => btn.addEventListener("click", () => openForm(currentList.find((x) => x.id === btn.dataset.id))));
+  list.querySelectorAll('[data-action="delete"]').forEach((btn) => btn.addEventListener("click", () => handleDeactivate(btn.dataset.id)));
+  list.querySelectorAll('[data-action="release"]').forEach((btn) => btn.addEventListener("click", () => handleReleaseClaim(btn.dataset.id)));
 }
 
-// ------------------------------------------------
-// Form (add/edit)
-// ------------------------------------------------
 function openForm(student) {
   const form = $("studentForm");
   if (!form) return;
-
   editingId = student ? student.id : null;
   form.name.value = student?.name || "";
   form.house.value = student?.house || "autumn";
   form.language.value = student?.language || "";
   form.transport.value = student?.transport || "";
-  form.rollNumber.value =
-    student?.rollNumber ||
-    currentList.reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1;
+  form.rollNumber.value = student?.rollNumber || (currentList.reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1);
   form.active.checked = student ? student.active !== false : true;
-
   setFormError(null);
   form.hidden = false;
-  form.querySelector('button[type="submit"]').textContent = student
-    ? "Save changes"
-    : "Add student";
+  form.querySelector('button[type="submit"]').textContent = student ? "Save changes" : "Add student";
   playOpen();
   form.name.focus();
 }
-
 function closeForm({ silent = false } = {}) {
   const form = $("studentForm");
   if (!form) return;
-  form.reset();
-  form.hidden = true;
-  editingId = null;
-  setFormError(null);
+  form.reset(); form.hidden = true; editingId = null; setFormError(null);
   if (!silent) playClose();
 }
-
 function setFormError(message) {
   const el = $("studentFormError");
   if (!el) return;
-  el.hidden = !message;
-  el.textContent = message || "";
+  el.hidden = !message; el.textContent = message || "";
 }
 
-// ------------------------------------------------
-// Submit (add / edit)
-// ------------------------------------------------
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
   const payload = {
-    name: form.name.value.trim(),
-    house: form.house.value,
-    language: form.language.value || null,
-    transport: form.transport.value.trim(),
-    rollNumber: parseInt(form.rollNumber.value, 10) || 0,
-    active: form.active.checked,
+    name: form.name.value.trim(), house: form.house.value,
+    language: form.language.value || null, transport: form.transport.value.trim(),
+    rollNumber: parseInt(form.rollNumber.value, 10) || 0, active: form.active.checked,
   };
   if (!payload.name || !payload.rollNumber) return;
-
   setFormError(null);
-  const btn = form.querySelector('button[type="submit"]');
-  const original = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Saving…";
-
+  const btn = form.querySelector('button[type="submit"]'); const original = btn.textContent;
+  btn.disabled = true; btn.textContent = "Saving…";
   try {
     if (editingId) {
       await setDoc(doc(db, "students", editingId), { id: editingId, ...payload }, { merge: true });
-      await logAction("updated", {
-        resourceType: "student",
-        resourceId: editingId,
-        summary: `Updated student: ${payload.name}`,
-      });
+      await logAction("updated", { resourceType: "student", resourceId: editingId, summary: `Updated student: ${payload.name}` });
     } else {
       const id = newStudentId();
       await setDoc(doc(db, "students", id), { id, ...payload });
-      await logAction("created", {
-        resourceType: "student",
-        resourceId: id,
-        summary: `Added student: ${payload.name}`,
-      });
+      await logAction("created", { resourceType: "student", resourceId: id, summary: `Added student: ${payload.name}` });
     }
-    playSuccess();
-    closeForm({ silent: true });
-    await invalidateStudentsCache();
-    claimsLoaded = false;
+    playSuccess(); closeForm({ silent: true }); await invalidateStudentsCache(); claimsLoaded = false;
   } catch (err) {
-    console.error("Save failed:", err);
-    playError();
-    setFormError("Couldn't save that — check your monitor access and try again.");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = original;
-  }
+    console.error("Save failed:", err); playError(); setFormError("Couldn't save that — check your monitor access and try again.");
+  } finally { btn.disabled = false; btn.textContent = original; }
 }
-
-// ------------------------------------------------
-// Deactivate (name-confirmation gated)
-// ------------------------------------------------
 async function handleDeactivate(id) {
-  const student = currentList.find((s) => s.id === id);
-  if (!student) return;
-
-  const typed = prompt(
-    `Deactivate ${student.name}?\n\nThey'll disappear from the directory and the "Pick your name" list, but their data and any identity claim stay on file — you can reactivate them from this same panel any time.\n\nType their name exactly to confirm:`
-  );
-  if (typed === null) return; // cancelled
-  if (typed.trim() !== student.name) {
-    alert("Name didn't match. Nothing was changed.");
-    return;
-  }
-
+  const student = currentList.find((s) => s.id === id); if (!student) return;
+  if (!confirm(`Deactivate ${student.name}? They'll disappear from the directory. Their claim (if any) stays.`)) return;
   try {
     await setDoc(doc(db, "students", id), { active: false }, { merge: true });
-    await logAction("deactivated", {
-      resourceType: "student",
-      resourceId: id,
-      summary: `Deactivated student: ${student.name}`,
-    });
-    playDelete();
-    await invalidateStudentsCache();
-  } catch (err) {
-    console.error("Deactivate failed:", err);
-    playError();
-    alert("Couldn't deactivate that — check your monitor access.");
-  }
+    await logAction("deactivated", { resourceType: "student", resourceId: id, summary: `Deactivated student: ${student.name}` });
+    playDelete(); await invalidateStudentsCache();
+  } catch (err) { console.error("Deactivate failed:", err); playError(); alert("Couldn't deactivate that — check your monitor access."); }
 }
-
-// ------------------------------------------------
-// Reactivate
-// ------------------------------------------------
-async function handleReactivate(id) {
-  const student = currentList.find((s) => s.id === id);
-  if (!student) return;
-
-  try {
-    await setDoc(doc(db, "students", id), { active: true }, { merge: true });
-    await logAction("reactivated", {
-      resourceType: "student",
-      resourceId: id,
-      summary: `Reactivated student: ${student.name}`,
-    });
-    playSuccess();
-    await invalidateStudentsCache();
-  } catch (err) {
-    console.error("Reactivate failed:", err);
-    playError();
-    alert("Couldn't reactivate that — check your monitor access.");
-  }
-}
-
-// ------------------------------------------------
-// Release identity claim
-// ------------------------------------------------
 async function handleReleaseClaim(studentId) {
-  const student = currentList.find((s) => s.id === studentId);
-  if (!student) return;
-
-  if (
-    !confirm(
-      `Release the identity claim on ${student.name}?\n\nThe account that claimed this student will lose their link and be asked to pick a name again on next sign-in.`
-    )
-  )
-    return;
-
+  const student = currentList.find((s) => s.id === studentId); if (!student) return;
+  if (!confirm(`Release the identity claim on ${student.name}? The account that claimed this student will lose their link.`)) return;
   try {
     await deleteDoc(doc(db, "claims", studentId));
-    await logAction("released-claim", {
-      resourceType: "claim",
-      resourceId: studentId,
-      summary: `Released identity claim on ${student.name}`,
-    });
-    playDelete();
-    claimsByStudent.delete(studentId);
-    render();
-  } catch (err) {
-    console.error("Release claim failed:", err);
-    playError();
-    alert("Couldn't release that claim — check your monitor access.");
-  }
+    await logAction("released-claim", { resourceType: "claim", resourceId: studentId, summary: `Released identity claim on ${student.name}` });
+    playDelete(); claimsByStudent.delete(studentId); render();
+  } catch (err) { console.error("Release claim failed:", err); playError(); alert("Couldn't release that claim — check your monitor access."); }
 }
 
-// ------------------------------------------------
-// Boot
-// ------------------------------------------------
 export function initStudentManagement() {
   if (!$("studentManageList")) return;
-
-  onStudents((list) => {
-    currentList = list;
-    render();
-  });
+  onStudents((list) => { currentList = list; render(); });
   loadStudents().catch(() => {});
-
   subscribeAuth(async ({ monitor }) => {
     isCurrentMonitor = monitor;
-    const addBtn = $("addStudentBtn");
-    if (addBtn) addBtn.hidden = !monitor;
+    const addBtn = $("addStudentBtn"); if (addBtn) addBtn.hidden = !monitor;
     if (monitor && !claimsLoaded) await loadClaimsForList();
     render();
   });
-
-  const addBtn = $("addStudentBtn");
-  if (addBtn) addBtn.addEventListener("click", () => openForm(null));
-
+  const addBtn = $("addStudentBtn"); if (addBtn) addBtn.addEventListener("click", () => openForm(null));
   const form = $("studentForm");
   if (form) {
     form.addEventListener("submit", handleSubmit);
-    const cancelBtn = form.querySelector('[data-action="cancel"]');
-    if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());
+    const cancelBtn = form.querySelector('[data-action="cancel"]'); if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());
   }
 }

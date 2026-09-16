@@ -392,6 +392,7 @@ const OPTIONAL_MODULES = [
   ["announcements", "./announcements.js", "initAnnouncements"],
   ["events", "./events.js", "initEvents"],
   ["timetable", "./timetable-live.js", "initTimetableLive"],
+  ["timetable announcements", "./timetable-announcements.js", "initTimetableAnnouncements"],
   ["dashboard", "./dashboard.js", "initDashboard"],
   ["student management", "./student-manage.js", "initStudentManagement"],
   ["gallery", "./gallery.js", "initGallery"],

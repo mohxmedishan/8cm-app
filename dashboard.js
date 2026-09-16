@@ -49,7 +49,7 @@ function renderTeasers() {
   if (event) {
     const diff = daysUntil(event.date);
     const when = diff === 0 ? "today" : diff === 1 ? "tomorrow" : `in ${diff}d`;
-    items.push(`<a class="my-day-teaser" href="events.html"><span class="my-day-teaser-label">Next event</span><span class="my-day-teaser-body">${escapeHtml(event.title)} — ${when}</span></a>`);
+    items.push(`<a class="my-day-teaser" href="#events"><span class="my-day-teaser-label">Next event</span><span class="my-day-teaser-body">${escapeHtml(event.title)} — ${when}</span></a>`);
   }
   el.innerHTML = items.length ? items.join("") : `<p class="my-day-teaser-empty">Nothing new right now.</p>`;
 }

@@ -2568,3 +2568,65 @@ a.tt-detail-hw:hover {
 
 /* Tint the timetable day-nav label when it's not "today" */
 .tt-selected-day { min-width: 160px; }
+
+
+/* ============================================
+   V10.2 — Timetable announcements
+   ============================================ */
+.tt-day-label.tt-day-has-announcement {
+  background: rgba(217, 164, 65, 0.14);
+  box-shadow: inset 3px 0 0 var(--house-summer);
+  cursor: pointer;
+}
+.tt-day-label.tt-day-has-announcement .tt-day-label-text,
+.tt-day-label.tt-day-has-announcement {
+  color: var(--house-summer);
+  font-weight: 600;
+}
+.tt-ann-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+}
+.tt-ann-heading {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+}
+.tt-ann-sub {
+  color: var(--text-faint);
+  font-size: 0.85rem;
+  margin: 0 0 16px;
+}
+.tt-ann-row {
+  padding: 14px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--house-summer);
+  border-radius: var(--radius-m);
+  margin-bottom: 10px;
+}
+.tt-ann-row.is-important { border-left-color: var(--danger); }
+.tt-ann-head {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+}
+.tt-ann-day { font-size: 0.75rem; color: var(--text-faint); font-style: italic; }
+.tt-ann-title { font-weight: 500; margin: 0 0 4px; font-size: 0.95rem; }
+.tt-ann-body { color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.5; }
+.tt-ann-empty { color: var(--text-faint); font-size: 0.88rem; margin: 0; }
+.tt-detail-ann {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; margin: 8px 0;
+  border-radius: var(--radius-s); border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--house-summer); background: var(--bg-elevated-2);
+}
+.tt-detail-ann.is-important { border-left-color: var(--danger); }
+.tt-detail-ann-title { font-weight: 500; font-size: 0.9rem; color: var(--text); }
+.tt-detail-ann-body { color: var(--text-muted); font-size: 0.82rem; }
+
+/* ============================================
+   V10.2 — announcement row button spacing
+   ============================================ */
+.announcement-row { padding-bottom: 20px; }
+.announcement-row .task-monitor-actions {
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-soft);
+}

@@ -11,6 +11,16 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V10.2: Announcements now show up under the timetable — an at-a-glance list of what's been posted this week, plus a tinted highlight on any day in the grid that has one. Tap a highlighted day name to read the announcements right in the panel below the grid.",
+      "Announcements and homework are now visually separate on the timetable — announcements highlight the day label, homework dots stay on the individual periods. Two different things, two different signals.",
+      "Fixed the \"Next event\" teaser on the homepage dashboard — clicking it now scrolls you to the Events section instead of trying to load a page that no longer exists.",
+      "Fixed the announcement card layout — the Pin/Edit/Delete buttons used to sit right up against the announcement text. There's proper breathing room now, with a subtle divider between the content and the actions.",
+    ],
+  },
+
+  {
+    date: "2026-09-16",
+    items: [
       "V10.1: removed the redundant Today button from the timetable day nav.",
       "Timetable status bar no longer repeats the day label — it only appears when you're viewing today.",
       "Fixed the profile dropdown alignment bug — Monitor panel was an anchor inheriting .dropdown a's padding, which out-specified the button rule. Now a button, and the CSS rule is specificity-proof anyway.",

@@ -40,7 +40,7 @@ export { isFirebaseConfigured };
 // the monitor-management UI are picked up without a code change here.
 export const MONITOR_EMAILS = [
   "mohamedishankunnummal@gmail.com",
-  "shahbazshamsudheen713596@gmail.com",
+  // "monitor2@example.com",
   // "monitor3@example.com",
 ];
 
