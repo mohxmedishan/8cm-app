@@ -397,7 +397,7 @@ const OPTIONAL_MODULES = [
   ["gallery", "./gallery.js", "initGallery"],
   ["achievements", "./achievements.js", "initAchievements"],
   ["manage page", "./manage.js", "initManagePage"],
-  ["theme", "./theme.js", null],
+  ["theme", "./theme.js", "initThemeUI"],
 ];
 
 OPTIONAL_MODULES.forEach(([label, path, initializer]) => {

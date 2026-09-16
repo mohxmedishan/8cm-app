@@ -9,6 +9,19 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-16",
+    items: [
+      "V10: nav now puts Students up top and Events in the More menu.",
+      "Fixed the Pin/Unpin button on announcements — the text no longer overflows its box.",
+      "Fixed the Settings (appearance) button — it actually opens the theme picker now.",
+      "Monitor panel link in the profile dropdown is now aligned with Switch student and Sign out.",
+      "Timetable day nav shows relative labels (Today / Tomorrow / Yesterday / in Nd) instead of always saying today.",
+      "Timetable homework dots now respect the homework's due date — a period only dots if the homework is due on or before that day, not just because a subject matches.",
+      "Timetable now says \"School's over for today\" once the last period ends, instead of showing nothing.",
+      "Timetable detail panel's homework rows are now tappable links that jump to the Today section.",
+    ],
+  },
+  {
     date: "2026-09-13",
     items: [
       "Swapped task file attachments for a simpler Link field — tasks can now point straight to a Google Form, Drive folder, or worksheet instead of needing an upload.",

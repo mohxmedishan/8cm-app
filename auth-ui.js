@@ -425,31 +425,33 @@ function renderAuthSlot() {
     : null;
 
   slot.innerHTML = `
-    <div class="nav-item has-dropdown" id="profileItem">
-      <button class="profile-pill" id="profileTrigger" aria-expanded="false">
-        <span class="profile-avatar">${initials(name)}</span>
-        <span class="tri">▾</span>
-      </button>
-      <div class="dropdown profile-dropdown" id="profileDropdown">
-        <p class="profile-name">${name}</p>
-        <p class="profile-email">${user.email || ""}</p>
-        ${monitor ? `<span class="monitor-pill">Monitor</span>` : ""}
-        ${student ? `
-          <div class="profile-stats">
-            <span class="profile-stat-pill">Roll #${student.rollNumber}</span>
-            <span class="profile-stat-pill house-${student.house}">
-              <span class="house-dot ${student.house}"></span>${houseLabel(student.house)}
-            </span>
-            ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
-            <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
-          </div>
-        ` : ""}
+  <div class="nav-item has-dropdown" id="profileItem">
+    <button class="profile-pill" id="profileTrigger" aria-expanded="false">
+      <span class="profile-avatar">${initials(name)}</span>
+      <span class="tri">▾</span>
+    </button>
+    <div class="dropdown profile-dropdown" id="profileDropdown">
+      <p class="profile-name">${name}</p>
+      <p class="profile-email">${user.email || ""}</p>
+      ${monitor ? `<span class="monitor-pill">Monitor</span>` : ""}
+      ${student ? `
+        <div class="profile-stats">
+          <span class="profile-stat-pill">Roll #${student.rollNumber}</span>
+          <span class="profile-stat-pill house-${student.house}">
+            <span class="house-dot ${student.house}"></span>${houseLabel(student.house)}
+          </span>
+          ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
+          <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
+        </div>
+      ` : ""}
+      <div class="profile-actions">
         ${monitor ? `<a href="manage.html" class="dropdown-action">Monitor panel</a>` : ""}
         <button class="dropdown-action" id="switchStudentBtn">Switch student</button>
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
     </div>
-  `;
+  </div>
+`;
 
   const item = $("profileItem");
   const trigger = $("profileTrigger");

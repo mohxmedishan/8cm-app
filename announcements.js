@@ -211,7 +211,7 @@ function render() {
       </div>
       <p class="task-detail">${a.content}</p>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-        <button class="task-icon-btn" data-action="pin" data-id="${a.id}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
+        <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${a.id}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
         <button class="task-icon-btn" data-action="edit" data-id="${a.id}" aria-label="Edit announcement">✎</button>
         <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${a.id}" aria-label="Delete announcement">✕</button>
       </div>
