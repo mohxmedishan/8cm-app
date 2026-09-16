@@ -95,14 +95,26 @@ export function avatarMarkup(avatarId, name, size = 32, extraClass = "") {
 }
 
 // avatars/{uid} = { id: "fox" | null }
+import { subscribeAuth } from "./auth.js";
+
 let cache = new Map();
 const listeners = new Set();
 let loaded = false;
 let inflight = null;
+let currentUid = null;
+
+subscribeAuth((state) => {
+  currentUid = state.user ? state.user.uid : null;
+  notify();
+});
 
 function notify() {
   listeners.forEach((cb) => {
-    try { cb(cache); } catch (err) { console.error("Avatar listener failed:", err); }
+    try {
+      cb(cache);
+    } catch (err) {
+      console.error("Avatar listener failed:", err);
+    }
   });
 }
 
@@ -117,17 +129,24 @@ export function getAvatarForUid(uid) {
   return cache.get(uid) || null;
 }
 
+export function getCurrentUid() {
+  return currentUid;
+}
+
 export async function loadAvatars({ force = false } = {}) {
   if (loaded && !force) return cache;
   if (inflight) return inflight;
+
   inflight = (async () => {
     try {
       const snap = await getDocs(collection(db, "avatars"));
       const next = new Map();
+
       snap.forEach((d) => {
         const data = d.data();
         if (data && data.id) next.set(d.id, data.id);
       });
+
       cache = next;
       loaded = true;
       notify();
@@ -140,16 +159,51 @@ export async function loadAvatars({ force = false } = {}) {
       inflight = null;
     }
   })();
+
   return inflight;
 }
 
-export async function setAvatarForUid(uid, avatarId) {
-  if (!uid) throw new Error("Cannot set an avatar without a signed-in account.");
-  const ref = doc(db, "avatars", uid);
+// Backward-compatible:
+//   setAvatarForUid("fox")
+//   setAvatarForUid(uid, "fox")
+export async function setAvatarForUid(uidOrAvatarId, maybeAvatarId) {
+  let uid;
+  let avatarId;
+
+  if (maybeAvatarId !== undefined) {
+    uid = uidOrAvatarId;
+    avatarId = maybeAvatarId;
+  } else {
+    uid = currentUid;
+    avatarId = uidOrAvatarId;
+  }
+
+  if (!uid) throw new Error("Cannot set an avatar while signed out.");
+
   const id = avatarId || null;
-  if (id && !byId.has(id)) throw new Error("Unknown avatar.");
-  await setDoc(ref, { id });
+  if (id && !byId.has(id)) {
+    throw new Error("Unknown avatar.");
+  }
+
+  const previous = cache.has(uid) ? cache.get(uid) : null;
+
+  // Update locally first so every render site reacts immediately.
   cache.set(uid, id);
   loaded = true;
   notify();
+
+  try {
+    await setDoc(doc(db, "avatars", uid), { id });
+  } catch (err) {
+    console.error("Avatar write failed, rolling back:", err);
+
+    if (previous) {
+      cache.set(uid, previous);
+    } else {
+      cache.delete(uid);
+    }
+
+    notify();
+    throw err;
+  }
 }

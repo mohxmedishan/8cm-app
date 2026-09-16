@@ -53,10 +53,10 @@ html[data-theme="light"] {
   --accent-strong: #3b675e;
   --accent-vibrant: #6b9a8f;
   --accent-vibrant-2: #86b3a8;
-  --house-winter: #4d8fc4;
-  --house-autumn: #d9722c;
-  --house-spring: #6ba844;
-  --house-summer: #e5a623;
+  --house-winter: #3d95d6;
+  --house-autumn: #e67826;
+  --house-spring: #6cb833;
+  --house-summer: #f0ab1a;
   --danger: #b23b30;
   --danger-soft: rgba(178, 59, 48, 0.12);
 }

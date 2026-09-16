@@ -7,7 +7,7 @@
 import { subscribeAuth, signOutUser } from "./auth.js";
 import { onStudents } from "./students.js";
 import { onAchievements } from "./achievements.js";
-import { AVATARS, avatarUrl, avatarMarkup, setAvatarForUid, onAvatars, getAvatarForUid, loadAvatars } from "./avatars.js";
+import { AVATARS, avatarUrl, avatarMarkup, setAvatarForUid, onAvatars, getAvatarForUid, loadAvatars, getCurrentUid } from "./avatars.js";
 import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
@@ -53,7 +53,7 @@ export function closeProfile() {
 function renderProfileBody(student) {
   const isMe = currentAuth.profile?.claimedStudentId === student.id;
   const claimedUid = window.__cmClaimUids?.get(student.id) || claimUids.get(student.id) || null;
-  const avatarUid = isMe && currentAuth.user ? currentAuth.user.uid : claimedUid;
+  const avatarUid = isMe ? getCurrentUid() : claimedUid;
   const avatarId = avatarUid ? getAvatarForUid(avatarUid) : null;
   const myAchievements = achievements.filter((a) => a.studentId === student.id);
 
@@ -134,9 +134,9 @@ function wireProfileBody(student) {
 function openPicker(student) {
   const overlay = $("avatarPickerOverlay");
   const grid = $("avatarPickerGrid");
-  if (!overlay || !grid || !currentAuth.user) return;
+  if (!overlay || !grid) return;
 
-  const current = getAvatarForUid(currentAuth.user.uid);
+  const current = getAvatarForUid(getCurrentUid());
   const cells = AVATARS.map((a) => {
     const active = current === a.id;
     return `<button type="button" class="avatar-choice ${active ? "active" : ""}" data-id="${escapeHtml(a.id)}" title="${escapeHtml(a.label)}" aria-label="${escapeHtml(a.label)}">
@@ -155,7 +155,7 @@ function openPicker(student) {
     btn.addEventListener("click", async () => {
       grid.querySelectorAll(".avatar-choice").forEach((b) => b.disabled = true);
       try {
-        await setAvatarForUid(currentAuth.user.uid, btn.dataset.id || null);
+        await setAvatarForUid(btn.dataset.id || null);
         playSuccess();
         closePicker();
         if (editingProfileStudentId) openProfile(editingProfileStudentId);
@@ -213,7 +213,6 @@ async function loadProfileBadgeData() {
 }
 
 export function initProfileModal() {
-  loadAvatars().catch((err) => console.error("Failed to load avatars:", err));
   loadProfileBadgeData();
 
   const overlay = $("profileOverlay");

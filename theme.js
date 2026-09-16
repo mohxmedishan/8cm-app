@@ -146,23 +146,29 @@ function setStoredAccent(hex) {
 function applyTheme(hex) {
   const isLight = document.documentElement.getAttribute("data-theme") === "light";
   const root = document.documentElement.style;
-  const rgb = hexToRgb(hex);
 
   if (isLight) {
     const vibrant = vibrify(hex);
-    root.setProperty("--accent", hex);
-    root.setProperty("--accent-strong", darkenForText(hex));
+    const rgb = hexToRgb(vibrant);
+
+    root.setProperty("--accent", vibrant);
+    root.setProperty("--accent-strong", darkenForText(vibrant));
     root.setProperty("--accent-vibrant", vibrant);
     root.setProperty("--accent-vibrant-2", lighten(vibrant, 0.22));
     root.setProperty("--accent-soft", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`);
+
+    reflectActiveSwatch(hex);
   } else {
+    const rgb = hexToRgb(hex);
+
     root.setProperty("--accent", hex);
     root.setProperty("--accent-strong", lighten(hex, 0.18));
     root.setProperty("--accent-vibrant", hex);
     root.setProperty("--accent-vibrant-2", lighten(hex, 0.18));
     root.setProperty("--accent-soft", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.14)`);
+
+    reflectActiveSwatch(hex);
   }
-  reflectActiveSwatch(hex);
 }
 function reflectActiveSwatch(hex) {
   document.querySelectorAll(".theme-swatch").forEach((btn) => {

@@ -11,6 +11,16 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V12.3: Avatar switching now tracks the signed-in account directly and updates the UI optimistically.",
+      "The avatar picker now shows the selected avatar correctly after hard refreshes and auth restoration.",
+      "Avatar changes now sync immediately across the profile, navigation pill, and directory.",
+      "Light mode now applies the brighter, more saturated accent to the base accent variable as well as the gradient accents.",
+      "Light-mode house colors are slightly brighter and more saturated.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V12: 30 premade avatars. Pick yours from View profile and tap your avatar. Colors follow the house/accent palette.",
       "Avatars are tied to your account, not to the student you've claimed. Switching students keeps your avatar.",
       "The profile dropdown got simpler: View profile, Monitor panel (if you're a monitor), and Sign out. Profile details and account actions now live in the profile view.",
