@@ -323,6 +323,7 @@ function initResources() {
   const resources = [
     { name: "Google Classroom", description: "Assignments, materials, and class-wide posts.", url: "https://classroom.google.com" },
     { name: "Digital Campus (DC)", description: "School portal for grades, attendance, and notices.", url: "https://ict.adiswathba.com/ADIS1/" },
+    { name: "ClassDojo", description: "Class story, points, and messages from teachers.", url: "https://home.classdojo.com/#/story" },
   ];
 
   resources.forEach((r) => {

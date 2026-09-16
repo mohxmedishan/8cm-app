@@ -31,6 +31,12 @@ import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
+import {
+  mountLinkFields,
+  fillLinkFields,
+  readLinkFields,
+  linkChipsHtml,
+} from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -206,13 +212,14 @@ function openForm(assignment) {
   const form = $("homeworkForm");
   if (!form) return;
   populateSubjectOptions();
+  mountLinkFields(form, "homework");
   editingId = assignment ? assignment.id : null;
   form.subject.value = (assignment && assignment.subject) || form.subject.options[0]?.value || "";
   form.title.value = (assignment && assignment.title) || "";
   form.description.value = (assignment && assignment.description) || "";
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
   form.priority.value = (assignment && assignment.priority) || "medium";
-  form.link.value = (assignment && assignment.link) || "";
+  fillLinkFields(form, "homework", assignment);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = assignment ? "Save changes" : "Add homework";
@@ -240,13 +247,24 @@ function setFormError(message) {
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
+  const { links, invalid } = readLinkFields(form);
+  if (invalid.length) {
+    setFormError(
+      `Link ${invalid.join(", ")} ${invalid.length === 1 ? "doesn't look like a valid URL" : "don't look like valid URLs"}. Fix or clear ${invalid.length === 1 ? "it" : "them"} and try again.`
+    );
+    playError();
+    return;
+  }
   const payload = {
     subject: form.subject.value.trim(),
     title: form.title.value.trim(),
     description: form.description.value.trim(),
     dueDate: form.dueDate.value,
     priority: form.priority.value,
-    link: form.link.value.trim(),
+    links,
+    // Legacy single-link field is cleared once an item is saved through
+    // the new multi-link form, so the two can't drift out of sync.
+    link: "",
   };
   if (!payload.subject || !payload.title || !payload.dueDate) return;
 
@@ -336,7 +354,7 @@ function renderList() {
         <p class="task-subject">${a.title}</p>
         <p class="task-detail">${a.description || ""}</p>
         <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
-        ${a.link ? `<a class="task-link-chip" href="${a.link}" target="_blank" rel="noopener">Resource</a>` : ""}
+        ${linkChipsHtml(a)}
       </div>
       <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
       <div class="hw-actions">
@@ -400,6 +418,7 @@ export function initAssignments() {
 
   const form = $("homeworkForm");
   if (form) {
+    mountLinkFields(form, "homework");
     form.addEventListener("submit", handleSubmit);
     const cancelBtn = form.querySelector('[data-action="cancel"]');
     if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());

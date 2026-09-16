@@ -20,6 +20,16 @@
   --house-spring: #7c9a5d;
   --house-summer: #d9a441;
 
+  /* Same four colors as raw R,G,B channels. Needed because several
+     places tint a house color at low opacity — rgba() can't take a
+     hex var, so those spots used to hardcode the dark-mode values and
+     therefore never changed in light mode. Every tinted house color
+     now reads from these, so switching theme shifts the tints too. */
+  --house-winter-rgb: 126, 168, 196;
+  --house-autumn-rgb: 193, 114, 58;
+  --house-spring-rgb: 124, 154, 93;
+  --house-summer-rgb: 217, 164, 65;
+
   --danger: #c1665a;
   --danger-soft: rgba(193, 102, 90, 0.14);
 
@@ -53,10 +63,18 @@ html[data-theme="light"] {
   --accent-strong: #3b675e;
   --accent-vibrant: #6b9a8f;
   --accent-vibrant-2: #86b3a8;
-  --house-winter: #3d95d6;
-  --house-autumn: #e67826;
-  --house-spring: #6cb833;
-  --house-summer: #f0ab1a;
+  --house-winter: #2f7cb8;
+  --house-autumn: #c0571a;
+  --house-spring: #4e8a2b;
+  --house-summer: #b8820c;
+  /* Deeper than the dark-theme versions on purpose: the same mid-tone
+     that reads clearly against #16171a washes out against a near-white
+     page, so each house shifts to a shade with enough contrast to stay
+     legible as text, dots and bar fills here. */
+  --house-winter-rgb: 47, 124, 184;
+  --house-autumn-rgb: 192, 87, 26;
+  --house-spring-rgb: 78, 138, 43;
+  --house-summer-rgb: 184, 130, 12;
   --danger: #b23b30;
   --danger-soft: rgba(178, 59, 48, 0.12);
 }
@@ -928,25 +946,25 @@ h1, h2, h3 {
 .house-card[data-house="winter"]:hover,
 .house-card[data-house="winter"]:focus-visible {
   border-color: var(--house-winter);
-  box-shadow: 0 10px 26px rgba(126, 168, 196, 0.14);
+  box-shadow: 0 10px 26px rgba(var(--house-winter-rgb), 0.14);
 }
 
 .house-card[data-house="autumn"]:hover,
 .house-card[data-house="autumn"]:focus-visible {
   border-color: var(--house-autumn);
-  box-shadow: 0 10px 26px rgba(193, 114, 58, 0.14);
+  box-shadow: 0 10px 26px rgba(var(--house-autumn-rgb), 0.14);
 }
 
 .house-card[data-house="spring"]:hover,
 .house-card[data-house="spring"]:focus-visible {
   border-color: var(--house-spring);
-  box-shadow: 0 10px 26px rgba(124, 154, 93, 0.14);
+  box-shadow: 0 10px 26px rgba(var(--house-spring-rgb), 0.14);
 }
 
 .house-card[data-house="summer"]:hover,
 .house-card[data-house="summer"]:focus-visible {
   border-color: var(--house-summer);
-  box-shadow: 0 10px 26px rgba(217, 164, 65, 0.14);
+  box-shadow: 0 10px 26px rgba(var(--house-summer-rgb), 0.14);
 }
 
 /* ============================================
@@ -1132,7 +1150,7 @@ h1, h2, h3 {
 .task-tag.announcement {
   border-color: var(--house-summer);
   color: var(--house-summer);
-  background: rgba(217, 164, 65, 0.12);
+  background: rgba(var(--house-summer-rgb), 0.12);
 }
 
 .task-subject { font-size: 0.9rem; font-weight: 500; margin: 0 0 3px; }
@@ -1197,6 +1215,84 @@ h1, h2, h3 {
   border-color: var(--accent);
   color: var(--accent-strong);
   transform: translateY(-1px);
+}
+
+/* ============================================
+   Attached links — the up-to-six link slots shared by the homework,
+   announcement and event forms (see item-links.js), plus the chips
+   those links render as on a card.
+   ============================================ */
+.item-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+/* The chips already carry their own top margin for the single-link
+   case; inside a wrapped group the flex gap handles spacing instead. */
+.item-links .task-link-chip { margin-top: 6px; }
+.link-chip-icon { opacity: 0.75; }
+
+.link-fields { gap: 8px; }
+.link-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.link-row {
+  display: grid;
+  /* Label stays narrow, URL takes the remaining room, clear button
+     is a fixed square at the end. */
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.link-row[hidden] { display: none; }
+
+.link-row-clear {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.link-row-clear:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.link-add-btn {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  padding: 7px 12px;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.link-add-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.link-add-btn[hidden] { display: none; }
+
+@media (max-width: 620px) {
+  /* Stack label above URL on narrow screens rather than squeezing
+     both into unusable widths; the clear button sits with the URL. */
+  .link-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .link-row-label { grid-column: 1 / -1; }
 }
 
 /* ============================================
@@ -1993,10 +2089,10 @@ body.lightbox-locked { overflow: hidden; }
 .tt-cell-subject { font-size: 0.72rem; line-height: 1.2; color: var(--text); }
 
 .tt-cell.cat-math { background: var(--accent-soft); border-bottom: 2px solid var(--accent); }
-.tt-cell.cat-science { background: rgba(126, 168, 196, 0.16); border-bottom: 2px solid var(--house-winter); }
-.tt-cell.cat-language { background: rgba(193, 114, 58, 0.16); border-bottom: 2px solid var(--house-autumn); }
-.tt-cell.cat-other { background: rgba(124, 154, 93, 0.16); border-bottom: 2px solid var(--house-spring); }
-.tt-cell.cat-creative { background: rgba(217, 164, 65, 0.16); border-bottom: 2px solid var(--house-summer); }
+.tt-cell.cat-science { background: rgba(var(--house-winter-rgb), 0.16); border-bottom: 2px solid var(--house-winter); }
+.tt-cell.cat-language { background: rgba(var(--house-autumn-rgb), 0.16); border-bottom: 2px solid var(--house-autumn); }
+.tt-cell.cat-other { background: rgba(var(--house-spring-rgb), 0.16); border-bottom: 2px solid var(--house-spring); }
+.tt-cell.cat-creative { background: rgba(var(--house-summer-rgb), 0.16); border-bottom: 2px solid var(--house-summer); }
 
 .tt-cell.is-break .tt-cell-subject,
 .tt-cell.is-tail .tt-cell-subject {
@@ -2628,7 +2724,7 @@ a.tt-detail-hw:hover {
    V10.2 — Timetable announcements
    ============================================ */
 .tt-day-label.tt-day-has-announcement {
-  background: rgba(217, 164, 65, 0.14);
+  background: rgba(var(--house-summer-rgb), 0.14);
   box-shadow: inset 3px 0 0 var(--house-summer);
   cursor: pointer;
 }

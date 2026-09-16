@@ -21,6 +21,7 @@ import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
+import { mountLinkFields, fillLinkFields, readLinkFields, linkChipsHtml } from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -105,6 +106,7 @@ async function togglePin(a) {
 function openForm(a) {
   const form = $("announcementForm");
   if (!form) return;
+  mountLinkFields(form, "announcement");
   editingId = a ? a.id : null;
   form.title.value = (a && a.title) || "";
   form.content.value = (a && a.content) || "";
@@ -112,6 +114,7 @@ function openForm(a) {
   form.priority.value = (a && a.priority) || "normal";
   form.eventDate.value = (a && a.eventDate) || "";
   form.pinned.checked = !!(a && a.pinned);
+  fillLinkFields(form, "announcement", a);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = a ? "Save changes" : "Post announcement";
@@ -139,6 +142,14 @@ function setFormError(message) {
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
+  const { links, invalid } = readLinkFields(form);
+  if (invalid.length) {
+    setFormError(
+      `Link ${invalid.join(", ")} ${invalid.length === 1 ? "doesn't look like a valid URL" : "don't look like valid URLs"}. Fix or clear ${invalid.length === 1 ? "it" : "them"} and try again.`
+    );
+    playError();
+    return;
+  }
   const payload = {
     title: form.title.value.trim(),
     content: form.content.value.trim(),
@@ -146,6 +157,7 @@ async function handleSubmit(e) {
     priority: form.priority.value,
     eventDate: form.eventDate.value || null,
     pinned: form.pinned.checked,
+    links,
   };
   if (!payload.title || !payload.content) return;
 
@@ -207,6 +219,7 @@ function render() {
         <p class="task-subject">${a.title}</p>
       </div>
       <p class="task-detail">${a.content}</p>
+      ${linkChipsHtml(a)}
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${a.id}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
         <button class="task-icon-btn" data-action="edit" data-id="${a.id}" aria-label="Edit announcement">✎</button>
@@ -257,6 +270,7 @@ export function initAnnouncements() {
 
   const form = $("announcementForm");
   if (form) {
+    mountLinkFields(form, "announcement");
     form.addEventListener("submit", handleSubmit);
     const cancelBtn = form.querySelector('[data-action="cancel"]');
     if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());

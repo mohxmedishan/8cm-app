@@ -20,6 +20,7 @@ import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
+import { mountLinkFields, fillLinkFields, readLinkFields, linkChipsHtml } from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -98,6 +99,7 @@ async function handleDelete(id) {
 function openForm(ev) {
   const form = $("eventForm");
   if (!form) return;
+  mountLinkFields(form, "event");
   editingId = ev ? ev.id : null;
   form.title.value = (ev && ev.title) || "";
   form.date.value = (ev && ev.date) || todayStr();
@@ -105,6 +107,7 @@ function openForm(ev) {
   form.location.value = (ev && ev.location) || "";
   form.category.value = (ev && ev.category) || "General";
   form.description.value = (ev && ev.description) || "";
+  fillLinkFields(form, "event", ev);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = ev ? "Save changes" : "Add event";
@@ -132,6 +135,14 @@ function setFormError(message) {
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
+  const { links, invalid } = readLinkFields(form);
+  if (invalid.length) {
+    setFormError(
+      `Link ${invalid.join(", ")} ${invalid.length === 1 ? "doesn't look like a valid URL" : "don't look like valid URLs"}. Fix or clear ${invalid.length === 1 ? "it" : "them"} and try again.`
+    );
+    playError();
+    return;
+  }
   const payload = {
     title: form.title.value.trim(),
     date: form.date.value,
@@ -139,6 +150,7 @@ async function handleSubmit(e) {
     location: form.location.value.trim(),
     category: form.category.value,
     description: form.description.value.trim(),
+    links,
   };
   if (!payload.title || !payload.date) return;
 
@@ -230,6 +242,7 @@ function render() {
         <h3>${ev.title}</h3>
         <p class="event-meta">${[ev.time, ev.location].filter(Boolean).join(" · ")}</p>
         ${ev.description ? `<p class="event-desc">${ev.description}</p>` : ""}
+        ${linkChipsHtml(ev)}
       </div>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn" data-action="edit" data-id="${ev.id}" aria-label="Edit event">✎</button>
@@ -276,6 +289,7 @@ export function initEvents() {
 
   const form = $("eventForm");
   if (form) {
+    mountLinkFields(form, "event");
     form.addEventListener("submit", handleSubmit);
     const cancelBtn = form.querySelector('[data-action="cancel"]');
     if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());
