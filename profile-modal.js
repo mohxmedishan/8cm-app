@@ -7,7 +7,7 @@
 import { subscribeAuth, signOutUser } from "./auth.js";
 import { onStudents } from "./students.js";
 import { onAchievements } from "./achievements.js";
-import { AVATARS, avatarUrl, avatarMarkup, setAvatarForUid, onAvatars, getAvatarForUid } from "./avatars.js";
+import { AVATARS, avatarUrl, avatarMarkup, setAvatarForUid, onAvatars, getAvatarForUid, loadAvatars } from "./avatars.js";
 import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
