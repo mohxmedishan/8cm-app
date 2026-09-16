@@ -68,7 +68,13 @@ function render() {
       <span class="roll-badge">${escapeHtml(String(s.rollNumber || "?").padStart(2, "0"))}</span>
       <div class="manage-row-body">
         <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ''} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ''}</p>
-        <p class="task-detail"><span class="house-dot ${escapeHtml(s.house)}"></span> ${escapeHtml(s.house)} · ${escapeHtml(s.language || "—")} · ${escapeHtml(transportLabel(s.transport))}</p>
+        <p class="task-detail">
+          <span class="house-dot ${escapeHtml(s.house)}"></span> ${escapeHtml(s.house)}
+          · ${escapeHtml(s.language || "—")}
+          · ${escapeHtml(transportLabel(s.transport))}
+          ${s.islamic ? ` · ${s.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}` : ""}
+          ${s.creative ? ` · ${s.creative.charAt(0).toUpperCase() + s.creative.slice(1)}` : ""}
+        </p>
       </div>
       <div class="task-monitor-actions">
         ${claimed ? `<button class="task-icon-btn" data-action="release" data-id="${escapeHtml(s.id)}" title="Release this student's claim">⌫</button>` : ''}
@@ -89,6 +95,8 @@ function openForm(student) {
   form.name.value = student?.name || "";
   form.house.value = student?.house || "autumn";
   form.language.value = student?.language || "";
+  form.islamic.value = student?.islamic || "";
+  form.creative.value = student?.creative || "";
   form.transport.value = student?.transport || "";
   form.rollNumber.value = student?.rollNumber || (currentList.reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1);
   form.active.checked = student ? student.active !== false : true;
@@ -115,7 +123,10 @@ async function handleSubmit(e) {
   const form = e.target;
   const payload = {
     name: form.name.value.trim(), house: form.house.value,
-    language: form.language.value || null, transport: form.transport.value.trim(),
+    language: form.language.value || null,
+    islamic: form.islamic.value || null,
+    creative: form.creative.value || null,
+    transport: form.transport.value.trim(),
     rollNumber: parseInt(form.rollNumber.value, 10) || 0, active: form.active.checked,
   };
   if (!payload.name || !payload.rollNumber) return;

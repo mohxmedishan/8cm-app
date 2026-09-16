@@ -31,6 +31,49 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ============================================
+   V11 — Light theme
+   Activated by setting data-theme="light" on <html>.
+   ============================================ */
+html[data-theme="light"] {
+  --bg: #f6f5f1;
+  --bg-elevated: #ffffff;
+  --bg-elevated-2: #eeece6;
+  --border: #d7d4cc;
+  --border-soft: #e3e0d8;
+  --text: #1c1c1a;
+  --text-muted: #5c5b56;
+  --text-faint: #8a8880;
+  --accent-soft: rgba(107, 154, 143, 0.18);
+  --accent-strong: #4c7a70;
+  --danger: #a8453c;
+  --danger-soft: rgba(168, 69, 60, 0.12);
+}
+
+html[data-theme="light"] .grain { opacity: 0.02; }
+html[data-theme="light"] .error-toast {
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  border-color: rgba(168, 69, 60, 0.4);
+}
+html[data-theme="light"] .loading-overlay {
+  background: rgba(246, 245, 241, 0.55);
+}
+html[data-theme="light"] .loading-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--border);
+}
+html[data-theme="light"] .nav {
+  background: rgba(246, 245, 241, 0.75);
+}
+html[data-theme="light"] .nav.scrolled {
+  background: rgba(246, 245, 241, 0.94);
+}
+html[data-theme="light"] .modal-overlay {
+  background: rgba(246, 245, 241, 0.6);
+}
+
+
 * { box-sizing: border-box; }
 
 /* Native [hidden] must always win over a component's own display rule
@@ -2200,7 +2243,7 @@ body.lightbox-locked { overflow: hidden; }
 }
 .next-event-countdown {
   background: var(--accent);
-  color: var(--bg);
+  color: #0e1c18;
   font-size: 0.72rem;
   font-weight: 600;
   padding: 4px 10px;

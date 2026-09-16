@@ -32,8 +32,21 @@ function dateForDay(day) {
 }
 
 function announcementDate(a) {
+  // Explicit date field wins if it exists.
   if (a.date) return a.date;
-  if (a.createdAtMs) return ymd(new Date(a.createdAtMs));
+  // Otherwise, keep the announcement on the weekday it was created,
+  // mapped to THIS week's date. This avoids making a recurring weekday
+  // announcement disappear just because a new week started.
+  if (a.createdAtMs) {
+    const created = new Date(a.createdAtMs);
+    const createdDow = created.getDay(); // 0 = Sun
+    if (createdDow >= 1 && createdDow <= 5) {
+      for (const day of DAY_ORDER) {
+        if (DAY_DOW[day] === createdDow) return dateForDay(day);
+      }
+    }
+    return ymd(created);
+  }
   return null;
 }
 

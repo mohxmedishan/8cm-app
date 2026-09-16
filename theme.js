@@ -13,7 +13,9 @@ import { saveThemePreference } from "./auth.js";
 import { playClick, playOpen, playClose } from "./sound.js";
 
 const STORAGE_KEY = "8cm-theme-accent";
+const MODE_KEY = "8cm-theme-mode";
 export const DEFAULT_ACCENT = "#6b9a8f";
+export const DEFAULT_MODE = "dark";
 
 const PRESETS = [
   { name: "Green (default)", hex: "#6b9a8f" },
@@ -56,10 +58,11 @@ let currentUid = null;
 
 function applyTheme(hex) {
   const root = document.documentElement.style;
+  const mode = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
   root.setProperty("--accent", hex);
-  root.setProperty("--accent-strong", lighten(hex, 0.18));
+  root.setProperty("--accent-strong", mode === "light" ? "#4c7a70" : lighten(hex, 0.18));
   const { r, g, b } = hexToRgb(hex);
-  root.setProperty("--accent-soft", `rgba(${r}, ${g}, ${b}, 0.14)`);
+  root.setProperty("--accent-soft", `rgba(${r}, ${g}, ${b}, ${mode === "light" ? 0.18 : 0.14})`);
   reflectActiveSwatch(hex);
 }
 
@@ -71,8 +74,44 @@ function reflectActiveSwatch(hex) {
   if (custom) custom.value = hex;
 }
 
+function applyMode(mode) {
+  const resolved = mode === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", resolved);
+  reflectModeButton(resolved);
+  const accent = getStoredAccent();
+  const root = document.documentElement.style;
+  root.setProperty("--accent-strong", resolved === "light" ? "#4c7a70" : lighten(accent, 0.18));
+  const { r, g, b } = hexToRgb(accent);
+  root.setProperty("--accent-soft", `rgba(${r}, ${g}, ${b}, ${resolved === "light" ? 0.18 : 0.14})`);
+}
+
+function reflectModeButton(mode) {
+  document.querySelectorAll(".theme-mode-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.mode === mode);
+    btn.setAttribute("aria-selected", btn.dataset.mode === mode ? "true" : "false");
+  });
+}
+
+function getStoredMode() {
+  try {
+    return localStorage.getItem(MODE_KEY) || DEFAULT_MODE;
+  } catch {
+    return DEFAULT_MODE;
+  }
+}
+
+function setStoredMode(mode) {
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch {}
+}
+
 function getStoredAccent() {
-  return localStorage.getItem(STORAGE_KEY) || DEFAULT_ACCENT;
+  try {
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_ACCENT;
+  } catch {
+    return DEFAULT_ACCENT;
+  }
 }
 
 function setStoredAccent(hex) {
@@ -88,7 +127,23 @@ function chooseAccent(hex) {
   applyTheme(hex);
   setStoredAccent(hex);
   if (currentUid) {
-    saveThemePreference(currentUid, hex).catch((err) => {
+    saveThemePreference(currentUid, {
+      accent: hex,
+      mode: getStoredMode(),
+    }).catch((err) => {
+      console.error("Failed to sync theme to account:", err);
+    });
+  }
+}
+
+function chooseMode(mode) {
+  applyMode(mode);
+  setStoredMode(mode);
+  if (currentUid) {
+    saveThemePreference(currentUid, {
+      accent: getStoredAccent(),
+      mode,
+    }).catch((err) => {
       console.error("Failed to sync theme to account:", err);
     });
   }
@@ -97,6 +152,7 @@ function chooseAccent(hex) {
 /** Applies whatever's cached locally. Call this once, as early as
  * possible, so the picked accent is on screen from first paint. */
 export function applyStoredTheme() {
+  applyMode(getStoredMode());
   applyTheme(getStoredAccent());
 }
 
@@ -107,9 +163,22 @@ export function applyStoredTheme() {
  * than resetting it, since it's still the same browser/device. */
 export function syncThemeFromProfile(uid, profile) {
   currentUid = uid || null;
-  if (uid && profile && profile.theme) {
-    applyTheme(profile.theme);
-    setStoredAccent(profile.theme);
+  if (!uid || !profile) return;
+  const theme = profile.theme;
+  if (!theme) return;
+  // Backward-compatibility: older saves stored only the accent hex string.
+  if (typeof theme === "string") {
+    applyTheme(theme);
+    setStoredAccent(theme);
+    return;
+  }
+  if (theme.mode) {
+    applyMode(theme.mode);
+    setStoredMode(theme.mode);
+  }
+  if (theme.accent) {
+    applyTheme(theme.accent);
+    setStoredAccent(theme.accent);
   }
 }
 
@@ -154,6 +223,13 @@ export function initThemeUI() {
     customInput.addEventListener("input", (e) => chooseAccent(e.target.value));
   }
 
+  document.querySelectorAll(".theme-mode-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      playClick();
+      chooseMode(btn.dataset.mode);
+    });
+  });
+
   const resetBtn = $("themeResetBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
@@ -177,4 +253,5 @@ export function initThemeUI() {
   });
 
   reflectActiveSwatch(getStoredAccent());
+  reflectModeButton(getStoredMode());
 }

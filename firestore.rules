@@ -17,9 +17,8 @@ service cloud.firestore {
     // two monitors' emails here.
     function isMonitorEmail() {
       return isSignedIn() && request.auth.token.email in [
-        'mohamedishankunnummal@gmail.com'
-        // , 'monitor2@example.com'
-        // , 'monitor3@example.com'
+        'mohamedishankunnummal@gmail.com',
+        'shahbazshamsudheen713596@gmail.com'
       ];
     }
 
@@ -37,8 +36,14 @@ service cloud.firestore {
     // users/{uid} — a field like that is exactly what let a student
     // grant themselves access by editing their own profile doc. Role
     // lives here, and only here.
+    function isMonitorFlag() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.monitor == true;
+    }
+
     function isMonitor() {
-      return isMonitorEmail() || isMonitorDoc();
+      return isMonitorEmail() || isMonitorDoc() || isMonitorFlag();
     }
 
     // A claimedStudentId written onto a user's own profile is only
@@ -73,7 +78,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && (request.auth.uid == uid || isMonitor());
 
       allow create: if isSignedIn() && request.auth.uid == uid &&
-        claimedIdOnCreateIsValid();
+        claimedIdOnCreateIsValid() &&
+        (isMonitor() || !('monitor' in request.resource.data) || request.resource.data.monitor != true);
 
       allow update: if isSignedIn() && (
         isMonitor() ||

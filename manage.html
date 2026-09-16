@@ -15,10 +15,14 @@
 <meta content="8CM." name="apple-mobile-web-app-title"/>
 <script>
 (function () {
-try {
-var a = localStorage.getItem('8cm-theme-accent');
-if (a) document.documentElement.style.setProperty('--accent', a);
-} catch (e) {}
+  try {
+    var a = localStorage.getItem('8cm-theme-accent');
+    if (a) document.documentElement.style.setProperty('--accent', a);
+    var m = localStorage.getItem('8cm-theme-mode');
+    if (m === 'light' || m === 'dark') {
+      document.documentElement.setAttribute('data-theme', m);
+    }
+  } catch (e) {}
 })();
 </script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -254,6 +258,21 @@ if (a) document.documentElement.style.setProperty('--accent', a);
 <option value="French">French</option>
 </select>
 </label>
+<label class="field"><span>Islamic / Value Ed</span>
+<select name="islamic">
+<option value="">—</option>
+<option value="islamic">Islamic Education</option>
+<option value="value">Value Education</option>
+</select>
+</label>
+<label class="field"><span>Creative Arts</span>
+<select name="creative">
+<option value="">—</option>
+<option value="dance">Dance</option>
+<option value="music">Music</option>
+<option value="art">Art</option>
+</select>
+</label>
 <label class="field"><span>Transport</span><input name="transport" placeholder="OT or bus number" type="text"/></label>
 <label class="field"><span>Roll number</span><input min="1" name="rollNumber" required="" type="number"/></label>
 <label class="field field-checkbox"><input checked="" name="active" type="checkbox"/><span>Active</span></label>
@@ -423,6 +442,10 @@ real values.
 <button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
 <h3>Appearance</h3>
 <p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div class="theme-mode-row" role="tablist" aria-label="Color mode">
+<button type="button" class="theme-mode-btn" data-mode="dark" role="tab">Dark</button>
+<button type="button" class="theme-mode-btn" data-mode="light" role="tab">Light</button>
+</div>
 <div class="theme-swatches" id="themeSwatches"></div>
 <label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
 <button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>

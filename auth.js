@@ -40,8 +40,7 @@ export { isFirebaseConfigured };
 // the monitor-management UI are picked up without a code change here.
 export const MONITOR_EMAILS = [
   "mohamedishankunnummal@gmail.com",
-  // "monitor2@example.com",
-  // "monitor3@example.com",
+  "shahbazshamsudheen713596@gmail.com",
 ];
 
 function monitorRef(uid) {
@@ -66,7 +65,11 @@ export async function computeIsMonitor(user) {
   if (emailMatchesAllowlist(user)) return true;
   try {
     const snap = await getDoc(monitorRef(user.uid));
-    return snap.exists();
+    if (snap.exists()) return true;
+    // Also honor a monitor: true flag on the user's own profile doc.
+    const profile = await getDoc(doc(db, "users", user.uid));
+    if (profile.exists() && profile.data().monitor === true) return true;
+    return false;
   } catch (err) {
     console.error("Failed to check monitor status:", err);
     return false;

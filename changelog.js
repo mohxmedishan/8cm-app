@@ -11,6 +11,17 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V11: Light mode. Settings now has Dark / Light buttons at the top — switches the entire palette, not just the background, with every text, border, and hover state adjusted so nothing goes invisible.",
+      "Announcements actually show up on the timetable now — the announcements listener was only opening on pages that had the announcement panel, so the timetable's list never had anything to work with. Now it opens on the timetable page too, and announcements match by day-of-week so a Tuesday posting stays on Tuesday.",
+      "Two new student role fields: Islamic Education vs. Value Education, and Dance / Music / Art. Set them in the monitor panel, they show on the student cards, and there are filter pills for both — single-select within each group (like houses), combinable across groups.",
+      "Added Shahbaz as a second monitor (email allowlist). Also added support for a monitor: true flag on a user's profile doc in Firestore — flip it from the console to grant monitor access without a redeploy, and only existing monitors can flip it.",
+      "Fixed the 'Next event' teaser on the dashboard — was pointing at a page that doesn't exist anymore.",
+      "Fixed announcement card button spacing — the Pin/Edit/Delete buttons had no breathing room from the announcement text.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V10.2: Announcements now show up under the timetable — an at-a-glance list of what's been posted this week, plus a tinted highlight on any day in the grid that has one. Tap a highlighted day name to read the announcements right in the panel below the grid.",
       "Announcements and homework are now visually separate on the timetable — announcements highlight the day label, homework dots stay on the individual periods. Two different things, two different signals.",
       "Fixed the \"Next event\" teaser on the homepage dashboard — clicking it now scrolls you to the Events section instead of trying to load a page that no longer exists.",

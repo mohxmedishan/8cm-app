@@ -19,6 +19,10 @@
   try {
     var a = localStorage.getItem('8cm-theme-accent');
     if (a) document.documentElement.style.setProperty('--accent', a);
+    var m = localStorage.getItem('8cm-theme-mode');
+    if (m === 'light' || m === 'dark') {
+      document.documentElement.setAttribute('data-theme', m);
+    }
   } catch (e) {}
 })();
 </script>
@@ -306,6 +310,10 @@
 <button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
 <h3>Appearance</h3>
 <p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div class="theme-mode-row" role="tablist" aria-label="Color mode">
+<button type="button" class="theme-mode-btn" data-mode="dark" role="tab">Dark</button>
+<button type="button" class="theme-mode-btn" data-mode="light" role="tab">Light</button>
+</div>
 <div class="theme-swatches" id="themeSwatches"></div>
 <label class="field theme-custom-field">
 <span>Custom color</span>

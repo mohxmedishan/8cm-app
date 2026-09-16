@@ -68,6 +68,8 @@ function initStudentDirectory() {
           <span>${houseLabel(s.house)}</span>
           <span>${s.language || "—"}</span>
           <span>${transportLabel(s.transport)}</span>
+          ${s.islamic ? `<span>${s.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}</span>` : ""}
+          ${s.creative ? `<span>${s.creative.charAt(0).toUpperCase() + s.creative.slice(1)}</span>` : ""}
         </div>
       `;
       grid.appendChild(card);
@@ -83,6 +85,8 @@ function initStudentDirectory() {
       if (filter.startsWith("language:")) {
         return (student.language || "").toLowerCase() === filter.slice(9);
       }
+      if (filter.startsWith("islamic:")) return student.islamic === filter.slice(8);
+      if (filter.startsWith("creative:")) return student.creative === filter.slice(9);
       return true;
     });
   }
@@ -123,6 +127,14 @@ function initStudentDirectory() {
       const languageFilters = ["language:hindi", "language:malayalam", "language:french"];
       if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
       else { languageFilters.forEach((l) => activeFilters.delete(l)); activeFilters.add(filter); playToggleOn(); }
+    } else if (filter.startsWith("islamic:")) {
+      const group = ["islamic:islamic", "islamic:value"];
+      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
+      else { group.forEach((f) => activeFilters.delete(f)); activeFilters.add(filter); playToggleOn(); }
+    } else if (filter.startsWith("creative:")) {
+      const group = ["creative:dance", "creative:music", "creative:art"];
+      if (activeFilters.has(filter)) { activeFilters.delete(filter); playToggleOff(); }
+      else { group.forEach((f) => activeFilters.delete(f)); activeFilters.add(filter); playToggleOn(); }
     } else if (activeFilters.has(filter)) {
       activeFilters.delete(filter); playToggleOff();
     } else {

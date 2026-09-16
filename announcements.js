@@ -241,7 +241,9 @@ function applyMonitorVisibility() {
 }
 
 export function initAnnouncements() {
-  if (!$("announcementList")) return;
+  const hasPanel = !!$("announcementList");
+  const hasTimetableList = !!$("timetableAnnouncementList");
+  if (!hasPanel && !hasTimetableList) return;
 
   startListener();
 
@@ -250,6 +252,8 @@ export function initAnnouncements() {
     applyMonitorVisibility();
     render();
   });
+
+  if (!hasPanel) return; // timetable page only needs the data, not the panel below
 
   const addBtn = $("addAnnouncementBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));

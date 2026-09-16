@@ -89,6 +89,8 @@ return {
 id: slug(s.name),
 rollNumber: rollByName.get(s.name),
 language: language || null,
+islamic: s.islamic || null,
+creative: s.creative || null,
 active: true,
 };
 })
