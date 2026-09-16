@@ -1,7 +1,7 @@
 // ============================================
 // 8CM — Site interactions (entry module)
 // ============================================
-import { getStudentsSync, onStudents } from "./students.js";
+import { onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
 import { onAchievements } from "./achievements.js";
@@ -37,6 +37,16 @@ window.addEventListener("error", (event) => {
   console.error("Uncaught error:", event.error || event.message);
 });
 
+const avatarAPI = {
+  getAvatarForUid: () => null,
+  avatarMarkup: (avatarId, name, size = 32) => {
+    const initials = String(name || "?").split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase() || "?";
+    return `<span class="cm-avatar cm-avatar-initials" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.4)}px;">${initials}</span>`;
+  },
+  onAvatars: () => () => {},
+  loadAvatars: async () => {},
+};
+
 // ============================================
 // Student directory — now driven by the live student cache
 // ============================================
@@ -53,7 +63,8 @@ function initStudentDirectory() {
   let searchTerm = "";
   const filters = { house: "", language: "", transport: "", islamic: "", creative: "" };
 
-  const claimUids = new Map();
+  // --- Badge data + avatar data -------------------------------------
+  const claimUids = new Map();       // studentId → uid
   let monitorUids = new Set();
   let currentAuthUid = null;
   let currentAuthIsMonitor = false;
@@ -64,6 +75,7 @@ function initStudentDirectory() {
     if (monitorUids.has(claimed)) return true;
     return currentAuthIsMonitor && claimed === currentAuthUid;
   }
+  window.__cmIsMonitorStudent = isMonitorStudent;
 
   async function loadBadgeData() {
     try {
@@ -76,13 +88,17 @@ function initStudentDirectory() {
         getDoc(doc(db, "settings", "monitors")),
       ]);
       claimUids.clear();
-      claimsSnap.forEach((d) => claimUids.set(d.id, d.data().uid));
+      claimsSnap.forEach((d) => {
+        const data = d.data();
+        if (data && data.uid) claimUids.set(d.id, data.uid);
+      });
       monitorUids = monitorsSnap.exists()
         ? new Set(Object.keys(monitorsSnap.data().uids || {}))
         : new Set();
       window.__cmClaimUids = claimUids;
       window.__cmMonitorUids = monitorUids;
       applyFilters();
+      window.dispatchEvent(new CustomEvent("cm:monitor-cache-ready"));
     } catch (err) {
       console.error("Failed to load badge data:", err);
     }
@@ -94,7 +110,7 @@ function initStudentDirectory() {
       currentAuthIsMonitor = !!state.monitor;
       applyFilters();
     });
-  });
+  }).catch((err) => console.error("Failed to subscribe to auth for directory:", err));
 
   const OPTIONS = {
     house: [
@@ -156,20 +172,26 @@ function initStudentDirectory() {
       card.dataset.studentId = s.id;
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
+
       const isMonitor = isMonitorStudent(s.id);
+      const claimed = claimUids.get(s.id);
+      const avatarId = claimed ? avatarAPI.getAvatarForUid(claimed) : null;
+      const avatarHtml = avatarAPI.avatarMarkup(avatarId, s.name, 44);
+
       card.innerHTML = `
-        <div class="student-top">
-          <span class="roll-badge">${rollLabel(s.rollNumber)}</span>
-          <span class="house-dot ${escapeHtml(s.house)}"></span>
-          <span class="student-name">${escapeHtml(s.name)}</span>
-          ${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}
+        <div class="student-card-top">
+          ${avatarHtml}
+          <div class="student-card-name-block">
+            <span class="student-name">${escapeHtml(s.name)}${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}</span>
+            <span class="student-card-roll">Roll ${rollLabel(s.rollNumber)}</span>
+          </div>
         </div>
         <div class="student-meta">
-          <span>${escapeHtml(houseLabel(s.house))}</span>
+          <span class="house-pill house-${escapeHtml(s.house)}"><span class="house-dot ${escapeHtml(s.house)}"></span>${escapeHtml(houseLabel(s.house))}</span>
           <span>${escapeHtml(s.language || "—")}</span>
           <span>${escapeHtml(transportLabel(s.transport))}</span>
           ${s.islamic ? `<span>${s.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}</span>` : ""}
-          ${s.creative ? `<span>${s.creative.charAt(0).toUpperCase() + s.creative.slice(1)}</span>` : ""}
+          ${s.creative ? `<span>${escapeHtml(s.creative.charAt(0).toUpperCase() + s.creative.slice(1))}</span>` : ""}
         </div>
       `;
       card.addEventListener("click", () => window.__cmOpenProfile?.(s.id));
@@ -211,7 +233,11 @@ function initStudentDirectory() {
 
   function openDropdownFor(box) {
     const key = box.dataset.filterKey;
-    if (box.classList.contains("open")) { closeDropdown(); return; }
+    if (!OPTIONS[key]) return;
+    if (box.classList.contains("open")) {
+      closeDropdown();
+      return;
+    }
     closeDropdown();
     box.classList.add("open");
     const rect = box.getBoundingClientRect();
@@ -219,7 +245,7 @@ function initStudentDirectory() {
     dropdownHost.style.top = `${rect.bottom + 6}px`;
     dropdownHost.style.minWidth = `${rect.width}px`;
     dropdownHost.innerHTML = OPTIONS[key]
-      .map((o) => `<button type="button" class="filter-option ${filters[key] === o.value ? "active" : ""}" data-value="${o.value}">${o.label}</button>`)
+      .map((o) => `<button type="button" class="filter-option ${filters[key] === o.value ? "active" : ""}" data-value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</button>`)
       .join("");
     dropdownHost.querySelectorAll(".filter-option").forEach((opt) => {
       opt.addEventListener("click", () => {
@@ -232,12 +258,17 @@ function initStudentDirectory() {
   }
 
   filterRow.querySelectorAll(".filter-box").forEach((box) => {
-    box.addEventListener("click", (e) => { e.stopPropagation(); openDropdownFor(box); });
+    box.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openDropdownFor(box);
+    });
   });
   document.addEventListener("click", (e) => {
     if (!dropdownHost.contains(e.target)) closeDropdown();
   });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeDropdown(); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDropdown();
+  });
 
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
@@ -249,95 +280,31 @@ function initStudentDirectory() {
     });
   }
 
-  searchInput.addEventListener("input", (e) => { searchTerm = e.target.value; applyFilters(); });
-  onStudents((list) => { liveStudents = list; applyFilters(); });
+  searchInput.addEventListener("input", (e) => {
+    searchTerm = e.target.value;
+    applyFilters();
+  });
+
+  onStudents((list) => {
+    liveStudents = list;
+    window.__cmStudents = list;
+    applyFilters();
+  });
+
   Object.keys(filters).forEach(updateBoxLabel);
+
+  import("./avatars.js").then((mod) => {
+    avatarAPI.getAvatarForUid = mod.getAvatarForUid;
+    avatarAPI.avatarMarkup = mod.avatarMarkup;
+    avatarAPI.onAvatars = mod.onAvatars;
+    avatarAPI.loadAvatars = mod.loadAvatars;
+    avatarAPI.onAvatars(() => applyFilters());
+    return avatarAPI.loadAvatars();
+  }).then(() => applyFilters()).catch((err) => {
+    console.error("[8CM] Avatar module unavailable:", err);
+  });
+
   loadBadgeData();
-}
-
-let __claimCache = null;
-let __monitorCache = null;
-
-async function __refreshBadgeCaches() {
-  try {
-    const { db } = await import("./firebase-config.js");
-    const { doc, getDoc, collection, getDocs } = await import(
-      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
-    );
-    const [claimsSnap, monitorsSnap] = await Promise.all([
-      getDocs(collection(db, "claims")),
-      getDoc(doc(db, "settings", "monitors")),
-    ]);
-    __claimCache = new Map();
-    claimsSnap.forEach((d) => __claimCache.set(d.id, d.data().uid));
-    __monitorCache = monitorsSnap.exists()
-      ? new Set(Object.keys(monitorsSnap.data().uids || {}))
-      : new Set();
-    window.__cmClaimUids = __claimCache;
-    window.__cmMonitorUids = __monitorCache;
-  } catch (err) {
-    console.error("Failed to refresh profile badge data:", err);
-  }
-}
-
-window.__cmIsMonitorStudent = (studentId) => {
-  const claimed = __claimCache?.get(studentId);
-  return !!claimed && !!__monitorCache?.has(claimed);
-};
-
-__refreshBadgeCaches();
-
-export function openProfile(studentId) {
-  const overlay = document.getElementById("profileOverlay");
-  const body = document.getElementById("profileBody");
-  if (!overlay || !body) return;
-  const student = (window.__cmStudents || []).find((s) => s.id === studentId);
-  if (!student) return;
-  const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
-  const transportLabel = (t) => (t === "OT" ? "Own transport" : `Bus ${t}`);
-  const claimMap = window.__cmClaimUids || __claimCache || new Map();
-  const monitorSet = window.__cmMonitorUids || __monitorCache || new Set();
-  const claimedUid = claimMap.get(studentId);
-  const myAchievements = achievementsCache.filter((a) => a.studentId === studentId);
-  body.innerHTML = `
-    <div class="profile-header">
-      <span class="roll-badge">${String(student.rollNumber).padStart(2, "0")}</span>
-      <h3 class="profile-title">${student.name} ${claimedUid && monitorSet.has(claimedUid) ? `<span class="monitor-badge">Monitor</span>` : ""}</h3>
-      <div class="profile-pills">
-        <span class="profile-stat-pill house-${student.house}"><span class="house-dot ${student.house}"></span>${houseLabel(student.house)}</span>
-        ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
-        <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
-        ${student.islamic ? `<span class="profile-stat-pill">${student.islamic === "islamic" ? "Islamic Ed" : "Value Ed"}</span>` : ""}
-        ${student.creative ? `<span class="profile-stat-pill">${student.creative.charAt(0).toUpperCase() + student.creative.slice(1)}</span>` : ""}
-      </div>
-    </div>
-    <h4 class="profile-section-title">Achievements</h4>
-    ${myAchievements.length ? myAchievements.map((a) => `
-      <div class="profile-achievement">
-        <span class="task-tag announcement">${a.category || "General"}</span>
-        <p class="profile-ach-title">${a.title}</p>
-        ${a.description ? `<p class="profile-ach-desc">${a.description}</p>` : ""}
-        ${a.date ? `<p class="profile-ach-date">${a.date}</p>` : ""}
-      </div>`).join("") : `<p class="tt-ann-empty">No achievements logged yet.</p>`}
-  `;
-  overlay.hidden = false;
-  requestAnimationFrame(() => overlay.classList.add("open"));
-}
-function closeProfile() {
-  const overlay = document.getElementById("profileOverlay");
-  if (!overlay || overlay.hidden) return;
-  overlay.classList.remove("open");
-  setTimeout(() => (overlay.hidden = true), 200);
-}
-window.__cmOpenProfile = openProfile;
-onStudents((list) => { window.__cmStudents = list; });
-function initProfileModal() {
-  const overlay = document.getElementById("profileOverlay");
-  const closeBtn = document.getElementById("profileClose");
-  if (!overlay) return;
-  if (closeBtn) closeBtn.addEventListener("click", closeProfile);
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeProfile(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeProfile(); });
 }
 
 // ============================================
@@ -545,18 +512,40 @@ function initTodayDate() {
 }
 
 // ============================================
+// V12 — version watermark
+// ============================================
+function initVersionBadge() {
+  if (document.querySelector(".version-badge")) return;
+  const el = document.createElement("div");
+  el.className = "version-badge";
+  el.textContent = "v12";
+  el.setAttribute("aria-hidden", "true");
+  document.body.appendChild(el);
+}
+
+initVersionBadge();
+
+// ============================================
 // Boot — every page
 // ============================================
 initSplash();
 initNav();
 initStudentDirectory();
-initProfileModal();
 initResources();
 initGalleryLightbox();
 initHeroChart();
 initStatCountUp();
 initChangelog();
 initTodayDate();
+
+// Profile modal + avatar picker boot
+import("./profile-modal.js")
+  .then((m) => {
+    window.__cmOpenProfile = m.openProfile;
+    m.initProfileModal();
+  })
+  .catch((err) => console.error("Failed to init profile modal:", err));
+
 
 // Firebase-backed modules are lazy. A blocked third-party SDK must not stop
 // static navigation, the directory, splash handling, or other local UI.

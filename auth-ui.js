@@ -21,6 +21,7 @@ import {
 } from "./auth.js";
 import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
 import { syncThemeFromProfile } from "./theme.js";
+import { avatarMarkup, onAvatars, getAvatarForUid } from "./avatars.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
 let latestState = { user: null, profile: null, monitor: false };
@@ -30,6 +31,11 @@ let latestState = { user: null, profile: null, monitor: false };
 let claimMode = "initial";
 
 const $ = (id) => document.getElementById(id);
+const escapeHtml = (v) =>
+  String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
+
 
 const AUTH_CACHE_KEY = "8cm:lastAuth";
 function readCachedAuth() {
@@ -411,59 +417,38 @@ function initials(name) {
   return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function houseLabel(house) {
-  return house.charAt(0).toUpperCase() + house.slice(1);
-}
-
-function transportLabel(t) {
-  return t === "OT" ? "Own transport" : `Bus ${t}`;
-}
-
-function renderAuthSlot() {
+funcfunction renderAuthSlot() {
   const slot = $("authSlot");
   if (!slot) return;
   const { user, profile, monitor } = latestState;
 
   if (!user) {
     slot.innerHTML = `<button class="btn btn-primary btn-small" id="signInTriggerBtn">Sign in</button>`;
-    $("signInTriggerBtn").addEventListener("click", () => showAuthModal("signin")); // showAuthModal() plays the "open" sound
+    $("signInTriggerBtn").addEventListener("click", () => showAuthModal("signin"));
     return;
   }
 
   const name = (profile && profile.claimedStudentName) || user.displayName || user.email || "Account";
-  const student = profile && profile.claimedStudentId
-    ? getStudentsSync().find((s) => s.id === profile.claimedStudentId)
-    : null;
+  const avatarId = getAvatarForUid(user.uid);
+  const avatarHtml = avatarMarkup(avatarId, name, 24);
 
   slot.innerHTML = `
-  <div class="nav-item has-dropdown" id="profileItem">
-    <button class="profile-pill" id="profileTrigger" aria-expanded="false">
-      <span class="profile-avatar">${initials(name)}</span>
-      <span class="tri">▾</span>
-    </button>
-    <div class="dropdown profile-dropdown" id="profileDropdown">
-      <p class="profile-name">${name}</p>
-      <p class="profile-email">${user.email || ""}</p>
-      ${monitor ? `<span class="monitor-pill">Monitor</span>` : ""}
-      ${student ? `
-        <div class="profile-stats">
-          <span class="profile-stat-pill">Roll #${student.rollNumber}</span>
-          <span class="profile-stat-pill house-${student.house}">
-            <span class="house-dot ${student.house}"></span>${houseLabel(student.house)}
-          </span>
-          ${student.language ? `<span class="profile-stat-pill">${student.language}</span>` : ""}
-          <span class="profile-stat-pill">${transportLabel(student.transport)}</span>
+    <div class="nav-item has-dropdown" id="profileItem">
+      <button class="profile-pill" id="profileTrigger" aria-expanded="false" type="button">
+        ${avatarHtml}
+        <span class="tri">▾</span>
+      </button>
+      <div class="dropdown profile-dropdown" id="profileDropdown">
+        <p class="profile-name">${escapeHtml(name)}</p>
+        <p class="profile-email">${escapeHtml(user.email || "")}</p>
+        <div class="profile-actions">
+          ${profile?.claimedStudentId ? `<button class="dropdown-action" id="viewProfileBtn" type="button">View profile</button>` : ""}
+          ${monitor ? `<button class="dropdown-action" id="monitorPanelBtn" type="button">Monitor panel</button>` : ""}
+          <button class="dropdown-action" id="signOutBtn" type="button">Sign out</button>
         </div>
-      ` : ""}
-      <div class="profile-actions">
-        ${profile?.claimedStudentId ? `<button class="dropdown-action" id="viewProfileBtn" type="button">View profile</button>` : ""}
-        ${monitor ? `<button class="dropdown-action" id="monitorPanelBtn" type="button">Monitor panel</button>` : ""}
-        <button class="dropdown-action" id="switchStudentBtn">Switch student</button>
-        <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
     </div>
-  </div>
-`;
+  `;
 
   const item = $("profileItem");
   const trigger = $("profileTrigger");
@@ -474,17 +459,12 @@ function renderAuthSlot() {
     open ? playOpen() : playClose();
   });
 
-  $("switchStudentBtn").addEventListener("click", () => {
-    playClick();
-    item.classList.remove("open");
-    openClaimModal("switch", profile && profile.claimedStudentId);
-  });
   const viewBtn = $("viewProfileBtn");
-  if (viewBtn && profile?.claimedStudentId) {
+  if (viewBtn) {
     viewBtn.addEventListener("click", () => {
       playClick();
       item.classList.remove("open");
-      window.__cmOpenProfile?.(profile.claimedStudentId);
+      window.__cmOpenProfile?.(profile?.claimedStudentId);
     });
   }
 
@@ -493,6 +473,15 @@ function renderAuthSlot() {
     monitorBtn.addEventListener("click", () => {
       playClick();
       window.location.href = "manage.html";
+    });
+  }
+
+  $("signOutBtn").addEventListener("click", () => {
+    playClose();
+    item.classList.remove("open");
+    signOutUser();
+  });
+}on.href = "manage.html";
     });
   }
 
@@ -511,11 +500,17 @@ document.addEventListener("click", (e) => {
 // ------------------------------------------------
 // Init
 // ------------------------------------------------
+export function openSwitchStudentModal(preselectId) {
+  openClaimModal("switch", preselectId || (latestState.profile && latestState.profile.claimedStudentId));
+}
+
 export function initAuthUI() {
   wirePasswordToggles();
   // Re-render profile pill if Firestore students arrive/resolve after
   // first paint, so the claimed name updates without a reload.
   onStudents(() => renderAuthSlot());
+  onAvatars(() => renderAuthSlot());
+  window.addEventListener("cm:avatar-changed", () => renderAuthSlot());
 
   if (!isFirebaseConfigured) {
     $("configBanner").hidden = false;

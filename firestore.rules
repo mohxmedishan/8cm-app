@@ -96,6 +96,16 @@ service cloud.firestore {
     // Only classmate-appropriate fields belong in these docs — see
     // section 6 of the project spec for what's safe to store here.
     // ================================================================
+    // ================================================================
+    // avatars/{uid} — premade avatar IDs only. The ID is not sensitive,
+    // so directory cards can read avatars publicly; only the account
+    // owner can write its own avatar document.
+    // ================================================================
+    match /avatars/{uid} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == uid;
+    }
+
     match /students/{studentId} {
       allow read: if true;
       allow write: if isMonitor();

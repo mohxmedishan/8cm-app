@@ -11,6 +11,18 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V12: 30 premade avatars. Pick yours from View profile and tap your avatar. Colors follow the house/accent palette.",
+      "Avatars are tied to your account, not to the student you've claimed. Switching students keeps your avatar.",
+      "The profile dropdown got simpler: View profile, Monitor panel (if you're a monitor), and Sign out. Profile details and account actions now live in the profile view.",
+      "View profile now shows a large avatar, house, language, Islamic/Value, Creative, transport, achievements, and your account actions when it is your own profile.",
+      "Monitor badges now resolve from the current student claim on every page load instead of depending on a previous sign-in event.",
+      "Student directory cards now show avatar + name on top, followed by labeled house/language/transport/role pills.",
+      "Added a v12 version watermark in the bottom-right of every page so you can tell whether the new deployment actually landed.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V11.2: Light-mode accents are now genuinely brighter and more saturated while keeping a darker readable shade for text.",
       "Gallery and lightbox captions are forced white over image gradients so they remain readable in light mode.",
       "Student cards now clearly behave like clickable profiles with pointer, hover lift, press, and keyboard focus states.",
