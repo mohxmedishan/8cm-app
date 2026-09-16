@@ -153,7 +153,7 @@ export async function loadAvatars({ force = false } = {}) {
       return cache;
     } catch (err) {
       console.error("Failed to load avatars:", err);
-      loaded = true;
+      loaded = false;
       return cache;
     } finally {
       inflight = null;
