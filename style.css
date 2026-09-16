@@ -761,7 +761,9 @@ h1, h2, h3 {
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* 3 columns × 2 rows for the current 6 stats — see the media
+     queries below for how this collapses on narrower screens. */
+  grid-template-columns: repeat(3, 1fr);
   gap: 1px;
   background: var(--border-soft);
   border: 1px solid var(--border-soft);
@@ -875,10 +877,6 @@ h1, h2, h3 {
 /* ============================================
    Responsive
    ============================================ */
-@media (max-width: 980px) {
-  .stat-grid { grid-template-columns: repeat(3, 1fr); }
-}
-
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-grid { grid-template-columns: 1fr; }
