@@ -445,7 +445,7 @@ function renderAuthSlot() {
         </div>
       ` : ""}
       <div class="profile-actions">
-        ${monitor ? `<a href="manage.html" class="dropdown-action">Monitor panel</a>` : ""}
+        ${monitor ? `<button class="dropdown-action" id="monitorPanelBtn" type="button">Monitor panel</button>` : ""}
         <button class="dropdown-action" id="switchStudentBtn">Switch student</button>
         <button class="dropdown-action" id="signOutBtn">Sign out</button>
       </div>
@@ -467,6 +467,14 @@ function renderAuthSlot() {
     item.classList.remove("open");
     openClaimModal("switch", profile && profile.claimedStudentId);
   });
+
+  const monitorBtn = $("monitorPanelBtn");
+  if (monitorBtn) {
+    monitorBtn.addEventListener("click", () => {
+      playClick();
+      window.location.href = "manage.html";
+    });
+  }
 
   $("signOutBtn").addEventListener("click", () => {
     playClose();

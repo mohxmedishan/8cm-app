@@ -11,6 +11,16 @@ export const changelog = [
   {
     date: "2026-09-16",
     items: [
+      "V10.1: removed the redundant Today button from the timetable day nav.",
+      "Timetable status bar no longer repeats the day label — it only appears when you're viewing today.",
+      "Fixed the profile dropdown alignment bug — Monitor panel was an anchor inheriting .dropdown a's padding, which out-specified the button rule. Now a button, and the CSS rule is specificity-proof anyway.",
+      "Timetable homework dots now respect the due date: a period only dots if the homework is due on or after that day, within the window from tomorrow through the due date. Homework due today only dots today, and only before school ends. Overdue homework never dots.",
+      "Tapping a period's homework in the detail panel jumps straight to the Today section.",
+    ],
+  },
+  {
+    date: "2026-09-16",
+    items: [
       "V10: nav now puts Students up top and Events in the More menu.",
       "Fixed the Pin/Unpin button on announcements — the text no longer overflows its box.",
       "Fixed the Settings (appearance) button — it actually opens the theme picker now.",
