@@ -1,39 +1,40 @@
 // ============================================
-// 8CM — Background music player (synth)
-// ------------------------------------------------
-// Instead of loading an audio file (which would 404 the moment we
-// didn't ship one), this generates a slow ambient pad with the Web
-// Audio API. No asset to host, no network hit, works offline.
+// 8CM — Background music (V13.1.1)
+// ================================================================
+//             HOW TO SET YOUR OWN TRACK
+// ----------------------------------------------------------------
+// 1. Create the folder assets/audio/ in your project.
+// 2. Drop your MP3 there (e.g. assets/audio/theme.mp3).
+// 3. Set BGM_CONFIG.src below to that path.
+// 4. Optionally set `startAt` in seconds to skip a slow intro.
+//    (e.g. Minecraft's "Mice on Venus" — you'd want startAt: 20)
 //
-// Chord progression is a slow minor-key cycle. Volume is user
-// controlled and persists in localStorage. Play state persists too —
-// navigating between pages resumes on the first user interaction
-// (browsers block autoplay otherwise).
-// ============================================
+// To use a hosted track instead, set src to the full URL:
+//    src: "https://example.com/your-song.mp3"
+//
+// To turn BGM off entirely for now, set src: "" — the Play button
+// will then do nothing. SFX still work; that's a separate system.
+// ================================================================
+
+const BGM_CONFIG = {
+  src: "",              // ← put your audio file path or URL here
+  startAt: 0,           // seconds — skips a slow intro. 20 for "Mice on Venus"-style.
+  volume: 0.4,          // default 0-1, user can override with the slider
+  loop: true,           // whether to loop the track
+};
 
 const STORAGE_PLAYING = "8cm:bgm:playing";
 const STORAGE_VOLUME = "8cm:bgm:volume";
-const DEFAULT_VOLUME = 0.4;
 
-// Slow minor progression — Am, F, C, G, at 8s per chord.
-const PROGRESSION = [
-  { bass: 110.00, mid: 220.00, high: 261.63 },  // Am
-  { bass:  87.31, mid: 174.61, high: 220.00 },  // F
-  { bass: 130.81, mid: 261.63, high: 329.63 },  // C
-  { bass:  98.00, mid: 196.00, high: 246.94 },  // G
-];
-const CHORD_SECONDS = 8;
-
-let ctx = null;
-let master = null;
-let filter = null;
-let currentVolume = DEFAULT_VOLUME;
+let audio = null;
 let wantsPlaying = false;
 let unlocked = false;
-let activeVoices = [];
-let loopTimer = null;
-let progressionIndex = 0;
+let currentVolume = BGM_CONFIG.volume;
+let seekApplied = false;
 
+// ---------------------------------------------------------------
+// Prefs
+// ---------------------------------------------------------------
 function readPrefs() {
   try {
     wantsPlaying = localStorage.getItem(STORAGE_PLAYING) === "1";
@@ -48,125 +49,56 @@ function writePrefs() {
   } catch {}
 }
 
-function getCtx() {
-  if (!ctx) {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return null;
-    ctx = new Ctx();
-  }
-  if (ctx.state === "suspended") ctx.resume().catch(() => {});
-  return ctx;
-}
-
-function ensureChain() {
-  const c = getCtx();
-  if (!c) return null;
-  if (!master) {
-    filter = c.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 900;
-    filter.Q.value = 0.6;
-
-    master = c.createGain();
-    master.gain.value = 0;
-
-    filter.connect(master);
-    master.connect(c.destination);
-  }
-  return c;
-}
-
-// One chord = three sine oscillators fading in and out over CHORD_SECONDS.
-function playChord(chord, atTime) {
-  const c = getCtx();
-  if (!c) return;
-  const duration = CHORD_SECONDS;
-  const voices = [
-    { freq: chord.bass, gain: 0.14 },
-    { freq: chord.mid,  gain: 0.06 },
-    { freq: chord.high, gain: 0.04 },
-  ];
-  voices.forEach((v) => {
-    const osc = c.createOscillator();
-    const g = c.createGain();
-    // Small detune on the upper voices for a chorus effect.
-    osc.type = "sine";
-    osc.frequency.value = v.freq;
-    osc.detune.value = v === voices[0] ? 0 : (Math.random() * 6 - 3);
-
-    g.gain.setValueAtTime(0, atTime);
-    g.gain.linearRampToValueAtTime(v.gain, atTime + 2.2);
-    g.gain.linearRampToValueAtTime(0, atTime + duration - 0.3);
-
-    osc.connect(g);
-    g.connect(filter);
-    osc.start(atTime);
-    osc.stop(atTime + duration + 0.5);
-    activeVoices.push(osc);
-  });
-}
-
-function scheduleLoop() {
-  if (!wantsPlaying) return;
-  const c = getCtx();
-  if (!c) return;
-
-  // Kick the first chord if this is the initial call
-  const now = c.currentTime + 0.05;
-  const chord = PROGRESSION[progressionIndex % PROGRESSION.length];
-  progressionIndex++;
-  playChord(chord, now);
-
-  // Schedule the next chord
-  loopTimer = setTimeout(scheduleLoop, CHORD_SECONDS * 1000 - 500);
-}
-
-function startPlayback() {
-  const c = ensureChain();
-  if (!c) return false;
-  // Ramp master up from wherever it was
-  master.gain.cancelScheduledValues(c.currentTime);
-  master.gain.setValueAtTime(master.gain.value, c.currentTime);
-  master.gain.linearRampToValueAtTime(currentVolume * 0.28, c.currentTime + 1.2);
-  if (!loopTimer) scheduleLoop();
-  return true;
-}
-
-function stopPlayback() {
-  const c = getCtx();
-  if (!c || !master) return;
-  master.gain.cancelScheduledValues(c.currentTime);
-  master.gain.setValueAtTime(master.gain.value, c.currentTime);
-  master.gain.linearRampToValueAtTime(0, c.currentTime + 0.6);
-  if (loopTimer) {
-    clearTimeout(loopTimer);
-    loopTimer = null;
-  }
-}
-
-function applyVolume() {
-  const c = getCtx();
-  if (!c || !master) return;
-  master.gain.cancelScheduledValues(c.currentTime);
-  master.gain.setValueAtTime(master.gain.value, c.currentTime);
-  master.gain.linearRampToValueAtTime(wantsPlaying ? currentVolume * 0.28 : 0, c.currentTime + 0.25);
-}
-
 // ---------------------------------------------------------------
-// Unlock handler — browsers block audio until a user gesture.
-// Attach once; the first pointerdown/keydown starts playback.
+// Audio element
 // ---------------------------------------------------------------
+function buildAudio() {
+  if (audio) return audio;
+  if (!BGM_CONFIG.src) return null;
+
+  audio = new Audio();
+  audio.src = BGM_CONFIG.src;
+  audio.loop = BGM_CONFIG.loop;
+  audio.preload = "metadata";
+  audio.volume = currentVolume;
+
+  // Seek past the intro as soon as enough of the file has loaded.
+  if (BGM_CONFIG.startAt > 0) {
+    const applySeek = () => {
+      if (seekApplied) return;
+      if (!audio.duration || !isFinite(audio.duration)) return;
+      try {
+        audio.currentTime = Math.min(BGM_CONFIG.startAt, audio.duration - 1);
+        seekApplied = true;
+      } catch {}
+    };
+    audio.addEventListener("loadedmetadata", applySeek);
+    audio.addEventListener("canplay", applySeek);
+  }
+  return audio;
+}
+
+async function attemptPlay() {
+  const a = buildAudio();
+  if (!a) return false;
+  try {
+    await a.play();
+    unlocked = true;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function armUnlock() {
   if (unlocked) return;
-  const unlock = () => {
+  const unlock = async () => {
     if (unlocked) return;
-    const c = getCtx();
-    if (!c) return;
-    unlocked = true;
-    if (wantsPlaying) startPlayback();
-    reflectUI();
-    document.removeEventListener("pointerdown", unlock);
-    document.removeEventListener("keydown", unlock);
+    const ok = await attemptPlay();
+    if (ok) {
+      document.removeEventListener("pointerdown", unlock);
+      document.removeEventListener("keydown", unlock);
+    }
   };
   document.addEventListener("pointerdown", unlock, { passive: true });
   document.addEventListener("keydown", unlock);
@@ -175,21 +107,25 @@ function armUnlock() {
 // ---------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------
-export function isBgmPlaying() { return wantsPlaying; }
-export function getBgmVolume() { return currentVolume; }
+export function isBgmPlaying() { return wantsPlaying && audio && !audio.paused; }
 
-export function playBgm() {
+export async function playBgm() {
+  if (!BGM_CONFIG.src) {
+    console.warn("[8CM] BGM: no src configured. Edit bgm.js BGM_CONFIG.src.");
+    return false;
+  }
   wantsPlaying = true;
   writePrefs();
-  unlocked = true; // clicking the toggle IS a gesture
-  startPlayback();
+  const ok = await attemptPlay();
+  if (!ok) armUnlock();
   reflectUI();
+  return ok;
 }
 
 export function pauseBgm() {
   wantsPlaying = false;
   writePrefs();
-  stopPlayback();
+  if (audio) audio.pause();
   reflectUI();
 }
 
@@ -200,21 +136,35 @@ export function toggleBgm() {
 
 export function setBgmVolume(v) {
   currentVolume = Math.max(0, Math.min(1, v));
+  if (audio) audio.volume = currentVolume;
   writePrefs();
-  applyVolume();
   reflectUI();
 }
 
+// ---------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------
 function reflectUI() {
   const toggle = document.getElementById("bgmToggle");
   if (toggle) {
     const on = wantsPlaying;
     toggle.setAttribute("aria-pressed", on ? "true" : "false");
     toggle.textContent = on ? "Pause" : "Play";
+    toggle.disabled = !BGM_CONFIG.src;
+    if (!BGM_CONFIG.src) toggle.title = "No track configured — see bgm.js";
   }
   const slider = document.getElementById("bgmVolume");
   if (slider && Math.abs(parseFloat(slider.value) / 100 - currentVolume) > 0.01) {
     slider.value = String(Math.round(currentVolume * 100));
+  }
+  // Small note explaining whether a track is set
+  const note = document.querySelector(".theme-audio-note");
+  if (note) {
+    if (!BGM_CONFIG.src) {
+      note.textContent = "No track configured yet. Set BGM_CONFIG.src in bgm.js to enable music.";
+    } else {
+      note.textContent = "SFX are always on. BGM only plays after you press Play — browsers block autoplay until then.";
+    }
   }
 }
 
@@ -231,9 +181,8 @@ export function initBgm() {
     slider.addEventListener("input", (e) => setBgmVolume(parseFloat(e.target.value) / 100));
   }
 
-  if (wantsPlaying) armUnlock();
+  if (wantsPlaying && BGM_CONFIG.src) armUnlock();
 
-  // If another tab toggles BGM, reflect it here.
   window.addEventListener("storage", (e) => {
     if (e.key === STORAGE_PLAYING) {
       const wanted = e.newValue === "1";

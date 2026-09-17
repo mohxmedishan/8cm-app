@@ -11,12 +11,12 @@ export const changelog = [
   {
     date: "2026-09-17",
     items: [
-      "V13: the Timetable page is now Class Archives — a full hub with the timetable, teachers, students, gallery, houses, and archive materials all in one place.",
-      "New Teachers directory — 15 teachers across every subject, each with their honorific, subject, and a small bio line. Search by name or subject just like the student directory.",
-      "WhatsApp group is now one tap away — green icon in the navbar and a bigger card in Quick Links at the top of Class Archives. (Ask a monitor for the invite URL if you don't have it — it'll get wired in shortly.)",
-      "Background music player — off by default. Open Settings → Sound to play, pause, and set volume. The choice follows you across pages, and it won't start until you interact with the page (browser rule, not ours).",
-      "Added a new subtle hover sound for cards, pills, and hub-nav tabs — same synth style as the existing SFX, quieter so it doesn't get annoying in lists.",
-      "Light mode got another audit pass — filter dropdowns, icon buttons, dropdown menus, timetable cell tints, ghost buttons, and modals all read correctly now.",
+      "V13.1.1: version watermark now shows the full patch number (v13.1.1) so you can tell exactly which build is live.",
+      "Homework, announcements, and events now show a proper loading animation instead of an empty box while they fetch.",
+      "Homework links are now a stack: paste a URL and press Enter to add another below. Up to six. No buttons, no X icons, no clutter.",
+      "Background music is now configurable — drop your MP3 in assets/audio/ and set one line in bgm.js. Optionally skip a slow intro by setting startAt in seconds.",
+      "Timetable announcements are back on the Class Archives page — the highlight + list below the grid works again.",
+      "House cards on the archives page now actually take you to the filtered student list, clearing any previous filters first.",
     ],
   },
   {

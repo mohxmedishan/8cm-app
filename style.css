@@ -3686,3 +3686,69 @@ html[data-theme="light"] .bgm-toggle[aria-pressed="true"] {
 .changelog-inline .changelog-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .changelog-inline .changelog-date { margin: 0 0 8px; font-size: 0.72rem; }
 .changelog-inline ul { padding-left: 18px; font-size: 0.85rem; line-height: 1.55; }
+
+/* ============================================
+   V13.1.1 — Loading skeletons
+   ============================================ */
+.task-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 20px;
+  color: var(--text-faint);
+  font-size: 0.88rem;
+}
+.task-loading-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
+  animation: taskLoadingPulse 1.2s ease-in-out infinite;
+}
+.task-loading-dot:nth-child(2) { animation-delay: 0.15s; }
+.task-loading-dot:nth-child(3) { animation-delay: 0.3s; }
+.task-loading-label { margin-left: 8px; }
+@keyframes taskLoadingPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-loading-dot { animation: none; opacity: 0.6; }
+}
+
+
+/* ============================================
+   V13.1.1 — Multi-link input stack
+   ============================================ */
+.links-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.link-input-row { position: relative; }
+.link-input {
+  width: 100%;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: border-color 0.2s var(--ease);
+}
+.link-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.link-input::placeholder { color: var(--text-faint); }
+.links-hint {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  margin: 6px 0 0;
+}
+html[data-theme="light"] .link-input {
+  background: #ffffff;
+  border-color: #cfcbc1;
+}

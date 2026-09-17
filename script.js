@@ -314,6 +314,49 @@ function initStudentDirectory() {
 }
 
 // ============================================
+// House card → students list, with the house filter pre-applied
+// ============================================
+function initHouseCards() {
+  const cards = document.querySelectorAll(".house-card[data-house]");
+  if (!cards.length) return;
+
+  cards.forEach((card) => {
+    const jump = () => {
+      const house = card.dataset.house;
+      if (!house) return;
+
+      const clearBtn = document.getElementById("filterClear");
+      if (clearBtn && !clearBtn.hidden) clearBtn.click();
+
+      const box = document.querySelector(`#filterRow .filter-box[data-filter-key="house"]`);
+      if (box) {
+        box.click();
+        const option = document.querySelector(`#filterDropdownHost .filter-option[data-value="${house}"]`);
+        if (option) option.click();
+      }
+
+      const target = document.getElementById("students");
+      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
+    card.addEventListener("click", jump);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        jump();
+      }
+    });
+  });
+
+  document.querySelectorAll(".bar-row[data-house]").forEach((bar) => {
+    bar.addEventListener("click", () => {
+      const house = bar.dataset.house;
+      window.location.href = `archives.html#students?house=${house}`;
+    });
+  });
+}
+
+// ============================================
 // Resources — unchanged
 // ============================================
 function initResources() {
@@ -542,7 +585,7 @@ function initVersionBadge() {
   if (document.querySelector(".version-badge")) return;
   const el = document.createElement("div");
   el.className = "version-badge";
-  el.textContent = "v13";
+  el.textContent = window.__cmVersion || "v13.1.1";
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
 }
@@ -555,6 +598,7 @@ initVersionBadge();
 initSplash();
 initNav();
 initStudentDirectory();
+initHouseCards();
 initGalleryLightbox();
 initHeroChart();
 initChangelog();  // no-ops on pages without #changelogEntries

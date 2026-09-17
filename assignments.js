@@ -31,14 +31,80 @@ import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
-import {
-  mountLinkFields,
-  fillLinkFields,
-  readLinkFields,
-  linkChipsHtml,
-} from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
+
+// ------------------------------------------------
+// Multi-link field
+// ------------------------------------------------
+const MAX_LINKS = 6;
+
+function appendLinkInput(container, value = "", index) {
+  const count = container.querySelectorAll(".link-input-row").length;
+  if (count >= MAX_LINKS) return;
+
+  const row = document.createElement("div");
+  row.className = "link-input-row";
+  const label = index !== undefined ? index + 1 : count + 1;
+
+  const input = document.createElement("input");
+  input.type = "url";
+  input.className = "link-input";
+  input.setAttribute("inputmode", "url");
+  input.placeholder = `Link ${label} (paste a URL)`;
+  input.value = value || "";
+  input.dataset.index = String(label);
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (!input.value.trim()) return;
+    if (row !== container.lastElementChild) return;
+    if (container.querySelectorAll(".link-input-row").length >= MAX_LINKS) return;
+    appendLinkInput(container, "", undefined);
+    const lastInput = container.lastElementChild.querySelector("input");
+    if (lastInput) lastInput.focus();
+  });
+
+  input.addEventListener("paste", () => {
+    setTimeout(() => {
+      if (!input.value.trim()) return;
+      if (row !== container.lastElementChild) return;
+      if (container.querySelectorAll(".link-input-row").length >= MAX_LINKS) return;
+      appendLinkInput(container, "", undefined);
+    }, 0);
+  });
+
+  row.appendChild(input);
+  container.appendChild(row);
+}
+
+function setLinkInputs(container, links) {
+  if (!container) return;
+  container.innerHTML = "";
+  const cleaned = (links || []).map((l) => (typeof l === "string" ? l : l?.url || "")).filter(Boolean);
+  if (cleaned.length === 0) {
+    appendLinkInput(container, "", 0);
+  } else {
+    cleaned.slice(0, MAX_LINKS).forEach((url, i) => appendLinkInput(container, url, i));
+    if (cleaned.length < MAX_LINKS) appendLinkInput(container, "", cleaned.length);
+  }
+}
+
+function readLinkInputs(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(".link-input"))
+    .map((i) => i.value.trim())
+    .filter(Boolean)
+    .map((url) => normalizeUrl(url));
+}
+
+function normalizeUrl(raw) {
+  const v = raw.trim();
+  if (!v) return "";
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+}
+
 
 // ------------------------------------------------
 // Shared cache + pub/sub — see module comment above
@@ -212,14 +278,15 @@ function openForm(assignment) {
   const form = $("homeworkForm");
   if (!form) return;
   populateSubjectOptions();
-  mountLinkFields(form, "homework");
   editingId = assignment ? assignment.id : null;
   form.subject.value = (assignment && assignment.subject) || form.subject.options[0]?.value || "";
   form.title.value = (assignment && assignment.title) || "";
   form.description.value = (assignment && assignment.description) || "";
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
   form.priority.value = (assignment && assignment.priority) || "medium";
-  fillLinkFields(form, "homework", assignment);
+  const linkStack = $("homeworkLinksStack");
+  const existingLinks = assignment?.links || (assignment?.link ? [assignment.link] : []);
+  setLinkInputs(linkStack, existingLinks);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = assignment ? "Save changes" : "Add homework";
@@ -234,6 +301,8 @@ function closeForm({ silent = false } = {}) {
   form.hidden = true;
   editingId = null;
   setFormError(null);
+  const linkStack = $("homeworkLinksStack");
+  if (linkStack) linkStack.innerHTML = "";
   if (!silent) playClose();
 }
 
@@ -247,14 +316,7 @@ function setFormError(message) {
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
-  const { links, invalid } = readLinkFields(form);
-  if (invalid.length) {
-    setFormError(
-      `Link ${invalid.join(", ")} ${invalid.length === 1 ? "doesn't look like a valid URL" : "don't look like valid URLs"}. Fix or clear ${invalid.length === 1 ? "it" : "them"} and try again.`
-    );
-    playError();
-    return;
-  }
+  const links = readLinkInputs($("homeworkLinksStack"));
   const payload = {
     subject: form.subject.value.trim(),
     title: form.title.value.trim(),
@@ -262,9 +324,7 @@ async function handleSubmit(e) {
     dueDate: form.dueDate.value,
     priority: form.priority.value,
     links,
-    // Legacy single-link field is cleared once an item is saved through
-    // the new multi-link form, so the two can't drift out of sync.
-    link: "",
+    link: links[0] || "",
   };
   if (!payload.subject || !payload.title || !payload.dueDate) return;
 
@@ -354,7 +414,12 @@ function renderList() {
         <p class="task-subject">${a.title}</p>
         <p class="task-detail">${a.description || ""}</p>
         <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
-        ${linkChipsHtml(a)}
+        ${(() => {
+          const list = a.links || (a.link ? [a.link] : []);
+          return list.map((url, i) =>
+            `<a class="task-link-chip" href="${url}" target="_blank" rel="noopener">${list.length > 1 ? `Link ${i + 1}` : "Resource"}</a>`
+          ).join("");
+        })()}
       </div>
       <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
       <div class="hw-actions">
@@ -401,6 +466,8 @@ export function initAssignments() {
   const needsLiveData = hasHomeworkPanel || !!document.querySelector(".tt-grid");
   if (!needsLiveData) return; // page needs neither the panel nor timetable homework badges
 
+  if (hasHomeworkPanel) renderListLoading();
+
   startAssignmentsListener();
 
   subscribeAuth(({ user, monitor }) => {
@@ -418,7 +485,6 @@ export function initAssignments() {
 
   const form = $("homeworkForm");
   if (form) {
-    mountLinkFields(form, "homework");
     form.addEventListener("submit", handleSubmit);
     const cancelBtn = form.querySelector('[data-action="cancel"]');
     if (cancelBtn) cancelBtn.addEventListener("click", () => closeForm());

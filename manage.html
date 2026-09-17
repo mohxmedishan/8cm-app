@@ -151,7 +151,11 @@
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Exercise 4.3" required="" type="text"/></label>
 <label class="field field-wide"><span>Description (optional)</span><input name="description" placeholder="Questions 1–10" type="text"/></label>
 <label class="field"><span>Due date</span><input name="dueDate" required="" type="date"/></label>
-<label class="field field-wide"><span>Link (optional)</span><input inputmode="url" name="link" placeholder="https://forms.google.com/…" type="url"/></label>
+<div class="field field-wide">
+  <span>Links (optional)</span>
+  <div class="links-stack" id="homeworkLinksStack"></div>
+  <p class="links-hint">Paste a URL and press Enter to add another. Leave blank to skip.</p>
+</div>
 </div>
 <p class="auth-error" hidden="" id="homeworkFormError"></p>
 <div class="task-form-actions">
