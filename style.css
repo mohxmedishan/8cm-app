@@ -20,16 +20,6 @@
   --house-spring: #7c9a5d;
   --house-summer: #d9a441;
 
-  /* Same four colors as raw R,G,B channels. Needed because several
-     places tint a house color at low opacity — rgba() can't take a
-     hex var, so those spots used to hardcode the dark-mode values and
-     therefore never changed in light mode. Every tinted house color
-     now reads from these, so switching theme shifts the tints too. */
-  --house-winter-rgb: 126, 168, 196;
-  --house-autumn-rgb: 193, 114, 58;
-  --house-spring-rgb: 124, 154, 93;
-  --house-summer-rgb: 217, 164, 65;
-
   --danger: #c1665a;
   --danger-soft: rgba(193, 102, 90, 0.14);
 
@@ -63,18 +53,10 @@ html[data-theme="light"] {
   --accent-strong: #3b675e;
   --accent-vibrant: #6b9a8f;
   --accent-vibrant-2: #86b3a8;
-  --house-winter: #2f7cb8;
-  --house-autumn: #c0571a;
-  --house-spring: #4e8a2b;
-  --house-summer: #b8820c;
-  /* Deeper than the dark-theme versions on purpose: the same mid-tone
-     that reads clearly against #16171a washes out against a near-white
-     page, so each house shifts to a shade with enough contrast to stay
-     legible as text, dots and bar fills here. */
-  --house-winter-rgb: 47, 124, 184;
-  --house-autumn-rgb: 192, 87, 26;
-  --house-spring-rgb: 78, 138, 43;
-  --house-summer-rgb: 184, 130, 12;
+  --house-winter: #3d95d6;
+  --house-autumn: #e67826;
+  --house-spring: #6cb833;
+  --house-summer: #f0ab1a;
   --danger: #b23b30;
   --danger-soft: rgba(178, 59, 48, 0.12);
 }
@@ -761,9 +743,7 @@ h1, h2, h3 {
 
 .stat-grid {
   display: grid;
-  /* 3 columns × 2 rows for the current 6 stats — see the media
-     queries below for how this collapses on narrower screens. */
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1px;
   background: var(--border-soft);
   border: 1px solid var(--border-soft);
@@ -877,6 +857,10 @@ h1, h2, h3 {
 /* ============================================
    Responsive
    ============================================ */
+@media (max-width: 980px) {
+  .stat-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 @media (max-width: 860px) {
   .hero-grid { grid-template-columns: 1fr; gap: 40px; }
   .about-grid { grid-template-columns: 1fr; }
@@ -944,25 +928,25 @@ h1, h2, h3 {
 .house-card[data-house="winter"]:hover,
 .house-card[data-house="winter"]:focus-visible {
   border-color: var(--house-winter);
-  box-shadow: 0 10px 26px rgba(var(--house-winter-rgb), 0.14);
+  box-shadow: 0 10px 26px rgba(126, 168, 196, 0.14);
 }
 
 .house-card[data-house="autumn"]:hover,
 .house-card[data-house="autumn"]:focus-visible {
   border-color: var(--house-autumn);
-  box-shadow: 0 10px 26px rgba(var(--house-autumn-rgb), 0.14);
+  box-shadow: 0 10px 26px rgba(193, 114, 58, 0.14);
 }
 
 .house-card[data-house="spring"]:hover,
 .house-card[data-house="spring"]:focus-visible {
   border-color: var(--house-spring);
-  box-shadow: 0 10px 26px rgba(var(--house-spring-rgb), 0.14);
+  box-shadow: 0 10px 26px rgba(124, 154, 93, 0.14);
 }
 
 .house-card[data-house="summer"]:hover,
 .house-card[data-house="summer"]:focus-visible {
   border-color: var(--house-summer);
-  box-shadow: 0 10px 26px rgba(var(--house-summer-rgb), 0.14);
+  box-shadow: 0 10px 26px rgba(217, 164, 65, 0.14);
 }
 
 /* ============================================
@@ -1148,7 +1132,7 @@ h1, h2, h3 {
 .task-tag.announcement {
   border-color: var(--house-summer);
   color: var(--house-summer);
-  background: rgba(var(--house-summer-rgb), 0.12);
+  background: rgba(217, 164, 65, 0.12);
 }
 
 .task-subject { font-size: 0.9rem; font-weight: 500; margin: 0 0 3px; }
@@ -1213,84 +1197,6 @@ h1, h2, h3 {
   border-color: var(--accent);
   color: var(--accent-strong);
   transform: translateY(-1px);
-}
-
-/* ============================================
-   Attached links — the up-to-six link slots shared by the homework,
-   announcement and event forms (see item-links.js), plus the chips
-   those links render as on a card.
-   ============================================ */
-.item-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 2px;
-}
-/* The chips already carry their own top margin for the single-link
-   case; inside a wrapped group the flex gap handles spacing instead. */
-.item-links .task-link-chip { margin-top: 6px; }
-.link-chip-icon { opacity: 0.75; }
-
-.link-fields { gap: 8px; }
-.link-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.link-row {
-  display: grid;
-  /* Label stays narrow, URL takes the remaining room, clear button
-     is a fixed square at the end. */
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr) auto;
-  gap: 8px;
-  align-items: center;
-}
-.link-row[hidden] { display: none; }
-
-.link-row-clear {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-s);
-  color: var(--text-faint);
-  cursor: pointer;
-  font-size: 0.8rem;
-  line-height: 1;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
-}
-.link-row-clear:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.link-add-btn {
-  align-self: flex-start;
-  background: none;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-s);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  padding: 7px 12px;
-  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
-}
-.link-add-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent-strong);
-}
-.link-add-btn[hidden] { display: none; }
-
-@media (max-width: 620px) {
-  /* Stack label above URL on narrow screens rather than squeezing
-     both into unusable widths; the clear button sits with the URL. */
-  .link-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .link-row-label { grid-column: 1 / -1; }
 }
 
 /* ============================================
@@ -2087,10 +1993,10 @@ body.lightbox-locked { overflow: hidden; }
 .tt-cell-subject { font-size: 0.72rem; line-height: 1.2; color: var(--text); }
 
 .tt-cell.cat-math { background: var(--accent-soft); border-bottom: 2px solid var(--accent); }
-.tt-cell.cat-science { background: rgba(var(--house-winter-rgb), 0.16); border-bottom: 2px solid var(--house-winter); }
-.tt-cell.cat-language { background: rgba(var(--house-autumn-rgb), 0.16); border-bottom: 2px solid var(--house-autumn); }
-.tt-cell.cat-other { background: rgba(var(--house-spring-rgb), 0.16); border-bottom: 2px solid var(--house-spring); }
-.tt-cell.cat-creative { background: rgba(var(--house-summer-rgb), 0.16); border-bottom: 2px solid var(--house-summer); }
+.tt-cell.cat-science { background: rgba(126, 168, 196, 0.16); border-bottom: 2px solid var(--house-winter); }
+.tt-cell.cat-language { background: rgba(193, 114, 58, 0.16); border-bottom: 2px solid var(--house-autumn); }
+.tt-cell.cat-other { background: rgba(124, 154, 93, 0.16); border-bottom: 2px solid var(--house-spring); }
+.tt-cell.cat-creative { background: rgba(217, 164, 65, 0.16); border-bottom: 2px solid var(--house-summer); }
 
 .tt-cell.is-break .tt-cell-subject,
 .tt-cell.is-tail .tt-cell-subject {
@@ -2722,7 +2628,7 @@ a.tt-detail-hw:hover {
    V10.2 — Timetable announcements
    ============================================ */
 .tt-day-label.tt-day-has-announcement {
-  background: rgba(var(--house-summer-rgb), 0.14);
+  background: rgba(217, 164, 65, 0.14);
   box-shadow: inset 3px 0 0 var(--house-summer);
   cursor: pointer;
 }
@@ -2731,57 +2637,6 @@ a.tt-detail-hw:hover {
   color: var(--house-summer);
   font-weight: 600;
 }
-/* ============================================
-   Teacher list — the "who teaches what" section below the
-   timetable grid. Related subjects that rotate through the same
-   period (second language, sciences, IVE, creative arts) share one
-   card, stacked as rows, rather than each getting its own tile.
-   ============================================ */
-.tt-teachers-section {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border-soft);
-}
-.teacher-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-.teacher-card {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-m);
-  padding: 14px 16px;
-}
-.teacher-card-group {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-.teacher-card-group .teacher-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-}
-.teacher-card-group .teacher-row + .teacher-row {
-  padding-top: 8px;
-  border-top: 1px dashed var(--border-soft);
-}
-.teacher-subject {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-}
-.teacher-name {
-  font-weight: 600;
-  font-size: 0.92rem;
-  text-align: right;
-}
-
 .tt-ann-section {
   margin-top: 28px;
   padding-top: 24px;
@@ -3275,4 +3130,393 @@ html[data-theme="light"] .version-badge {
   .avatar-choice,
   .avatar-edit-overlay { transition: none; }
   .avatar-choice:hover { transform: none; }
+}
+
+/* ============================================
+   V13 — Light mode audit pass
+   ============================================ */
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* House tints on timetable cells are hardcoded rgba over a dark bg.
+   On light they wash out almost entirely — replace with solid pastel
+   tints that read against a white surface. */
+html[data-theme="light"] .tt-cell.cat-math      { background: rgba(107, 154, 143, 0.18); }
+html[data-theme="light"] .tt-cell.cat-science   { background: rgba(77, 149, 214, 0.16); }
+html[data-theme="light"] .tt-cell.cat-language  { background: rgba(230, 120, 38, 0.16); }
+html[data-theme="light"] .tt-cell.cat-other     { background: rgba(108, 184, 51, 0.16); }
+html[data-theme="light"] .tt-cell.cat-creative  { background: rgba(240, 171, 26, 0.18); }
+html[data-theme="light"] .tt-cell.is-break,
+html[data-theme="light"] .tt-cell.is-tail       { background: #eeece6; }
+html[data-theme="light"] .tt-col-day            { background: #efece6; }
+html[data-theme="light"] .tt-head               { background: #efece6; }
+
+/* Filter dropdown host + options */
+html[data-theme="light"] .filter-dropdown-host {
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+html[data-theme="light"] .filter-box {
+  background: #ffffff;
+  border-color: #d5d1c6;
+}
+html[data-theme="light"] .filter-box:hover,
+html[data-theme="light"] .filter-box.open,
+html[data-theme="light"] .filter-box.is-active { border-color: var(--accent-vibrant); }
+html[data-theme="light"] .filter-option:hover { background: #efece6; }
+html[data-theme="light"] .filter-option.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* Icon buttons — hover border used to go invisible against white */
+html[data-theme="light"] .icon-btn {
+  background: #ffffff;
+  border-color: #d5d1c6;
+  color: #5c5b56;
+}
+html[data-theme="light"] .icon-btn:hover {
+  border-color: var(--accent-vibrant);
+  color: var(--accent-strong);
+}
+
+/* Nav dropdown menu */
+html[data-theme="light"] .dropdown {
+  background: #ffffff;
+  border-color: #d5d1c6;
+  box-shadow: 0 12px 28px -14px rgba(0, 0, 0, 0.16);
+}
+html[data-theme="light"] .dropdown a:hover { background: #efece6; color: var(--text); }
+
+/* Home card borders were fine but the shadow stack lacked depth */
+html[data-theme="light"] .my-day-card { border-color: var(--accent-vibrant); }
+
+/* Modal backdrop — the dark backdrop was fine, but the modal-card
+   shadow vanished. Give it a real one. */
+html[data-theme="light"] .modal-card {
+  box-shadow: 0 24px 64px -28px rgba(0, 0, 0, 0.28);
+}
+
+/* Profile / avatar picker */
+html[data-theme="light"] .avatar-choice.active { background: var(--accent-soft); }
+html[data-theme="light"] .avatar-choice-none .cm-avatar-initials {
+  background: #efece6;
+  border-color: #d5d1c6;
+}
+
+/* Buttons: primary keeps dark text on the accent — that's fine on
+   both themes. Ghost buttons needed the border to actually read. */
+html[data-theme="light"] .btn-ghost {
+  background: #ffffff;
+  border-color: #d5d1c6;
+  color: var(--text);
+}
+html[data-theme="light"] .btn-ghost:hover {
+  border-color: var(--accent-vibrant);
+  color: var(--accent-strong);
+  background: #faf9f5;
+}
+
+/* Version badge — leave dark in both themes (it's tiny and legible
+   against any page content) but nudge its shadow for light. */
+html[data-theme="light"] .version-badge {
+  box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.35);
+}
+
+/* Hub nav (the sticky sub-nav on archives.html) */
+html[data-theme="light"] .hub-nav {
+  background: rgba(246, 245, 241, 0.92);
+  border-color: #d5d1c6;
+}
+
+/* Teacher cards */
+html[data-theme="light"] .teacher-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px -8px rgba(0, 0, 0, 0.06);
+}
+
+/* BGM controls in Settings */
+html[data-theme="light"] .bgm-toggle {
+  background: #ffffff;
+  border-color: #d5d1c6;
+}
+html[data-theme="light"] .bgm-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-vibrant);
+  color: var(--accent-strong);
+}
+
+/* Gallery + lightbox captions were forced white in V11.2 — keep that,
+   but the gradient beneath needs to actually be strong enough on
+   light thumbnails. This is fine because captions sit over a photo. */
+.gallery-photo figcaption {
+  background: linear-gradient(to top, rgba(10, 11, 12, 0.82), rgba(10, 11, 12, 0.3) 60%, transparent);
+}
+
+/* Announcement important tint reads as almost-invisible pale pink on
+   white. Bump the alpha so it's a real highlight. */
+html[data-theme="light"] .announcement-row.is-important {
+  background: rgba(178, 59, 48, 0.07);
+}
+
+/* ============================================
+   V13 — Hub page, teachers, WhatsApp, BGM
+   ============================================ */
+
+/* ---------------------------------------------------------------
+   Hub page wrapper
+   --------------------------------------------------------------- */
+.hub-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0 0 8px;
+}
+
+.hub-nav {
+  position: sticky;
+  top: 62px; /* under the main nav */
+  z-index: 50;
+  background: rgba(22, 23, 26, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  margin-bottom: 40px;
+}
+.hub-nav-inner {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  scrollbar-width: none;
+}
+.hub-nav-inner::-webkit-scrollbar { display: none; }
+.hub-nav-link {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 100px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease), border-color 0.2s var(--ease);
+  white-space: nowrap;
+}
+.hub-nav-link:hover {
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+.hub-nav-link.is-active,
+.hub-nav-link:target {
+  color: var(--accent-strong);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hub-section {
+  padding: 60px 0;
+  border-top: 1px solid var(--border-soft);
+  scroll-margin-top: 120px;
+}
+.hub-section:first-of-type { border-top: none; }
+
+/* ---------------------------------------------------------------
+   Quick links
+   --------------------------------------------------------------- */
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.quick-link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.quick-link-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.2);
+}
+.quick-link-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.quick-link-icon svg { width: 22px; height: 22px; }
+.quick-link-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.quick-link-title { font-size: 0.95rem; font-weight: 500; color: var(--text); }
+.quick-link-sub { font-size: 0.78rem; color: var(--text-faint); }
+.quick-link-arrow { color: var(--text-faint); font-size: 0.9rem; }
+.quick-link-card:hover .quick-link-arrow { color: var(--accent-strong); }
+
+.quick-link-whatsapp .quick-link-icon {
+  background: rgba(37, 211, 102, 0.15);
+  color: #25d366;
+}
+.quick-link-whatsapp:hover { border-color: #25d366; }
+.quick-link-whatsapp:hover .quick-link-arrow { color: #25d366; }
+
+/* Navbar WhatsApp button — a small green-tinted circular icon */
+.whatsapp-icon-btn {
+  color: #25d366;
+}
+.whatsapp-icon-btn:hover {
+  border-color: #25d366;
+  color: #25d366;
+  background: rgba(37, 211, 102, 0.08);
+}
+
+/* ---------------------------------------------------------------
+   Teachers
+   --------------------------------------------------------------- */
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.teacher-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--teacher-accent, var(--accent));
+  border-radius: var(--radius-m);
+  animation: fadeUp 0.4s var(--ease) forwards;
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.teacher-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--teacher-accent, var(--accent));
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.22);
+}
+
+.teacher-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--teacher-accent, var(--accent)) 18%, transparent);
+  color: var(--teacher-accent, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--teacher-accent, var(--accent)) 40%, transparent);
+}
+.teacher-body { min-width: 0; flex: 1; }
+.teacher-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0 0 2px;
+  color: var(--text);
+  line-height: 1.25;
+}
+.teacher-subject {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+.teacher-notes {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: 4px 0 0;
+}
+.teacher-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  padding: 32px 0;
+}
+
+@media (max-width: 640px) {
+  .teacher-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------------------------------------------------------------
+   BGM controls inside Settings
+   --------------------------------------------------------------- */
+.theme-audio-block {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+.theme-audio-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0 0 12px;
+}
+.theme-audio-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.theme-audio-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.theme-audio-slider input[type="range"] {
+  flex: 1;
+  max-width: 140px;
+  accent-color: var(--accent);
+}
+.bgm-toggle {
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.bgm-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.bgm-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.theme-audio-note {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------
+   Responsive
+   --------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .hub-nav { top: 54px; }
+  .hub-section { padding: 40px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .teacher-card, .quick-link-card { transition: none; }
+  .teacher-card:hover, .quick-link-card:hover { transform: none; }
 }

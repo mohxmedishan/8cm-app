@@ -112,3 +112,17 @@ export function playExternal() {
   tone(600, { duration: 0.06, type: "sine", gain: 0.05 });
   tone(950, { duration: 0.07, type: "sine", gain: 0.045, delay: 0.045 });
 }
+
+/** A very quiet tick for pointerenter on interactive cards/pills.
+ *  Uses a much lower gain than playNav so hovering a long list
+ *  doesn't become a machine gun. Debounced internally by the caller. */
+export function playHover() {
+  tone(1200, { duration: 0.028, type: "sine", gain: 0.022 });
+}
+
+/** A slightly heftier tick for tab activation (hub-nav, filter
+ *  option selection). */
+export function playTab() {
+  tone(560, { duration: 0.06, type: "triangle", gain: 0.055 });
+  tone(780, { duration: 0.07, type: "triangle", gain: 0.045, delay: 0.035 });
+}

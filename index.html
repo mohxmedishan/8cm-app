@@ -65,7 +65,7 @@
 <nav class="nav-links" id="navLinks">
   <a href="index.html#today" class="nav-link">Today</a>
   <a href="index.html#students" class="nav-link">Students</a>
-  <a href="timetable.html" class="nav-link">Timetable</a>
+  <a href="archives.html" class="nav-link">Timetable</a>
   <a href="index.html#gallery" class="nav-link">Gallery</a>
 
   <div class="nav-item has-dropdown">
@@ -113,7 +113,7 @@
 <div class="hero-actions">
 <a class="btn btn-primary" href="#students">Meet the class</a>
 <a class="btn btn-ghost" href="#houses">See the houses</a>
-<a class="btn btn-ghost" href="timetable.html">See the timetable</a>
+<a class="btn btn-ghost" href="archives.html">Class Archives</a>
 </div>
 </div>
 <div class="hero-visual">
@@ -195,6 +195,10 @@
 <label class="field">
 <span>Due date</span>
 <input name="dueDate" required="" type="date"/>
+</label>
+<label class="field field-wide">
+<span>Link (optional)</span>
+<input inputmode="url" name="link" placeholder="https://forms.google.com/…" type="url"/>
 </label>
 </div>
 <p class="auth-error" hidden="" id="homeworkFormError"></p>
@@ -418,10 +422,6 @@
 <div class="stat-block">
 <p class="stat-number" data-count="3">0</p>
 <p class="stat-label">Language groups</p>
-</div>
-<div class="stat-block">
-<p class="stat-number" data-count="2">0</p>
-<p class="stat-label">Religious sectors</p>
 </div>
 <div class="stat-block">
 <p class="stat-number" data-count="24">0</p>

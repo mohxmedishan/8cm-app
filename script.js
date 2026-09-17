@@ -3,7 +3,7 @@
 // ============================================
 import { onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
-import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav } from "./sound.js";
+import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav, playHover, playTab } from "./sound.js";
 import { onAchievements } from "./achievements.js";
 let achievementsCache = [];
 onAchievements((list) => (achievementsCache = list));
@@ -323,7 +323,6 @@ function initResources() {
   const resources = [
     { name: "Google Classroom", description: "Assignments, materials, and class-wide posts.", url: "https://classroom.google.com" },
     { name: "Digital Campus (DC)", description: "School portal for grades, attendance, and notices.", url: "https://ict.adiswathba.com/ADIS1/" },
-    { name: "ClassDojo", description: "Class story, points, and messages from teachers.", url: "https://home.classdojo.com/#/story" },
   ];
 
   resources.forEach((r) => {
@@ -519,6 +518,30 @@ function initTodayDate() {
 }
 
 // ============================================
+// V13 — Hover SFX
+// ============================================
+function initHoverSfx() {
+  const SELECTOR = ".student-card, .teacher-card, .house-card, .resource-card, .pill, .filter-box, .hub-nav-link";
+  let lastEl = null;
+  document.addEventListener("pointerover", (e) => {
+    const el = e.target.closest?.(SELECTOR);
+    if (!el || el === lastEl) return;
+    if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+    lastEl = el;
+    playHover();
+  }, { passive: true });
+  document.addEventListener("pointerout", (e) => {
+    if (e.target.closest?.(SELECTOR) === lastEl) lastEl = null;
+  }, { passive: true });
+}
+
+function initHubNavSfx() {
+  document.querySelectorAll("#hubNav .hub-nav-link").forEach((a) => {
+    a.addEventListener("click", () => playTab());
+  });
+}
+
+// ============================================
 // V12 — version watermark
 // ============================================
 function initVersionBadge() {
@@ -544,6 +567,8 @@ initHeroChart();
 initStatCountUp();
 initChangelog();
 initTodayDate();
+initHoverSfx();
+initHubNavSfx();
 
 // Profile modal + avatar picker boot
 import("./profile-modal.js")
@@ -553,6 +578,11 @@ import("./profile-modal.js")
   })
   .catch((err) => console.error("Failed to init profile modal:", err));
 
+
+// Background music is independent of Firebase and safe to lazy-load on every page.
+import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
+  console.error("[8CM] BGM module failed:", err);
+});
 
 // Firebase-backed modules are lazy. A blocked third-party SDK must not stop
 // static navigation, the directory, splash handling, or other local UI.
@@ -565,6 +595,7 @@ const OPTIONAL_MODULES = [
   ["timetable announcements", "./timetable-announcements.js", "initTimetableAnnouncements"],
   ["dashboard", "./dashboard.js", "initDashboard"],
   ["student management", "./student-manage.js", "initStudentManagement"],
+  ["teachers", "./teachers.js", "initTeachers"],
   ["gallery", "./gallery.js", "initGallery"],
   ["achievements", "./achievements.js", "initAchievements"],
   ["manage page", "./manage.js", "initManagePage"],

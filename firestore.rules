@@ -106,6 +106,14 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == uid;
     }
 
+
+    // Teachers — public read, monitor-only write. Same pattern as
+    // students: the roster is public information, only monitors manage it.
+    match /teachers/{teacherId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
+
     match /students/{studentId} {
       allow read: if true;
       allow write: if isMonitor();

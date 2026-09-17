@@ -9,6 +9,17 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-17",
+    items: [
+      "V13: the Timetable page is now Class Archives — a full hub with the timetable, teachers, students, gallery, houses, and archive materials all in one place.",
+      "New Teachers directory — 15 teachers across every subject, each with their honorific, subject, and a small bio line. Search by name or subject just like the student directory.",
+      "WhatsApp group is now one tap away — green icon in the navbar and a bigger card in Quick Links at the top of Class Archives. (Ask a monitor for the invite URL if you don't have it — it'll get wired in shortly.)",
+      "Background music player — off by default. Open Settings → Sound to play, pause, and set volume. The choice follows you across pages, and it won't start until you interact with the page (browser rule, not ours).",
+      "Added a new subtle hover sound for cards, pills, and hub-nav tabs — same synth style as the existing SFX, quieter so it doesn't get annoying in lists.",
+      "Light mode got another audit pass — filter dropdowns, icon buttons, dropdown menus, timetable cell tints, ghost buttons, and modals all read correctly now.",
+    ],
+  },
+  {
     date: "2026-09-16",
     items: [
       "V12.3: Avatar switching now tracks the signed-in account directly and updates the UI optimistically.",

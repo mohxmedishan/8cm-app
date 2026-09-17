@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Archives — 8CM</title>
-<meta name="description" content="Classroom setup, seating, and prefect history for 8CM.">
+<title>Class Archives — 8CM</title>
+<meta name="description" content="Everything about 8CM in one place — timetable, teachers, students, gallery, houses, and archive materials.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/archives.html">
 <meta property="og:url" content="https://8cm.vercel.app/archives.html">
@@ -18,29 +18,27 @@
   try {
     var a = localStorage.getItem('8cm-theme-accent');
     if (a) document.documentElement.style.setProperty('--accent', a);
+    var m = localStorage.getItem('8cm-theme-mode');
+    if (m === 'light' || m === 'dark') document.documentElement.setAttribute('data-theme', m);
   } catch (e) {}
 })();
 </script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-
 <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
 <link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
-<!-- Mobile / PWA loading splash. Shown briefly on first paint, then fades. -->
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-content">
     <img src="assets/cm-logo.png" alt="" class="splash-logo">
     <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
   </div>
 </div>
-
 <script>
 (function(){
   function hideSplash(){
@@ -56,83 +54,318 @@
 })();
 </script>
 <div class="grain"></div>
+
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="index.html#top" class="brand" aria-label="8CM home">
-      <img src="assets/cm-logo.png" alt="8CM">
-    </a>
-
+    <a href="index.html#top" class="brand" aria-label="8CM home"><img src="assets/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links" id="navLinks">
       <a href="index.html#today" class="nav-link">Today</a>
       <a href="index.html#students" class="nav-link">Students</a>
-      <a href="index.html#houses" class="nav-link">Houses</a>
-      <a href="timetable.html" class="nav-link">Timetable</a>
-
+      <a href="archives.html" class="nav-link is-active">Archives</a>
+      <a href="index.html#gallery" class="nav-link">Gallery</a>
       <div class="nav-item has-dropdown">
-        <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">
-          More <span class="tri">▾</span>
-        </button>
+        <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">More <span class="tri">▾</span></button>
         <div class="dropdown" id="moreDropdown">
-          <a href="about.html">Class overview</a>
-          <a href="archives.html">Archives</a>
-          <a href="resources.html">Resources</a>
-          <a href="stats.html">Stats</a>
-          <span class="dropdown-divider" aria-hidden="true"></span>
-          <a href="events.html">Events</a>
-          <a href="gallery.html">Gallery</a>
-          <a href="updates.html">Updates</a>
-          <a href="achievements.html">Achievements</a>
-          <span class="dropdown-divider" aria-hidden="true"></span>
-          <a href="changelog.html">Changelog</a>
+          <a href="index.html#events">Events</a>
+          <a href="index.html#houses">Houses</a>
+          <a href="index.html#achievements">Achievements</a>
+          <a href="index.html#resources">Resources</a>
+          <a href="index.html#stats">Stats</a>
+          <a href="index.html#about">About</a>
+          <a href="index.html#changelog">Changelog</a>
         </div>
       </div>
     </nav>
-
     <div class="nav-right">
+      <a class="icon-btn whatsapp-icon-btn" id="whatsappNavBtn" href="#" target="_blank" rel="noopener" aria-label="Open WhatsApp group" title="WhatsApp group">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.92 9.92 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.91-7.02Zm-7.01 15.24h-.01c-1.47 0-2.91-.4-4.17-1.14l-.3-.18-3.11.82.83-3.04-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.25 8.24Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42h-.48c-.17 0-.44.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29Z"/></svg>
+      </a>
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          <circle cx="9" cy="6" r="2" fill="currentColor"/>
-          <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          <circle cx="15" cy="12" r="2" fill="currentColor"/>
-          <line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          <circle cx="11" cy="18" r="2" fill="currentColor"/>
-        </svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
       </button>
-
-      <!-- auth-ui.js renders either a Sign in button or the profile pill here -->
       <div class="nav-auth" id="authSlot"></div>
-
-      <button class="burger" id="burger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
+      <button class="burger" id="burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
 
-<main>
+<main id="top">
   <section class="page-hero">
     <div class="section-inner">
       <a href="index.html#top" class="back-to-dashboard">← Dashboard</a>
+      <div class="section-head" style="margin-top:12px;margin-bottom:20px">
+        <h1 class="hub-title">Class Archives</h1>
+        <p class="section-sub">Timetable, teachers, students, houses, and everything else that lives off the front page.</p>
+      </div>
     </div>
   </section>
 
-  <section class="archives" id="archives">
+  <nav class="hub-nav" id="hubNav" aria-label="Archives sections">
+    <div class="section-inner hub-nav-inner">
+      <a href="#quick-links" class="hub-nav-link">Quick Links</a>
+      <a href="#timetable" class="hub-nav-link">Timetable</a>
+      <a href="#teachers" class="hub-nav-link">Teachers</a>
+      <a href="#students" class="hub-nav-link">Students</a>
+      <a href="#gallery" class="hub-nav-link">Gallery</a>
+      <a href="#houses" class="hub-nav-link">Houses</a>
+      <a href="#archive-materials" class="hub-nav-link">Materials</a>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       QUICK LINKS
+       ------------------------------------------------------------
+       WHATSAPP INVITE URL LIVES IN: archives.html, right below.
+       Replace the href on the <a id="whatsappQuickBtn"> element
+       AND the href on <a id="whatsappNavBtn"> above (the navbar icon)
+       with your group invite URL. Both are marked with the same
+       placeholder text so a find-and-replace catches them.
+       ============================================================ -->
+  <section class="hub-section" id="quick-links">
     <div class="section-inner">
       <div class="section-head">
-        <h2>Class archives</h2>
-        <p class="section-sub">The details that matter but don't belong on the front page.</p>
+        <h2>Quick links</h2>
+        <p class="section-sub">One tap to the places 8CM actually lives.</p>
+      </div>
+      <div class="quick-links-grid">
+        <a class="quick-link-card quick-link-whatsapp" id="whatsappQuickBtn" href="https://chat.whatsapp.com/YOUR_GROUP_INVITE_CODE" target="_blank" rel="noopener">
+          <span class="quick-link-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.05 4.91A9.82 9.82 0 0 0 12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.92 9.92 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.91-7.02Zm-7.01 15.24h-.01c-1.47 0-2.91-.4-4.17-1.14l-.3-.18-3.11.82.83-3.04-.2-.31a8.22 8.22 0 0 1-1.26-4.39c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.83 2.41a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.25 8.24Zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.12-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.44.12-.14.17-.25.25-.41.08-.17.04-.31-.02-.44-.06-.12-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.42h-.48c-.17 0-.44.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.22-.17-.47-.29Z"/></svg>
+          </span>
+          <span class="quick-link-body">
+            <span class="quick-link-title">WhatsApp Group</span>
+            <span class="quick-link-sub">Class chat — announcements, help, and chaos</span>
+          </span>
+          <span class="quick-link-arrow">→</span>
+        </a>
+        <a class="quick-link-card" href="https://classroom.google.com" target="_blank" rel="noopener">
+          <span class="quick-link-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M4 4h16v2H4V4zm0 4h9v2H4V8zm0 4h16v2H4v-2zm0 4h9v2H4v-2z"/></svg>
+          </span>
+          <span class="quick-link-body">
+            <span class="quick-link-title">Google Classroom</span>
+            <span class="quick-link-sub">Assignments, materials, class-wide posts</span>
+          </span>
+          <span class="quick-link-arrow">→</span>
+        </a>
+        <a class="quick-link-card" href="https://ict.adiswathba.com/ADIS1/" target="_blank" rel="noopener">
+          <span class="quick-link-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2 2 7v10l10 5 10-5V7L12 2zm0 2.18 6.4 3.2L12 10.55 5.6 7.38 12 4.18zM4 9.06l7 3.5V19.8L4 16.3V9.06zm9 10.74V12.56l7-3.5v7.24l-7 3.5z"/></svg>
+          </span>
+          <span class="quick-link-body">
+            <span class="quick-link-title">Digital Campus (DC)</span>
+            <span class="quick-link-sub">School portal — grades, attendance, notices</span>
+          </span>
+          <span class="quick-link-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TIMETABLE
+       ============================================================ -->
+  <section class="timetable hub-section" id="timetable">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>The weekly timetable</h2>
+        <p class="section-sub">Monday to Thursday runs 8:00 to 2:35 in 40-minute periods. Friday runs 8:00 to 11:10 in 35-minute periods — its own start times are listed as a smaller second line wherever they land on a different minute. Scroll sideways on a small screen, or tap a period for its full name.</p>
+      </div>
+      <div class="timetable-legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--accent)"></span>Math</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--house-winter)"></span>Sciences and computing</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--house-autumn)"></span>Languages</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--house-spring)"></span>Humanities and PE</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--house-summer)"></span>Creative arts</div>
+        <div class="legend-item"><span class="legend-swatch is-break"></span>Break</div>
+        <div class="legend-item"><span class="legend-swatch tt-legend-hw"></span>Has homework</div>
+      </div>
+      <div class="tt-day-nav">
+        <button type="button" class="tt-day-nav-btn" id="ttPrevDay" aria-label="Previous day">‹</button>
+        <span class="tt-selected-day" id="ttSelectedDayLabel">—</span>
+        <button type="button" class="tt-day-nav-btn" id="ttNextDay" aria-label="Next day">›</button>
+      </div>
+      <div class="tt-now-bar" id="ttNowBar"></div>
+      <div class="tt-scroll">
+        <div class="tt-grid">
+        <div class="tt-head tt-col-day tt-row-head"></div>
+        <div class="tt-head tt-col-p1 tt-row-head"><span class="tt-head-label">P1</span><span class="tt-head-time">8:00</span></div>
+        <div class="tt-head tt-col-p2 tt-row-head"><span class="tt-head-label">P2</span><span class="tt-head-time">8:40</span><span class="tt-head-time tt-head-time-fri">Fri 8:35</span></div>
+        <div class="tt-head tt-col-br1 tt-row-head"><span class="tt-head-label">Break</span><span class="tt-head-time">9:20</span><span class="tt-head-time tt-head-time-fri">Fri 9:10</span></div>
+        <div class="tt-head tt-col-p3 tt-row-head"><span class="tt-head-label">P3</span><span class="tt-head-time">9:35</span><span class="tt-head-time tt-head-time-fri">Fri 9:25</span></div>
+        <div class="tt-head tt-col-p4 tt-row-head"><span class="tt-head-label">P4</span><span class="tt-head-time">10:15</span><span class="tt-head-time tt-head-time-fri">Fri 10:00</span></div>
+        <div class="tt-head tt-col-p5 tt-row-head"><span class="tt-head-label">P5</span><span class="tt-head-time">10:55</span><span class="tt-head-time tt-head-time-fri">Fri 10:35</span></div>
+        <div class="tt-head tt-col-p6 tt-row-head"><span class="tt-head-label">P6</span><span class="tt-head-time">11:35</span></div>
+        <div class="tt-head tt-col-p7 tt-row-head"><span class="tt-head-label">P7</span><span class="tt-head-time">12:15</span></div>
+        <div class="tt-head tt-col-br2 tt-row-head"><span class="tt-head-label">Break</span><span class="tt-head-time">12:55</span></div>
+        <div class="tt-head tt-col-p8 tt-row-head"><span class="tt-head-label">P8</span><span class="tt-head-time">1:15</span></div>
+        <div class="tt-head tt-col-p9 tt-row-head"><span class="tt-head-label">P9</span><span class="tt-head-time">1:55</span></div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-mon" data-day="mon">Mon</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-tue" data-day="tue">Tue</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-wed" data-day="wed">Wed</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-thu" data-day="thu">Thu</div>
+        <div class="tt-cell tt-day-label tt-col-day tt-row-fri" data-day="fri">Fri</div>
+        <div class="tt-cell cat-math tt-col-p1 tt-row-mon" data-day="mon" data-period="p1" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-science tt-col-p2 tt-row-mon" data-day="mon" data-period="p2" data-subject="Phys" data-full="Physics" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-mon" data-day="mon" data-period="p3" data-subject="Lib" data-full="Library" title="Library · 40 min"><span class="tt-cell-subject">Lib</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-mon" data-day="mon" data-period="p4" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p5 tt-row-mon" data-day="mon" data-period="p5" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-creative tt-col-p6 tt-row-mon" data-day="mon" data-period="p6" data-subject="Arts" data-full="Creative arts" title="Creative arts · 40 min"><span class="tt-cell-subject">Arts</span></div>
+        <div class="tt-cell cat-language tt-col-p7 tt-row-mon" data-day="mon" data-period="p7" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-other tt-col-p8 tt-row-mon" data-day="mon" data-period="p8" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-science tt-col-p9 tt-row-mon" data-day="mon" data-period="p9" data-subject="CS" data-full="Computer science" title="Computer science · 40 min"><span class="tt-cell-subject">CS</span></div>
+        <div class="tt-cell cat-language tt-col-p1 tt-row-tue" data-day="tue" data-period="p1" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-tue" data-day="tue" data-period="p2" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-science tt-col-p3 tt-row-tue" data-day="tue" data-period="p3" data-subject="AI" data-full="Artificial intelligence" title="Artificial intelligence · 40 min"><span class="tt-cell-subject">AI</span></div>
+        <div class="tt-cell cat-language tt-col-p4 tt-row-tue" data-day="tue" data-period="p4" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p5 tt-row-tue" data-day="tue" data-period="p5" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-science tt-col-p6 tt-row-tue" data-day="tue" data-period="p6" data-subject="Chem" data-full="Chemistry" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell cat-science tt-col-p7 tt-row-tue" data-day="tue" data-period="p7" data-subject="Phys" data-full="Physics" title="Physics · 40 min"><span class="tt-cell-subject">Phys</span></div>
+        <div class="tt-cell cat-science tt-col-p8 tt-row-tue" data-day="tue" data-period="p8" data-subject="MSCS1" data-full="MSCS 1" title="MSCS 1 · 40 min"><span class="tt-cell-subject">MSCS1</span></div>
+        <div class="tt-cell cat-math tt-col-p9 tt-row-tue" data-day="tue" data-period="p9" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-math tt-col-p1 tt-row-wed" data-day="wed" data-period="p1" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-wed" data-day="wed" data-period="p2" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p3 tt-row-wed" data-day="wed" data-period="p3" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-science tt-col-p4 tt-row-wed" data-day="wed" data-period="p4" data-subject="Chem" data-full="Chemistry" title="Chemistry · 40 min"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell cat-science tt-col-p5 tt-row-wed" data-day="wed" data-period="p5" data-subject="Bio" data-full="Biology" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
+        <div class="tt-cell cat-other tt-col-p6 tt-row-wed" data-day="wed" data-period="p6" data-subject="IVE" data-full="Islamic and value education" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
+        <div class="tt-cell cat-other tt-col-p7 tt-row-wed" data-day="wed" data-period="p7" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-language tt-col-p8 tt-row-wed" data-day="wed" data-period="p8" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-language tt-col-p9 tt-row-wed" data-day="wed" data-period="p9" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-science tt-col-p1 tt-row-thu" data-day="thu" data-period="p1" data-subject="Bio" data-full="Biology" title="Biology · 40 min"><span class="tt-cell-subject">Bio</span></div>
+        <div class="tt-cell cat-language tt-col-p2 tt-row-thu" data-day="thu" data-period="p2" data-subject="Eng" data-full="English" title="English · 40 min"><span class="tt-cell-subject">Eng</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-thu" data-day="thu" data-period="p3" data-subject="IVE" data-full="Islamic and value education" title="Islamic and value education · 40 min"><span class="tt-cell-subject">IVE</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-thu" data-day="thu" data-period="p4" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-other tt-col-p5 tt-row-thu" data-day="thu" data-period="p5" data-subject="SST" data-full="Social studies" title="Social studies · 40 min"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-science tt-col-p6 tt-row-thu" data-day="thu" data-period="p6" data-subject="MSCS2" data-full="MSCS 2" title="MSCS 2 · 40 min"><span class="tt-cell-subject">MSCS2</span></div>
+        <div class="tt-cell cat-language tt-col-p7 tt-row-thu" data-day="thu" data-period="p7" data-subject="Arabic" data-full="Arabic" title="Arabic · 40 min"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-math tt-col-p8 tt-row-thu" data-day="thu" data-period="p8" data-subject="Math" data-full="Math" title="Math · 40 min"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-language tt-col-p9 tt-row-thu" data-day="thu" data-period="p9" data-subject="L2" data-full="Second language" title="Second language · 40 min"><span class="tt-cell-subject">L2</span></div>
+        <div class="tt-cell cat-language tt-col-p1 tt-row-fri" data-day="fri" data-period="p1" data-subject="Arabic" data-full="Arabic" title="Arabic · 35 min (Friday)"><span class="tt-cell-subject">Arabic</span></div>
+        <div class="tt-cell cat-other tt-col-p2 tt-row-fri" data-day="fri" data-period="p2" data-subject="SST" data-full="Social studies" title="Social studies · 35 min (Friday)"><span class="tt-cell-subject">SST</span></div>
+        <div class="tt-cell cat-other tt-col-p3 tt-row-fri" data-day="fri" data-period="p3" data-subject="PE" data-full="Physical education" title="Physical education · 35 min (Friday)"><span class="tt-cell-subject">PE</span></div>
+        <div class="tt-cell cat-math tt-col-p4 tt-row-fri" data-day="fri" data-period="p4" data-subject="Math" data-full="Math" title="Math · 35 min (Friday)"><span class="tt-cell-subject">Math</span></div>
+        <div class="tt-cell cat-science tt-col-p5 tt-row-fri" data-day="fri" data-period="p5" data-subject="Chem" data-full="Chemistry" title="Chemistry · 35 min (Friday)"><span class="tt-cell-subject">Chem</span></div>
+        <div class="tt-cell is-break tt-col-br1 tt-row-all" title="Break"><span class="tt-cell-subject">Break</span></div>
+        <div class="tt-cell is-break tt-col-br2 tt-row-mon-thu" title="Break · Monday–Thursday only"><span class="tt-cell-subject">Break</span></div>
+        <div class="tt-cell is-tail tt-col-tail tt-row-fri" data-day="fri" title="Friday ends at 11:10"><span class="tt-cell-subject">School ends · 11:10</span></div>
+        </div>
+      </div>
+      <div class="tt-detail-panel" id="ttDetailPanel">
+        <p class="tt-detail-hint">Tap any period for its full name and linked homework.</p>
+      </div>
+      <p class="timetable-note">Phys — physics · Lib — library · Eng — English · Arts — creative arts · L2 — second language · SST — social studies · CS — computer science · AI — artificial intelligence · Chem — chemistry · Bio — biology · IVE — Islamic and value education · PE — physical education · MSCS 1/2 — as listed in the class schedule.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TEACHERS
+       ============================================================ -->
+  <section class="hub-section" id="teachers">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Teachers</h2>
+        <p class="section-sub">Everyone teaching 8CM this year. Search by name or subject.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="teacherSearchInput" placeholder="Search a teacher or subject…" autocomplete="off">
+        </div>
+        <p class="result-count" id="teacherResultCount">— teachers</p>
+      </div>
+      <div class="teacher-grid" id="teacherGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       STUDENTS (reuses the same IDs as index — script.js renders
+       whichever exists on the page currently loaded)
+       ============================================================ -->
+  <section class="hub-section students" id="students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Find someone</h2>
+        <p class="section-sub">Search a name, or filter by house, transport, and language.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
+        </div>
+        <div class="filter-row" id="filterRow">
+          <button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
+          <button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
+          <button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
+          <button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
+          <button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
+          <button class="filter-clear" id="filterClear" hidden type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="filterDropdownHost"></div>
+      </div>
+      <p class="result-count" id="resultCount">30 students</p>
+      <div class="student-grid" id="studentGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       GALLERY
+       ============================================================ -->
+  <section class="hub-section gallery" id="gallery">
+    <div class="section-inner">
+      <div class="section-head"><h2>Gallery</h2></div>
+      <div class="gallery-grid" id="galleryGrid"></div>
+      <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HOUSES
+       ============================================================ -->
+  <section class="hub-section houses" id="houses">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>The four houses</h2>
+        <p class="section-sub">Every student in 8CM belongs to one.</p>
+      </div>
+      <div class="house-grid">
+        <article class="house-card" data-house="winter" tabindex="0" role="button" aria-label="View Winter students">
+          <div class="house-bar"></div>
+          <div class="house-card-body"><h3>Winter</h3><p class="house-count">8 students</p><p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p></div>
+        </article>
+        <article class="house-card" data-house="autumn" tabindex="0" role="button" aria-label="View Autumn students">
+          <div class="house-bar"></div>
+          <div class="house-card-body"><h3>Autumn</h3><p class="house-count">11 students</p><p class="house-desc">The biggest house in the room, and it acts like it.</p></div>
+        </article>
+        <article class="house-card" data-house="spring" tabindex="0" role="button" aria-label="View Spring students">
+          <div class="house-bar"></div>
+          <div class="house-card-body"><h3>Spring</h3><p class="house-count">8 students</p><p class="house-desc">Right in the middle of the pack, and comfortable there.</p></div>
+        </article>
+        <article class="house-card" data-house="summer" tabindex="0" role="button" aria-label="View Summer students">
+          <div class="house-bar"></div>
+          <div class="house-card-body"><h3>Summer</h3><p class="house-count">3 students</p><p class="house-desc">Smallest house in the batch. Every point counts more.</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ARCHIVE MATERIALS
+       ============================================================ -->
+  <section class="hub-section archives" id="archive-materials">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Archive materials</h2>
+        <p class="section-sub">Notes, past resources, and details that matter but don't belong on the front page.</p>
       </div>
       <div class="archive-grid">
         <article class="archive-card">
           <p class="archive-kicker">Classroom setup</p>
           <h3>What changed, what stayed.</h3>
-          <p>Grades 5 through 7 ran on LED screens up front. Grade 8 switched back to a projector and whiteboard — a small change, but the kind of detail that belongs in the record rather than the overview.</p>
+          <p>Grades 5 through 7 ran on LED screens up front. Grade 8 switched back to a projector and whiteboard — a small change, but the kind of detail that belongs in the record.</p>
         </article>
         <article class="archive-card">
           <p class="archive-kicker">Seating</p>
           <h3>Thirty desks, paired up.</h3>
-          <p>Three pairs to a row, thirty seats total. The exact arrangement has shifted over the years, but the pairing format has stuck.</p>
+          <p>Three pairs to a row, thirty seats total. The pairing format has stuck across years.</p>
         </article>
         <article class="archive-card">
           <p class="archive-kicker">Prefect history</p>
@@ -152,102 +385,45 @@
   </div>
 </footer>
 
-<!-- ============================================
-     Sign in / create account / reset password
-     ============================================ -->
+<!-- Shared modals — identical to every other page. Kept verbatim so
+     auth/claim/settings/profile/avatar keep working with no changes. -->
 <div class="modal-overlay" id="authOverlay" hidden>
   <div class="modal-card">
     <button class="modal-close" id="authClose" aria-label="Close">✕</button>
-
     <div class="auth-tabs">
       <button class="auth-tab active" data-mode="signin" type="button">Sign in</button>
       <button class="auth-tab" data-mode="signup" type="button">Create account</button>
     </div>
-
-    <p class="config-banner" id="configBanner" hidden>
-      ⚠️ This site isn't connected to a real Firebase project yet — sign-in
-      can't work until <code>firebase-config.js</code> has your project's
-      real values instead of the <code>REPLACE_WITH_…</code> placeholders.
-    </p>
-
+    <p class="config-banner" id="configBanner" hidden>⚠️ This site isn't connected to a real Firebase project yet.</p>
     <button class="btn-google" id="googleSignInBtn" type="button">
-      <svg class="google-icon" viewBox="0 0 18 18" aria-hidden="true">
-        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
-        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z"/>
-        <path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/>
-        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
-      </svg>
+      <svg class="google-icon" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
       <span>Continue with Google</span>
     </button>
     <div class="auth-divider"><span>or</span></div>
-
     <form id="authForm" class="auth-form" novalidate>
-      <label class="field">
-        <span>Email</span>
-        <input type="email" name="email" required autocomplete="email">
-      </label>
-      <label class="field" data-field="password">
-        <span>Password</span>
-        <div class="password-wrap">
-          <input type="password" name="password" autocomplete="current-password">
-          <button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false">
-            <svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>
-            <svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg>
-          </button>
-        </div>
-      </label>
-      <label class="field" data-field="confirmPassword" hidden>
-        <span>Confirm password</span>
-        <div class="password-wrap">
-          <input type="password" name="confirmPassword" autocomplete="new-password">
-          <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show password" aria-pressed="false">
-            <svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg>
-            <svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg>
-          </button>
-        </div>
-      </label>
-
+      <label class="field"><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
+      <label class="field" data-field="password"><span>Password</span><div class="password-wrap"><input type="password" name="password" autocomplete="current-password"><button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
+      <label class="field" data-field="confirmPassword" hidden><span>Confirm password</span><div class="password-wrap"><input type="password" name="confirmPassword" autocomplete="new-password"><button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
       <p class="auth-error" id="authError" hidden></p>
       <p class="auth-note" id="authResetNote" hidden></p>
-
-      <button type="submit" class="btn btn-primary" id="authSubmitBtn">
-        <span class="btn-label">Sign in</span>
-      </button>
+      <button type="submit" class="btn btn-primary" id="authSubmitBtn"><span class="btn-label">Sign in</span></button>
       <button type="button" class="link-btn" id="forgotPasswordBtn">Forgot password?</button>
     </form>
   </div>
 </div>
 
-<!-- ============================================
-     Immersive loading overlay — shown during
-     async Firebase calls (sign-in / sign-up / Google)
-     ============================================ -->
 <div class="loading-overlay" id="loadingOverlay" hidden>
-  <div class="loading-card">
-    <span class="loading-spinner" aria-hidden="true"></span>
-    <p class="loading-status" id="loadingStatus">Signing in…</p>
-  </div>
+  <div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-status" id="loadingStatus">Signing in…</p></div>
 </div>
 
-<!-- ============================================
-     Identity claim — mandatory before using the account.
-     No skip/close: this modal only ever gets hidden once a
-     claim actually succeeds (see auth-ui.js).
-     ============================================ -->
 <div class="modal-overlay" id="claimOverlay" hidden>
   <div class="modal-card">
     <button class="modal-close" id="claimClose" aria-label="Close" hidden>✕</button>
     <h3 id="claimModalTitle">Which one are you?</h3>
-    <p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account. This links your account to that student.</p>
+    <p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account.</p>
     <button type="button" class="link-btn claim-wrong-account" id="claimWrongAccountBtn">Not you? Sign out</button>
-
-    <label class="field">
-      <span>Your name</span>
-      <select id="claimSelect"></select>
-    </label>
-
+    <label class="field"><span>Your name</span><select id="claimSelect"></select></label>
     <p class="auth-error" id="claimError" hidden></p>
-
     <div class="modal-actions">
       <button type="button" class="link-btn" id="claimCancelBtn" hidden>Cancel</button>
       <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
@@ -255,23 +431,46 @@
   </div>
 </div>
 
-<!-- ============================================
-     Settings — appearance / theme picker
-     ============================================ -->
 <div class="modal-overlay" id="settingsOverlay" hidden>
   <div class="modal-card settings-card">
     <button class="modal-close" id="settingsClose" aria-label="Close">✕</button>
     <h3>Appearance</h3>
     <p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
-
+    <div class="theme-mode-row" role="tablist" aria-label="Color mode">
+      <button type="button" class="theme-mode-btn" data-mode="dark" role="tab">Dark</button>
+      <button type="button" class="theme-mode-btn" data-mode="light" role="tab">Light</button>
+    </div>
     <div class="theme-swatches" id="themeSwatches"></div>
-
-    <label class="field theme-custom-field">
-      <span>Custom color</span>
-      <input type="color" id="themeCustomInput" value="#6b9a8f">
-    </label>
-
+    <label class="field theme-custom-field"><span>Custom color</span><input type="color" id="themeCustomInput" value="#6b9a8f"></label>
     <button type="button" class="link-btn" id="themeResetBtn">Reset to default</button>
+    <div class="theme-audio-block">
+      <h4 class="theme-audio-title">Sound</h4>
+      <label class="theme-audio-row">
+        <span class="theme-audio-label">Background music</span>
+        <button type="button" class="bgm-toggle" id="bgmToggle" aria-pressed="false">Play</button>
+      </label>
+      <label class="theme-audio-row theme-audio-slider">
+        <span class="theme-audio-label">Volume</span>
+        <input type="range" id="bgmVolume" min="0" max="100" step="5" value="40">
+      </label>
+      <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="avatarPickerOverlay" hidden>
+  <div class="modal-card avatar-picker-card">
+    <button class="modal-close" id="avatarPickerClose" aria-label="Close">✕</button>
+    <h3>Choose your avatar</h3>
+    <p class="modal-sub">Your avatar is tied to your account, not to the student you've claimed. Switching students keeps your avatar.</p>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
   </div>
 </div>
 
