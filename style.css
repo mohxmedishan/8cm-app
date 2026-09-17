@@ -2731,6 +2731,57 @@ a.tt-detail-hw:hover {
   color: var(--house-summer);
   font-weight: 600;
 }
+/* ============================================
+   Teacher list — the "who teaches what" section below the
+   timetable grid. Related subjects that rotate through the same
+   period (second language, sciences, IVE, creative arts) share one
+   card, stacked as rows, rather than each getting its own tile.
+   ============================================ */
+.tt-teachers-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+}
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.teacher-card {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 14px 16px;
+}
+.teacher-card-group {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.teacher-card-group .teacher-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.teacher-card-group .teacher-row + .teacher-row {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-soft);
+}
+.teacher-subject {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.teacher-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-align: right;
+}
+
 .tt-ann-section {
   margin-top: 28px;
   padding-top: 24px;
