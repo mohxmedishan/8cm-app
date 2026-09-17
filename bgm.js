@@ -4,7 +4,7 @@
 //             HOW TO SET YOUR OWN TRACK
 // ----------------------------------------------------------------
 // 1. Create the folder assets/audio/ in your project.
-// 2. Drop your MP3 there (e.g. assets/audio/theme.mp3).
+// 2. Drop your MP3 there (e.g. assets/audio/sweden.mp3).
 // 3. Set BGM_CONFIG.src below to that path.
 // 4. Optionally set `startAt` in seconds to skip a slow intro.
 //    (e.g. Minecraft's "Mice on Venus" — you'd want startAt: 20)
@@ -17,10 +17,10 @@
 // ================================================================
 
 const BGM_CONFIG = {
-  src: "",              // ← put your audio file path or URL here
-  startAt: 0,           // seconds — skips a slow intro. 20 for "Mice on Venus"-style.
+  src: "assets/audio/Sweden.mp3", // ← Change this path if you renamed your file!
+  startAt: 10,          // skips first 20 seconds
   volume: 0.4,          // default 0-1, user can override with the slider
-  loop: true,           // whether to loop the track
+  loop: true,           // loops continuously
 };
 
 const STORAGE_PLAYING = "8cm:bgm:playing";
