@@ -30,6 +30,7 @@ const BGM_CONFIG = {
   // titles; also used as the full list when auto-discovery fails.
   fallbackTracks: [
     { file: "Sweden.mp3", title: "Sweden", startAt: 10 },
+    { file: "MiceOnVenus.mp3", title: "Mice on Venus", startAt: 40},
   ],
 
   defaultVolume: 0.4,
