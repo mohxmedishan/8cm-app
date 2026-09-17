@@ -14,14 +14,14 @@
 const BGM_CONFIG = {
   audioDir: "assets/audio/",
   tracks: [
-    { file: "Taswell.mp3", title: "Taswell", startAt: 0 },
+    { file: "Taswell.mp3", title: "Taswell", startAt: 4.5 },
     { file: "AriaMath.mp3", title: "Aria Math", startAt: 0 },
     { file: "Danny.mp3", title: "Danny", startAt: 0 },
-    { file: "LivingMice.mp3", title: "Living Mice", startAt: 0 },
+    { file: "LivingMice.mp3", title: "Living Mice", startAt: 28 },
     { file: "Haggstorm.mp3", title: "Haggstorm", startAt: 0 },
     { file: "WetHands.mp3", title: "Wet Hands", startAt: 0 },
     { file: "SubwooferLullaby.mp3", title: "Subwoofer Lullaby", startAt: 0 },
-    { file: "MiceOnVenus.mp3", title: "Mice on Venus", startAt: 0 },
+    { file: "MiceOnVenus.mp3", title: "Mice on Venus", startAt: 9.5 },
     { file: "Sweden.mp3", title: "Sweden", startAt: 0 },
     { file: "Otherside.mp3", title: "Otherside", startAt: 0 },
   ],
