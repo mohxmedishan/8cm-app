@@ -8,6 +8,15 @@
 // To add an entry: put a new object at the TOP of this array.
 // ============================================
 export const changelog = [
+{
+  date: "2026-09-17",
+  items: [
+    "V14: Background music now has a track chooser. Drop an MP3 into assets/audio/ and it appears in the Settings dropdown — pick one, it remembers your choice across reloads.",
+    "Fixed the Background music play/pause button. The whole row used to be clickable because it was wrapped in a <label>; the button now has its own predictable, larger hit area.",
+    "Audio controls redesigned: track picker on top, bigger Play/Pause button, wider volume slider.",
+  ],
+},
+
   {
     date: "2026-09-17",
     items: [

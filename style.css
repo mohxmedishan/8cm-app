@@ -3752,3 +3752,77 @@ html[data-theme="light"] .link-input {
   background: #ffffff;
   border-color: #cfcbc1;
 }
+
+/* ============================================
+   V14 — BGM track chooser + play button fix
+   ============================================ */
+
+/* Track picker */
+.bgm-track-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.bgm-track-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%239c9b96' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 11px 8px;
+  padding-right: 34px;
+}
+.bgm-track-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.bgm-track-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+html[data-theme="light"] .bgm-track-select {
+  background-color: #ffffff;
+  border-color: #d5d1c6;
+}
+
+/* The old .bgm-toggle sat inside a <label> that wrapped the whole
+   row, so clicking anywhere in the row fired the button — that was
+   the "wild hitbox." The row is now a plain <div> and the button
+   has an actual, predictable size. */
+.bgm-toggle {
+  min-width: 96px;
+  min-height: 40px;
+  padding: 10px 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1;
+  box-sizing: border-box;
+}
+.bgm-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Volume row — was a <label>, now a <div> with an inner label
+   pointing at the range for accessibility. */
+.theme-audio-slider {
+  gap: 14px;
+}
+.theme-audio-slider input[type="range"] {
+  height: 24px;
+  cursor: pointer;
+}
