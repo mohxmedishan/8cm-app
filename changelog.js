@@ -11,6 +11,16 @@ export const changelog = [
 {
   date: "2026-09-17",
   items: [
+    "V14.1: Fixed monitors being unable to save homework or announcements — a case-sensitivity mismatch between the sign-in check and the security rules was silently rejecting their writes.",
+    "Removed the automatic quiet-intro detection from Background music — it downloaded and analyzed the whole track just to guess where it starts, which was slow and inconsistent. Replaced with a fixed, manually-set start offset per track.",
+    "Fixed background tracks sometimes playing on top of each other (a fast double-tap on Play, or having the site open in two tabs, could start two overlapping streams). Only one track can play at a time now, and tabs no longer auto-start playback for each other.",
+    "Fixed Google sign-in popups failing on the live site due to a missing cross-origin header in the Vercel config.",
+    "Homework, announcements, and event titles/descriptions are now HTML-escaped when rendered, matching the rest of the site — stray '<' or '&' characters in monitor-entered text no longer break the layout.",
+  ],
+},
+{
+  date: "2026-09-17",
+  items: [
     "V14: Background music has a real track chooser now — pick any song from the dropdown and it remembers your choice across reloads.",
     "Each track's quiet intro is detected automatically the first time you play it (the browser reads the file's waveform, finds where it actually gets going, and skips ahead). Cached, so it's instant after the first play.",
     "Fixed the Background music play button — the whole row used to be clickable because it was wrapped in a <label>. The button now has its own bigger, predictable hit area.",

@@ -15,8 +15,17 @@ service cloud.firestore {
     // one way to manage the `monitors` collection below without
     // anyone needing direct Firestore console access. Add the other
     // two monitors' emails here.
+    // Lower-cased on both sides: the client-side mirror of this check
+    // (emailMatchesAllowlist in auth.js) already normalizes case before
+    // comparing, so a monitor's UI lit up as signed-in-and-monitor while
+    // this rule — which compared the token's email byte-for-byte — could
+    // still reject the write if Google/email sign-in preserved different
+    // casing than what's hardcoded here. That mismatch is what made
+    // homework/announcement saves fail for real monitors with no visible
+    // reason. Comparing lower-cased on both sides matches the client and
+    // removes the gap.
     function isMonitorEmail() {
-      return isSignedIn() && request.auth.token.email in [
+      return isSignedIn() && request.auth.token.email.lower() in [
         'mohamedishankunnummal@gmail.com',
         'shahbazshamsudheen713596@gmail.com'
       ];

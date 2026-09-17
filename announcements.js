@@ -23,6 +23,10 @@ import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
+const escapeHtml = (v) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
 
 let cache = [];
 const listeners = new Set();
@@ -215,14 +219,14 @@ function render() {
     row.innerHTML = `
       <div class="announcement-head">
         ${a.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
-        <span class="task-tag announcement">${a.category || "General"}</span>
-        <p class="task-subject">${a.title}</p>
+        <span class="task-tag announcement">${escapeHtml(a.category || "General")}</span>
+        <p class="task-subject">${escapeHtml(a.title)}</p>
       </div>
-      <p class="task-detail">${a.content}</p>
+      <p class="task-detail">${escapeHtml(a.content)}</p>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-        <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${a.id}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
-        <button class="task-icon-btn" data-action="edit" data-id="${a.id}" aria-label="Edit announcement">✎</button>
-        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${a.id}" aria-label="Delete announcement">✕</button>
+        <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${escapeHtml(a.id)}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
+        <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit announcement">✎</button>
+        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete announcement">✕</button>
       </div>
     `;
     list.appendChild(row);

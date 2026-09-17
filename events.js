@@ -22,6 +22,10 @@ import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
+const escapeHtml = (v) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
 
 let cache = [];
 const listeners = new Set();
@@ -201,8 +205,8 @@ function render() {
       banner.hidden = false;
       banner.innerHTML = `
         <span class="next-event-countdown">${countdownLabel(next.date)}</span>
-        <span class="next-event-title">${next.title}</span>
-        <span class="next-event-meta">${next.date}${next.time ? " · " + next.time : ""}${next.location ? " · " + next.location : ""}</span>
+        <span class="next-event-title">${escapeHtml(next.title)}</span>
+        <span class="next-event-meta">${escapeHtml(next.date)}${next.time ? " · " + escapeHtml(next.time) : ""}${next.location ? " · " + escapeHtml(next.location) : ""}</span>
       `;
     } else {
       banner.hidden = true;
@@ -226,14 +230,14 @@ function render() {
         <span class="event-date-full">${ev.date}</span>
       </div>
       <div class="event-card-body">
-        <span class="task-tag announcement">${ev.category || "General"}</span>
-        <h3>${ev.title}</h3>
-        <p class="event-meta">${[ev.time, ev.location].filter(Boolean).join(" · ")}</p>
-        ${ev.description ? `<p class="event-desc">${ev.description}</p>` : ""}
+        <span class="task-tag announcement">${escapeHtml(ev.category || "General")}</span>
+        <h3>${escapeHtml(ev.title)}</h3>
+        <p class="event-meta">${[ev.time, ev.location].filter(Boolean).map(escapeHtml).join(" · ")}</p>
+        ${ev.description ? `<p class="event-desc">${escapeHtml(ev.description)}</p>` : ""}
       </div>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-        <button class="task-icon-btn" data-action="edit" data-id="${ev.id}" aria-label="Edit event">✎</button>
-        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${ev.id}" aria-label="Delete event">✕</button>
+        <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(ev.id)}" aria-label="Edit event">✎</button>
+        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(ev.id)}" aria-label="Delete event">✕</button>
       </div>
     `;
     list.appendChild(card);

@@ -33,6 +33,10 @@ import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
 
 const $ = (id) => document.getElementById(id);
+const escapeHtml = (v) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
 
 // ------------------------------------------------
 // Multi-link field
@@ -409,26 +413,26 @@ function renderList() {
     const row = document.createElement("div");
     row.className = "task-row hw-row";
     row.innerHTML = `
-      <span class="task-tag homework hw-priority-${a.priority || "medium"}">${a.subject}</span>
+      <span class="task-tag homework hw-priority-${escapeHtml(a.priority || "medium")}">${escapeHtml(a.subject)}</span>
       <div class="task-body">
-        <p class="task-subject">${a.title}</p>
-        <p class="task-detail">${a.description || ""}</p>
+        <p class="task-subject">${escapeHtml(a.title)}</p>
+        <p class="task-detail">${escapeHtml(a.description || "")}</p>
         <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
         ${(() => {
           const list = a.links || (a.link ? [a.link] : []);
           return list.map((url, i) =>
-            `<a class="task-link-chip" href="${url}" target="_blank" rel="noopener">${list.length > 1 ? `Link ${i + 1}` : "Resource"}</a>`
+            `<a class="task-link-chip" href="${escapeHtml(url)}" target="_blank" rel="noopener">${list.length > 1 ? `Link ${i + 1}` : "Resource"}</a>`
           ).join("");
         })()}
       </div>
       <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
       <div class="hw-actions">
-        <button class="hw-complete-btn ${bucket === "completed" ? "is-done" : ""}" data-action="toggle" data-id="${a.id}" ${currentUid ? "" : "disabled"} title="${currentUid ? "" : "Sign in to track your own homework"}">
+        <button class="hw-complete-btn ${bucket === "completed" ? "is-done" : ""}" data-action="toggle" data-id="${escapeHtml(a.id)}" ${currentUid ? "" : "disabled"} title="${currentUid ? "" : "Sign in to track your own homework"}">
           ${bucket === "completed" ? "✓ Done" : "Mark done"}
         </button>
         <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-          <button class="task-icon-btn" data-action="edit" data-id="${a.id}" aria-label="Edit homework">✎</button>
-          <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${a.id}" aria-label="Delete homework">✕</button>
+          <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit homework">✎</button>
+          <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete homework">✕</button>
         </div>
       </div>
     `;

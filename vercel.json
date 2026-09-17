@@ -4,5 +4,20 @@
       "source": "/__/auth/:match*",
       "destination": "https://cm-app-1644e.firebaseapp.com/__/auth/:match*"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "unsafe-none"
+        }
+      ]
+    }
   ]
 }
