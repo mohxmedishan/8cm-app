@@ -3520,3 +3520,169 @@ html[data-theme="light"] .announcement-row.is-important {
   .teacher-card, .quick-link-card { transition: none; }
   .teacher-card:hover, .quick-link-card:hover { transform: none; }
 }
+
+
+/* ============================================
+   V13.1 — restructure + fixes
+   ============================================ */
+
+/* Hub title + section anchors clear the sticky nav */
+.hub-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0 0 8px;
+}
+.hub-section {
+  padding: 70px 0;
+  border-top: 1px solid var(--border-soft);
+  scroll-margin-top: 90px;
+}
+.hub-section:first-of-type { border-top: none; }
+
+/* Teacher cards — no animation delay, no fadeIn. The fadeUp +
+   animation-delay combination was leaving cards at opacity 0
+   until the animation ran, which read as "invisible until hover". */
+.teacher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.teacher-card {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--teacher-accent, var(--accent));
+  border-radius: var(--radius-m);
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  opacity: 1 !important;
+}
+.teacher-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--teacher-accent, var(--accent));
+  box-shadow: 0 12px 26px -12px rgba(0, 0, 0, 0.22);
+}
+.teacher-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--teacher-accent, var(--accent)) 18%, transparent);
+  color: var(--teacher-accent, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--teacher-accent, var(--accent)) 40%, transparent);
+}
+.teacher-body { min-width: 0; flex: 1; }
+.teacher-name { font-size: 0.95rem; font-weight: 500; margin: 0 0 2px; color: var(--text); line-height: 1.25; }
+.teacher-subject { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+.teacher-notes { font-size: 0.75rem; color: var(--text-faint); font-style: italic; margin: 4px 0 0; }
+.teacher-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  padding: 32px 0;
+}
+@media (max-width: 640px) { .teacher-grid { grid-template-columns: 1fr; } }
+
+/* Quick links */
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.quick-link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.quick-link-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.2);
+}
+.quick-link-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-elevated-2);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.quick-link-icon svg { width: 22px; height: 22px; }
+.quick-link-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.quick-link-title { font-size: 0.95rem; font-weight: 500; color: var(--text); }
+.quick-link-sub { font-size: 0.78rem; color: var(--text-faint); }
+.quick-link-arrow { color: var(--text-faint); font-size: 0.9rem; }
+.quick-link-card:hover .quick-link-arrow { color: var(--accent-strong); }
+.quick-link-whatsapp .quick-link-icon { background: rgba(37, 211, 102, 0.15); color: #25d366; }
+.quick-link-whatsapp:hover { border-color: #25d366; }
+.quick-link-whatsapp:hover .quick-link-arrow { color: #25d366; }
+
+/* BGM controls in settings */
+.theme-audio-block { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-soft); }
+.theme-audio-title { font-family: var(--font-display); font-size: 0.95rem; font-weight: 500; margin: 0 0 12px; }
+.theme-audio-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.theme-audio-label { font-size: 0.85rem; color: var(--text-muted); }
+.theme-audio-slider input[type="range"] { flex: 1; max-width: 140px; accent-color: var(--accent); }
+.bgm-toggle {
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.bgm-toggle:hover { border-color: var(--accent); color: var(--accent-strong); }
+.bgm-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.theme-audio-note { font-size: 0.75rem; color: var(--text-faint); margin: 10px 0 0; line-height: 1.5; }
+
+/* Light mode fixes for teacher / quick-link cards */
+html[data-theme="light"] .teacher-card,
+html[data-theme="light"] .quick-link-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 16px -8px rgba(0, 0, 0, 0.06);
+}
+html[data-theme="light"] .bgm-toggle {
+  background: #ffffff;
+  border-color: #d5d1c6;
+}
+html[data-theme="light"] .bgm-toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent-vibrant);
+  color: var(--accent-strong);
+}
+
+@media (max-width: 720px) {
+  .hub-section { padding: 44px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .teacher-card:hover, .quick-link-card:hover { transform: none; }
+}
+
+.changelog-inline { padding: 16px 20px; }
+.changelog-inline .changelog-entry { max-width: none; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border-soft); }
+.changelog-inline .changelog-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.changelog-inline .changelog-date { margin: 0 0 8px; font-size: 0.72rem; }
+.changelog-inline ul { padding-left: 18px; font-size: 0.85rem; line-height: 1.55; }

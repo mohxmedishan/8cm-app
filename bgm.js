@@ -1,37 +1,39 @@
 // ============================================
-// 8CM — Background music player
+// 8CM — Background music player (synth)
 // ------------------------------------------------
-// One HTMLAudioElement reused across pages. State (playing / paused,
-// volume) is persisted in localStorage so navigating between pages
-// resumes where you left off rather than resetting.
+// Instead of loading an audio file (which would 404 the moment we
+// didn't ship one), this generates a slow ambient pad with the Web
+// Audio API. No asset to host, no network hit, works offline.
 //
-// Autoplay policy: browsers refuse to start audio without a prior
-// user gesture. We never try to autoplay — we just remember "the
-// user pressed Play at some point" and, when the new page loads, we
-// resume on the FIRST user interaction (any click or keypress).
-//
-// ────────────────────────────────────────────────────────────────
-// TO SET YOUR TRACK: replace BGM_SRC below with a URL to your audio
-// file. Can be a same-origin path (e.g. "assets/audio/theme.mp3") or
-// a remote URL. Format support is whatever the browser supports —
-// mp3 and ogg cover effectively everything.
-// ────────────────────────────────────────────────────────────────
+// Chord progression is a slow minor-key cycle. Volume is user
+// controlled and persists in localStorage. Play state persists too —
+// navigating between pages resumes on the first user interaction
+// (browsers block autoplay otherwise).
 // ============================================
 
-const BGM_SRC = "assets/audio/8cm-theme.mp3"; // ← REPLACE THIS
 const STORAGE_PLAYING = "8cm:bgm:playing";
 const STORAGE_VOLUME = "8cm:bgm:volume";
-
 const DEFAULT_VOLUME = 0.4;
 
-let audio = null;
+// Slow minor progression — Am, F, C, G, at 8s per chord.
+const PROGRESSION = [
+  { bass: 110.00, mid: 220.00, high: 261.63 },  // Am
+  { bass:  87.31, mid: 174.61, high: 220.00 },  // F
+  { bass: 130.81, mid: 261.63, high: 329.63 },  // C
+  { bass:  98.00, mid: 196.00, high: 246.94 },  // G
+];
+const CHORD_SECONDS = 8;
+
+let ctx = null;
+let master = null;
+let filter = null;
+let currentVolume = DEFAULT_VOLUME;
 let wantsPlaying = false;
 let unlocked = false;
-let currentVolume = DEFAULT_VOLUME;
+let activeVoices = [];
+let loopTimer = null;
+let progressionIndex = 0;
 
-// ---------------------------------------------------------------
-// State helpers
-// ---------------------------------------------------------------
 function readPrefs() {
   try {
     wantsPlaying = localStorage.getItem(STORAGE_PLAYING) === "1";
@@ -39,7 +41,6 @@ function readPrefs() {
     if (!isNaN(v) && v >= 0 && v <= 1) currentVolume = v;
   } catch {}
 }
-
 function writePrefs() {
   try {
     localStorage.setItem(STORAGE_PLAYING, wantsPlaying ? "1" : "0");
@@ -47,76 +48,148 @@ function writePrefs() {
   } catch {}
 }
 
-// ---------------------------------------------------------------
-// Audio element
-// ---------------------------------------------------------------
-function getAudio() {
-  if (audio) return audio;
-  audio = new Audio(BGM_SRC);
-  audio.loop = true;
-  audio.preload = "none";
-  audio.volume = currentVolume;
-  audio.crossOrigin = "anonymous";
-  return audio;
+function getCtx() {
+  if (!ctx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    ctx = new Ctx();
+  }
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  return ctx;
 }
 
-// Attempt to play. If the browser blocks it (no user gesture yet),
-// returns false and we stay in "armed" state — the next real
-// interaction unlocks us.
-async function attemptPlay() {
-  if (!wantsPlaying) return false;
-  const a = getAudio();
-  try {
-    await a.play();
-    unlocked = true;
-    return true;
-  } catch {
-    return false;
+function ensureChain() {
+  const c = getCtx();
+  if (!c) return null;
+  if (!master) {
+    filter = c.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 900;
+    filter.Q.value = 0.6;
+
+    master = c.createGain();
+    master.gain.value = 0;
+
+    filter.connect(master);
+    master.connect(c.destination);
+  }
+  return c;
+}
+
+// One chord = three sine oscillators fading in and out over CHORD_SECONDS.
+function playChord(chord, atTime) {
+  const c = getCtx();
+  if (!c) return;
+  const duration = CHORD_SECONDS;
+  const voices = [
+    { freq: chord.bass, gain: 0.14 },
+    { freq: chord.mid,  gain: 0.06 },
+    { freq: chord.high, gain: 0.04 },
+  ];
+  voices.forEach((v) => {
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    // Small detune on the upper voices for a chorus effect.
+    osc.type = "sine";
+    osc.frequency.value = v.freq;
+    osc.detune.value = v === voices[0] ? 0 : (Math.random() * 6 - 3);
+
+    g.gain.setValueAtTime(0, atTime);
+    g.gain.linearRampToValueAtTime(v.gain, atTime + 2.2);
+    g.gain.linearRampToValueAtTime(0, atTime + duration - 0.3);
+
+    osc.connect(g);
+    g.connect(filter);
+    osc.start(atTime);
+    osc.stop(atTime + duration + 0.5);
+    activeVoices.push(osc);
+  });
+}
+
+function scheduleLoop() {
+  if (!wantsPlaying) return;
+  const c = getCtx();
+  if (!c) return;
+
+  // Kick the first chord if this is the initial call
+  const now = c.currentTime + 0.05;
+  const chord = PROGRESSION[progressionIndex % PROGRESSION.length];
+  progressionIndex++;
+  playChord(chord, now);
+
+  // Schedule the next chord
+  loopTimer = setTimeout(scheduleLoop, CHORD_SECONDS * 1000 - 500);
+}
+
+function startPlayback() {
+  const c = ensureChain();
+  if (!c) return false;
+  // Ramp master up from wherever it was
+  master.gain.cancelScheduledValues(c.currentTime);
+  master.gain.setValueAtTime(master.gain.value, c.currentTime);
+  master.gain.linearRampToValueAtTime(currentVolume * 0.28, c.currentTime + 1.2);
+  if (!loopTimer) scheduleLoop();
+  return true;
+}
+
+function stopPlayback() {
+  const c = getCtx();
+  if (!c || !master) return;
+  master.gain.cancelScheduledValues(c.currentTime);
+  master.gain.setValueAtTime(master.gain.value, c.currentTime);
+  master.gain.linearRampToValueAtTime(0, c.currentTime + 0.6);
+  if (loopTimer) {
+    clearTimeout(loopTimer);
+    loopTimer = null;
   }
 }
 
+function applyVolume() {
+  const c = getCtx();
+  if (!c || !master) return;
+  master.gain.cancelScheduledValues(c.currentTime);
+  master.gain.setValueAtTime(master.gain.value, c.currentTime);
+  master.gain.linearRampToValueAtTime(wantsPlaying ? currentVolume * 0.28 : 0, c.currentTime + 0.25);
+}
+
+// ---------------------------------------------------------------
+// Unlock handler — browsers block audio until a user gesture.
+// Attach once; the first pointerdown/keydown starts playback.
+// ---------------------------------------------------------------
 function armUnlock() {
   if (unlocked) return;
-  const unlock = async () => {
+  const unlock = () => {
     if (unlocked) return;
-    const ok = await attemptPlay();
-    if (ok) {
-      document.removeEventListener("pointerdown", unlock);
-      document.removeEventListener("keydown", unlock);
-    }
+    const c = getCtx();
+    if (!c) return;
+    unlocked = true;
+    if (wantsPlaying) startPlayback();
+    reflectUI();
+    document.removeEventListener("pointerdown", unlock);
+    document.removeEventListener("keydown", unlock);
   };
   document.addEventListener("pointerdown", unlock, { passive: true });
   document.addEventListener("keydown", unlock);
 }
 
 // ---------------------------------------------------------------
-// Public controls
+// Public API
 // ---------------------------------------------------------------
-export function isBgmPlaying() {
-  return wantsPlaying && audio && !audio.paused;
-}
+export function isBgmPlaying() { return wantsPlaying; }
+export function getBgmVolume() { return currentVolume; }
 
-export function isBgmWanted() {
-  return wantsPlaying;
-}
-
-export function getBgmVolume() {
-  return currentVolume;
-}
-
-export async function playBgm() {
+export function playBgm() {
   wantsPlaying = true;
   writePrefs();
-  const ok = await attemptPlay();
-  if (!ok) armUnlock();
+  unlocked = true; // clicking the toggle IS a gesture
+  startPlayback();
   reflectUI();
-  return ok;
 }
 
 export function pauseBgm() {
   wantsPlaying = false;
   writePrefs();
-  if (audio) audio.pause();
+  stopPlayback();
   reflectUI();
 }
 
@@ -127,15 +200,11 @@ export function toggleBgm() {
 
 export function setBgmVolume(v) {
   currentVolume = Math.max(0, Math.min(1, v));
-  if (audio) audio.volume = currentVolume;
   writePrefs();
+  applyVolume();
   reflectUI();
 }
 
-// ---------------------------------------------------------------
-// UI wiring — safe to call on every page. No-op if the settings
-// modal's sound block isn't present.
-// ---------------------------------------------------------------
 function reflectUI() {
   const toggle = document.getElementById("bgmToggle");
   if (toggle) {
@@ -154,25 +223,17 @@ export function initBgm() {
   reflectUI();
 
   const toggle = document.getElementById("bgmToggle");
-  if (toggle) {
-    toggle.addEventListener("click", () => {
-      toggleBgm();
-    });
-  }
+  if (toggle) toggle.addEventListener("click", toggleBgm);
+
   const slider = document.getElementById("bgmVolume");
   if (slider) {
     slider.value = String(Math.round(currentVolume * 100));
-    slider.addEventListener("input", (e) => {
-      setBgmVolume(parseFloat(e.target.value) / 100);
-    });
+    slider.addEventListener("input", (e) => setBgmVolume(parseFloat(e.target.value) / 100));
   }
 
-  // If the user already wanted music on a previous page, resume on
-  // first interaction of this one.
   if (wantsPlaying) armUnlock();
 
-  // Keep multiple tabs roughly in sync — a press in one tab reflects
-  // in the other on next focus.
+  // If another tab toggles BGM, reflect it here.
   window.addEventListener("storage", (e) => {
     if (e.key === STORAGE_PLAYING) {
       const wanted = e.newValue === "1";

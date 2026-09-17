@@ -1,46 +1,43 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>8CM.</title>
-<meta content="The home of 8CM — Abu Dhabi Indian School, Al Wathba. Students, houses, and what's due today." name="description"/>
-<meta content="#16171a" name="theme-color"/>
-<link href="https://8cm.vercel.app/" rel="canonical"/>
-<meta content="https://8cm.vercel.app/" property="og:url"/>
-<meta content="8CM" property="og:site_name"/>
-<meta content="yes" name="apple-mobile-web-app-capable"/>
-<meta content="yes" name="mobile-web-app-capable"/>
-<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
-<meta content="8CM." name="apple-mobile-web-app-title"/>
+<meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba.">
+<meta name="theme-color" content="#16171a">
+<link rel="canonical" href="https://8cm.vercel.app/">
+<meta property="og:url" content="https://8cm.vercel.app/">
+<meta property="og:site_name" content="8CM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="8CM.">
 <script>
 (function () {
   try {
     var a = localStorage.getItem('8cm-theme-accent');
     if (a) document.documentElement.style.setProperty('--accent', a);
     var m = localStorage.getItem('8cm-theme-mode');
-    if (m === 'light' || m === 'dark') {
-      document.documentElement.setAttribute('data-theme', m);
-    }
+    if (m === 'light' || m === 'dark') document.documentElement.setAttribute('data-theme', m);
   } catch (e) {}
 })();
 </script>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
-<link href="style.css" rel="stylesheet"/>
-<link href="assets/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
-<link href="assets/cm-icon-192.png" rel="apple-touch-icon" sizes="192x192"/>
-<link href="manifest.json" rel="manifest"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
+<link rel="manifest" href="manifest.json">
 </head>
 <body>
-<!-- Mobile / PWA loading splash. Shown briefly on first paint, then fades. -->
-<div aria-hidden="true" class="splash" id="splash">
-<div class="splash-content">
-<img alt="" class="splash-logo" src="assets/cm-logo.png"/>
-<p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
-</div>
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-content">
+    <img src="assets/cm-logo.png" alt="" class="splash-logo">
+    <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
+  </div>
 </div>
 <script>
 (function(){
@@ -57,437 +54,170 @@
 })();
 </script>
 <div class="grain"></div>
-<header class="nav" id="nav">
-<div class="nav-inner">
-<a aria-label="8CM home" class="brand" href="#top">
-<img alt="8CM" src="assets/cm-logo.png"/>
-</a>
-<nav class="nav-links" id="navLinks">
-  <a href="index.html#today" class="nav-link">Today</a>
-  <a href="index.html#students" class="nav-link">Students</a>
-  <a href="archives.html" class="nav-link">Timetable</a>
-  <a href="index.html#gallery" class="nav-link">Gallery</a>
 
-  <div class="nav-item has-dropdown">
-    <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">
-      More <span class="tri">▾</span>
-    </button>
-    <div class="dropdown" id="moreDropdown">
-      <a href="index.html#events">Events</a>
-      <a href="index.html#houses">Houses</a>
-      <a href="index.html#achievements">Achievements</a>
-      <a href="index.html#resources">Resources</a>
-      <a href="index.html#stats">Stats</a>
-      <a href="index.html#about">About</a>
-      <a href="index.html#changelog">Changelog</a>
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand" aria-label="8CM home"><img src="assets/cm-logo.png" alt="8CM"></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#today" class="nav-link">Today</a>
+      <a href="#events" class="nav-link">Events</a>
+      <a href="#achievements" class="nav-link">Achievements</a>
+      <a href="archives.html" class="nav-link">Archives</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
+      </button>
+      <div class="nav-auth" id="authSlot"></div>
+      <button class="burger" id="burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
     </div>
   </div>
-</nav>
-<div class="nav-right">
-<button aria-label="Settings" class="icon-btn" id="settingsBtn" title="Settings" type="button">
-<svg aria-hidden="true" viewbox="0 0 24 24">
-<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="6" y2="6"></line>
-<circle cx="9" cy="6" fill="currentColor" r="2"></circle>
-<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="12" y2="12"></line>
-<circle cx="15" cy="12" fill="currentColor" r="2"></circle>
-<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="18" y2="18"></line>
-<circle cx="11" cy="18" fill="currentColor" r="2"></circle>
-</svg>
-</button>
-<!-- auth-ui.js renders either a Sign in button or the profile pill here -->
-<div class="nav-auth" id="authSlot"></div>
-<button aria-label="Toggle menu" class="burger" id="burger">
-<span></span><span></span><span></span>
-</button>
-</div>
-</div>
 </header>
+
 <main id="top">
-<!-- HERO -->
-<section class="hero">
-<div class="hero-grid">
-<div class="hero-text">
-<p class="hero-kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
-<h1 class="hero-title">Thirty desks,<br/>four houses,<br/>one classroom that's ours.</h1>
-<p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
-<div class="hero-actions">
-<a class="btn btn-primary" href="#students">Meet the class</a>
-<a class="btn btn-ghost" href="#houses">See the houses</a>
-<a class="btn btn-ghost" href="archives.html">Class Archives</a>
-</div>
-</div>
-<div class="hero-visual">
-<p class="hero-visual-label">Houses, by headcount</p>
-<div class="bar-chart" id="heroChart">
-<div aria-label="Filter Autumn students" class="bar-row" data-house="autumn" role="button" tabindex="0">
-<span class="bar-name">Autumn</span>
-<div class="bar-track"><div class="bar-fill" data-max="11" data-value="11"></div></div>
-<span class="bar-count">11</span>
-</div>
-<div aria-label="Filter Spring students" class="bar-row" data-house="spring" role="button" tabindex="0">
-<span class="bar-name">Spring</span>
-<div class="bar-track"><div class="bar-fill" data-max="11" data-value="8"></div></div>
-<span class="bar-count">8</span>
-</div>
-<div aria-label="Filter Winter students" class="bar-row" data-house="winter" role="button" tabindex="0">
-<span class="bar-name">Winter</span>
-<div class="bar-track"><div class="bar-fill" data-max="11" data-value="8"></div></div>
-<span class="bar-count">8</span>
-</div>
-<div aria-label="Filter Summer students" class="bar-row" data-house="summer" role="button" tabindex="0">
-<span class="bar-name">Summer</span>
-<div class="bar-track"><div class="bar-fill" data-max="11" data-value="3"></div></div>
-<span class="bar-count">3</span>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- TODAY / MY DAY DASHBOARD -->
-<section class="today" id="today">
-<div class="section-inner">
-<div class="section-head">
-<h2>What's for today</h2>
-<p class="section-sub" id="todayDate">Homework and announcements — kept current so anyone checking knows what's due.</p>
-</div>
-<!-- Personalized "My Day" — only shown once signed in and claimed -->
-<div class="my-day-card" hidden="" id="myDayCard">
-<p class="my-day-greeting" id="myDayGreeting"></p>
-<div class="my-day-stats" id="myDayStats"></div>
-<div class="my-day-class" id="myDayClass"></div>
-<div class="my-day-teasers" id="myDayTeasers"></div>
-</div>
-<div class="today-grid">
-<div class="today-panel" id="homeworkPanel">
-<div class="today-panel-head">
-<h3 class="today-panel-title">Homework</h3>
-<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addHomeworkBtn">+ Add homework</button>
-</div>
-<div class="filter-pills" id="homeworkFilters">
-<button class="pill active" data-filter="all">All</button>
-<button class="pill" data-filter="pending">Pending</button>
-<button class="pill" data-filter="due-soon">Due soon</button>
-<button class="pill" data-filter="overdue">Overdue</button>
-<button class="pill" data-filter="completed">Completed</button>
-</div>
-<form class="task-form" hidden="" id="homeworkForm">
-<div class="task-form-grid">
-<label class="field">
-<span>Subject</span>
-<select name="subject" required=""></select>
-</label>
-<label class="field">
-<span>Priority</span>
-<select name="priority">
-<option value="low">Low</option>
-<option selected="" value="medium">Medium</option>
-<option value="high">High</option>
-</select>
-</label>
-<label class="field field-wide">
-<span>Title</span>
-<input name="title" placeholder="Exercise 4.3" required="" type="text"/>
-</label>
-<label class="field field-wide">
-<span>Description (optional)</span>
-<input name="description" placeholder="Questions 1–10" type="text"/>
-</label>
-<label class="field">
-<span>Due date</span>
-<input name="dueDate" required="" type="date"/>
-</label>
-<label class="field field-wide">
-<span>Link (optional)</span>
-<input inputmode="url" name="link" placeholder="https://forms.google.com/…" type="url"/>
-</label>
-</div>
-<p class="auth-error" hidden="" id="homeworkFormError"></p>
-<div class="task-form-actions">
-<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
-<button class="btn btn-add-task btn-small" type="submit">Add homework</button>
-</div>
-</form>
-<div class="task-list" id="homeworkList"></div>
-</div>
-<div class="today-panel" id="announcementPanel">
-<div class="today-panel-head">
-<h3 class="today-panel-title">Announcements</h3>
-<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addAnnouncementBtn">+ Post announcement</button>
-</div>
-<form class="task-form" hidden="" id="announcementForm">
-<div class="task-form-grid">
-<label class="field field-wide">
-<span>Title</span>
-<input name="title" placeholder="Sports day moved to Thursday" required="" type="text"/>
-</label>
-<label class="field field-wide">
-<span>Content</span>
-<input name="content" placeholder="Details students need to know" required="" type="text"/>
-</label>
-<label class="field">
-<span>Category</span>
-<select name="category">
-<option>Important</option>
-<option>Class</option>
-<option>Exam</option>
-<option>Homework</option>
-<option>Event</option>
-<option selected="">General</option>
-</select>
-</label>
-<label class="field">
-<span>Priority</span>
-<select name="priority">
-<option selected="" value="normal">Normal</option>
-<option value="important">Important</option>
-</select>
-</label>
-<label class="field">
-<span>Date of event (optional)</span>
-<input name="eventDate" type="date"/>
-</label>
-<label class="field field-checkbox">
-<input name="pinned" type="checkbox"/>
-<span>Pin to top</span>
-</label>
-</div>
-<p class="auth-error" hidden="" id="announcementFormError"></p>
-<div class="task-form-actions">
-<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
-<button class="btn btn-add-task btn-small" type="submit">Post announcement</button>
-</div>
-</form>
-<div class="task-list" id="announcementList"></div>
-</div>
-</div>
-</div>
-</section>
-<!-- HOUSES -->
-<section class="houses" id="houses">
-<div class="section-inner">
-<div class="section-head">
-<h2>The four houses</h2>
-<p class="section-sub">Every student in 8CM belongs to one. Click a house to jump straight to its filtered student list.</p>
-</div>
-<div class="house-grid">
-<article aria-label="View Winter students" class="house-card" data-house="winter" role="button" tabindex="0">
-<div class="house-bar"></div>
-<div class="house-card-body">
-<h3>Winter</h3>
-<p class="house-count">8 students</p>
-<p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p>
-</div>
-</article>
-<article aria-label="View Autumn students" class="house-card" data-house="autumn" role="button" tabindex="0">
-<div class="house-bar"></div>
-<div class="house-card-body">
-<h3>Autumn</h3>
-<p class="house-count">11 students</p>
-<p class="house-desc">The biggest house in the room, and it acts like it.</p>
-</div>
-</article>
-<article aria-label="View Spring students" class="house-card" data-house="spring" role="button" tabindex="0">
-<div class="house-bar"></div>
-<div class="house-card-body">
-<h3>Spring</h3>
-<p class="house-count">8 students</p>
-<p class="house-desc">Right in the middle of the pack, and comfortable there.</p>
-</div>
-</article>
-<article aria-label="View Summer students" class="house-card" data-house="summer" role="button" tabindex="0">
-<div class="house-bar"></div>
-<div class="house-card-body">
-<h3>Summer</h3>
-<p class="house-count">3 students</p>
-<p class="house-desc">Smallest house in the batch. Every point counts more.</p>
-</div>
-</article>
-</div>
-</div>
-</section>
-<!-- STUDENTS -->
-<section class="students" id="students">
-<div class="section-inner">
-<div class="section-head">
-<h2>Find someone</h2>
-<p class="section-sub">Search a name, or filter by house, transport, and language.</p>
-</div>
-<div class="controls">
-<div class="search-wrap">
-<input autocomplete="off" id="searchInput" placeholder="Search a name…" type="text"/>
-</div>
-<div class="filter-row" id="filterRow">
-<button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
-<button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
-<button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
-<button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
-<button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
-<button class="filter-clear" id="filterClear" hidden type="button">Clear</button>
-</div>
-<div class="filter-dropdown-host" id="filterDropdownHost"></div>
-</div>
-<p class="result-count" id="resultCount">30 students</p>
-<div class="student-grid" id="studentGrid"></div>
-</div>
-</section>
-<section class="events-page" id="events">
-<div class="section-inner">
-<div class="section-head">
-<h2>Events</h2>
-<p class="section-sub">Trips, competitions, and anything else worth marking on 8CM's calendar.</p>
-</div>
-<div class="next-event-banner" hidden="" id="nextEventBanner"></div>
-<div class="today-panel-head">
-<span class="today-note">Synced from Firestore — sign in as monitor to edit.</span>
-<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addEventBtn">+ Add event</button>
-</div>
-<form class="task-form" hidden="" id="eventForm">
-<div class="task-form-grid">
-<label class="field field-wide">
-<span>Title</span>
-<input name="title" placeholder="Inter-school science fair" required="" type="text"/>
-</label>
-<label class="field">
-<span>Date</span>
-<input name="date" required="" type="date"/>
-</label>
-<label class="field">
-<span>Time (optional)</span>
-<input name="time" placeholder="9:00 AM" type="text"/>
-</label>
-<label class="field">
-<span>Location</span>
-<input name="location" placeholder="Main hall" type="text"/>
-</label>
-<label class="field">
-<span>Category</span>
-<select name="category">
-<option>General</option>
-<option>Trip</option>
-<option>Competition</option>
-<option>Exam</option>
-<option>Celebration</option>
-</select>
-</label>
-<label class="field field-wide">
-<span>Description (optional)</span>
-<input name="description" placeholder="What to bring, what to expect" type="text"/>
-</label>
-</div>
-<p class="auth-error" hidden="" id="eventFormError"></p>
-<div class="task-form-actions">
-<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
-<button class="btn btn-add-task btn-small" type="submit">Add event</button>
-</div>
-</form>
-<div class="event-list" id="eventList"></div>
-<div class="empty-state" hidden="" id="eventsEmptyState">
-<p class="empty-title">Nothing scheduled yet.</p>
-<p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
-</div>
-</div>
-</section><section class="gallery" id="gallery">
-<div class="section-inner">
-<div class="section-head"><h2>Gallery</h2></div>
-<div class="gallery-grid" id="galleryGrid"></div>
-<p class="gallery-note">Photos go up once the class approves what's shareable.</p>
-</div>
-</section><section class="achievements" id="achievements">
-<div class="section-inner">
-<div class="section-head"><h2>Achievements</h2></div>
-<div id="achievementsList"></div>
-</div>
-</section><section class="resources" id="resources">
-<div class="section-inner">
-<div class="section-head">
-<h2>Resources</h2>
-<p class="section-sub">Quick links to the platforms 8CM actually uses.</p>
-</div>
-<div class="resource-grid" id="resourceGrid"></div>
-</div>
-</section><section class="stats" id="stats">
-<div class="section-inner">
-<div class="section-head">
-<h2>8CM, in numbers</h2>
-</div>
-<div class="stat-grid">
-<div class="stat-block">
-<p class="stat-number" data-count="30">0</p>
-<p class="stat-label">Students</p>
-</div>
-<div class="stat-block">
-<p class="stat-number" data-count="4">0</p>
-<p class="stat-label">Houses</p>
-</div>
-<div class="stat-block">
-<p class="stat-number" data-count="3">0</p>
-<p class="stat-label">Language groups</p>
-</div>
-<div class="stat-block">
-<p class="stat-number" data-count="24">0</p>
-<p class="stat-label">Take the bus</p>
-</div>
-<div class="stat-block">
-<p class="stat-number" data-count="6">0</p>
-<p class="stat-label">Own transport</p>
-</div>
-</div>
-</div>
-</section><section class="about" id="about">
-<div class="section-inner about-grid">
-<div class="about-lead">
-<h2>What 8CM actually is</h2>
-</div>
-<div class="about-body">
-<p>8CM runs on a school day that starts at 8:00 and ends at 2:30 — except Friday, which lets out around 11:30 and is treated accordingly. Thirty students sit in pairs, three pairs to a row, in front of a projector and whiteboard.</p>
-<p>The class runs on four houses — Winter, Autumn, Spring, and Summer — plus split groups for Malayalam, Hindi, and French, and shared periods for Islamic Education and Value Education. What holds 8CM together is the batch itself: the friendships, the routines, and the culture built around them.</p>
-<p class="about-note">Real events, achievements, and photos are added as they happen. Until then, you're looking at the foundation.</p>
-</div>
-</div>
-</section><section class="archives" id="archives">
-<div class="section-inner">
-<div class="section-head">
-<h2>Class archives</h2>
-<p class="section-sub">The details that matter but don't belong on the front page.</p>
-</div>
-<div class="archive-grid">
-<article class="archive-card">
-<p class="archive-kicker">Classroom setup</p>
-<h3>What changed, what stayed.</h3>
-<p>Grades 5 through 7 ran on LED screens up front. Grade 8 switched back to a projector and whiteboard — a small change, but the kind of detail that belongs in the record rather than the overview.</p>
-</article>
-<article class="archive-card">
-<p class="archive-kicker">Seating</p>
-<h3>Thirty desks, paired up.</h3>
-<p>Three pairs to a row, thirty seats total. The exact arrangement has shifted over the years, but the pairing format has stuck.</p>
-</article>
-<article class="archive-card">
-<p class="archive-kicker">Prefect history</p>
-<h3>More than one name on the seat.</h3>
-<p>The prefect role has changed hands more than once across 8CM's run. Individual records are kept internally rather than featured here.</p>
-</article>
-</div>
-</div>
-</section><section class="section changelog-section" id="changelog">
-<div class="section-inner">
-<div class="section-head"><h2>Changelog</h2></div>
-<p class="section-sub">
-        What changed on CM over time. Monitors:
-        <a class="inline-link" href="manage.html">monitor panel →</a>
-<span class="today-note">(audit log lives there too)</span>
-</p>
-<div id="changelogEntries"><!-- filled by script.js from changelog.js --></div>
-</div>
-</section></main>
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="hero-kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
+        <h1 class="hero-title">Thirty desks,<br>four houses,<br>one classroom that's ours.</h1>
+        <p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
+        <div class="hero-actions">
+          <a href="archives.html#students" class="btn btn-primary">Meet the class</a>
+          <a href="archives.html#houses" class="btn btn-ghost">See the houses</a>
+          <a href="archives.html#timetable" class="btn btn-ghost">See the timetable</a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <p class="hero-visual-label">Houses, by headcount</p>
+        <div class="bar-chart" id="heroChart">
+          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="11" data-max="11"></div></div><span class="bar-count">11</span></div>
+          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
+          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
+          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="3" data-max="11"></div></div><span class="bar-count">3</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="today" id="today">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>What's for today</h2>
+        <p class="section-sub" id="todayDate">Homework and announcements — kept current so anyone checking knows what's due.</p>
+      </div>
+      <div class="my-day-card" id="myDayCard" hidden>
+        <p class="my-day-greeting" id="myDayGreeting"></p>
+        <div class="my-day-stats" id="myDayStats"></div>
+        <div class="my-day-class" id="myDayClass"></div>
+        <div class="my-day-teasers" id="myDayTeasers"></div>
+      </div>
+      <div class="today-grid">
+        <div class="today-panel" id="homeworkPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Homework</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addHomeworkBtn" hidden>+ Add homework</button>
+          </div>
+          <div class="filter-pills" id="homeworkFilters">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="pending">Pending</button>
+            <button class="pill" data-filter="due-soon">Due soon</button>
+            <button class="pill" data-filter="overdue">Overdue</button>
+            <button class="pill" data-filter="completed">Completed</button>
+          </div>
+          <form class="task-form" id="homeworkForm" hidden>
+            <div class="task-form-grid">
+              <label class="field"><span>Subject</span><select name="subject" required></select></label>
+              <label class="field"><span>Priority</span><select name="priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Exercise 4.3" required></label>
+              <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="Questions 1–10"></label>
+              <label class="field"><span>Due date</span><input type="date" name="dueDate" required></label>
+              <label class="field field-wide"><span>Link (optional)</span><input type="url" name="link" placeholder="https://forms.google.com/…" inputmode="url"></label>
+            </div>
+            <p class="auth-error" id="homeworkFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Add homework</button>
+            </div>
+          </form>
+          <div class="task-list" id="homeworkList"></div>
+        </div>
+        <div class="today-panel" id="announcementPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Announcements</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addAnnouncementBtn" hidden>+ Post announcement</button>
+          </div>
+          <form class="task-form" id="announcementForm" hidden>
+            <div class="task-form-grid">
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Sports day moved to Thursday" required></label>
+              <label class="field field-wide"><span>Content</span><input type="text" name="content" placeholder="Details students need to know" required></label>
+              <label class="field"><span>Category</span><select name="category"><option>Important</option><option>Class</option><option>Exam</option><option>Homework</option><option>Event</option><option selected>General</option></select></label>
+              <label class="field"><span>Priority</span><select name="priority"><option value="normal" selected>Normal</option><option value="important">Important</option></select></label>
+              <label class="field"><span>Date of event (optional)</span><input type="date" name="eventDate"></label>
+              <label class="field field-checkbox"><input type="checkbox" name="pinned"><span>Pin to top</span></label>
+            </div>
+            <p class="auth-error" id="announcementFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Post announcement</button>
+            </div>
+          </form>
+          <div class="task-list" id="announcementList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="events-page" id="events">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Events</h2>
+        <p class="section-sub">Trips, competitions, and anything else worth marking on 8CM's calendar.</p>
+      </div>
+      <div class="next-event-banner" id="nextEventBanner" hidden></div>
+      <div class="today-panel-head">
+        <span class="today-note">Synced from Firestore — sign in as monitor to edit.</span>
+        <button class="btn btn-add-task btn-small monitor-only" id="addEventBtn" hidden>+ Add event</button>
+      </div>
+      <form class="task-form" id="eventForm" hidden>
+        <div class="task-form-grid">
+          <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Inter-school science fair" required></label>
+          <label class="field"><span>Date</span><input type="date" name="date" required></label>
+          <label class="field"><span>Time (optional)</span><input type="text" name="time" placeholder="9:00 AM"></label>
+          <label class="field"><span>Location</span><input type="text" name="location" placeholder="Main hall"></label>
+          <label class="field"><span>Category</span><select name="category"><option>General</option><option>Trip</option><option>Competition</option><option>Exam</option><option>Celebration</option></select></label>
+          <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="What to bring, what to expect"></label>
+        </div>
+        <p class="auth-error" id="eventFormError" hidden></p>
+        <div class="task-form-actions">
+          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn btn-add-task btn-small">Add event</button>
+        </div>
+      </form>
+      <div class="event-list" id="eventList"></div>
+      <div class="empty-state" id="eventsEmptyState" hidden>
+        <p class="empty-title">Nothing scheduled yet.</p>
+        <p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="achievements" id="achievements">
+    <div class="section-inner">
+      <div class="section-head"><h2>Achievements</h2></div>
+      <div id="achievementsList"></div>
+    </div>
+  </section>
+
+</main>
+
 <footer class="footer">
-<div class="section-inner footer-inner">
-<p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
-<p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
-</div>
+  <div class="section-inner footer-inner">
+    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+  </div>
 </footer>
-<!-- ============================================
-     Sign in / create account / reset password
-     ============================================ -->
+
 <div class="modal-overlay" hidden="" id="authOverlay">
 <div class="modal-card">
 <button aria-label="Close" class="modal-close" id="authClose">✕</button>

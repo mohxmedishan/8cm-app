@@ -114,13 +114,15 @@
 <div class="manage-locked" id="manageLocked"><p>Checking access…</p></div>
 <div hidden="" id="manageContent">
 <div class="manage-tabs" id="manageTabs">
-<button class="manage-tab active" data-tab="homework" type="button">Homework</button>
-<button class="manage-tab" data-tab="announcements" type="button">Announcements</button>
-<button class="manage-tab" data-tab="events" type="button">Events</button>
-<button class="manage-tab" data-tab="students" type="button">Students</button>
-<button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
-<button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
-<button class="manage-tab" data-tab="audit" type="button">Audit log</button>
+  <button class="manage-tab active" data-tab="homework" type="button">Homework</button>
+  <button class="manage-tab" data-tab="announcements" type="button">Announcements</button>
+  <button class="manage-tab" data-tab="events" type="button">Events</button>
+  <button class="manage-tab" data-tab="students" type="button">Students</button>
+  <button class="manage-tab" data-tab="teachers" type="button">Teachers</button>
+  <button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
+  <button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
+  <button class="manage-tab" data-tab="changelog" type="button">Changelog</button>
+  <button class="manage-tab" data-tab="audit" type="button">Audit log</button>
 </div>
 <!-- HOMEWORK -->
 <div class="manage-panel active" data-panel="homework">
@@ -351,6 +353,59 @@
 </form>
 <div class="task-list" id="achievementManageList"></div>
 </div>
+</div>
+<!-- TEACHERS -->
+<div class="manage-panel" data-panel="teachers">
+  <div class="today-panel">
+    <div class="today-panel-head">
+      <h3 class="today-panel-title">Teachers</h3>
+      <button class="btn btn-add-task btn-small" id="addTeacherBtn" hidden>+ Add teacher</button>
+    </div>
+    <form class="task-form" id="teacherForm" hidden>
+      <div class="task-form-grid">
+        <label class="field">
+          <span>Honorific</span>
+          <select name="honorific">
+            <option value="Mr.">Mr.</option>
+            <option value="Mrs.">Mrs.</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Subject</span>
+          <input type="text" name="subject" placeholder="Mathematics" required>
+        </label>
+        <label class="field field-wide">
+          <span>Full name</span>
+          <input type="text" name="name" placeholder="Anil Kumar" required>
+        </label>
+        <label class="field field-wide">
+          <span>Notes (optional)</span>
+          <input type="text" name="notes" placeholder="Class teacher, 8CM">
+        </label>
+        <label class="field field-checkbox">
+          <input type="checkbox" name="active" checked>
+          <span>Active</span>
+        </label>
+      </div>
+      <p class="auth-error" id="teacherFormError" hidden></p>
+      <div class="task-form-actions">
+        <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+        <button type="submit" class="btn btn-add-task btn-small">Add teacher</button>
+      </div>
+    </form>
+    <div class="task-list" id="teacherManageList"></div>
+  </div>
+</div>
+
+<!-- CHANGELOG -->
+<div class="manage-panel" data-panel="changelog">
+  <div class="today-panel">
+    <div class="today-panel-head">
+      <h3 class="today-panel-title">Changelog</h3>
+      <span class="today-note">Read-only · the update log</span>
+    </div>
+    <div id="changelogEntries" class="changelog-inline"></div>
+  </div>
 </div>
 <!-- AUDIT LOG -->
 <div class="manage-panel" data-panel="audit">

@@ -3,7 +3,7 @@
 // ============================================
 import { onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
-import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav, playHover, playTab } from "./sound.js";
+import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav, playHover } from "./sound.js";
 import { onAchievements } from "./achievements.js";
 let achievementsCache = [];
 onAchievements((list) => (achievementsCache = list));
@@ -521,24 +521,18 @@ function initTodayDate() {
 // V13 — Hover SFX
 // ============================================
 function initHoverSfx() {
-  const SELECTOR = ".student-card, .teacher-card, .house-card, .resource-card, .pill, .filter-box, .hub-nav-link";
+  const SELECTOR = ".student-card, .teacher-card, .house-card, .resource-card, .quick-link-card, .pill, .filter-box, .hub-nav-link";
   let lastEl = null;
   document.addEventListener("pointerover", (e) => {
     const el = e.target.closest?.(SELECTOR);
     if (!el || el === lastEl) return;
     if (e.relatedTarget && el.contains(e.relatedTarget)) return;
     lastEl = el;
-    playHover();
+    import("./sound.js").then((m) => m.playHover?.());
   }, { passive: true });
   document.addEventListener("pointerout", (e) => {
     if (e.target.closest?.(SELECTOR) === lastEl) lastEl = null;
   }, { passive: true });
-}
-
-function initHubNavSfx() {
-  document.querySelectorAll("#hubNav .hub-nav-link").forEach((a) => {
-    a.addEventListener("click", () => playTab());
-  });
 }
 
 // ============================================
@@ -548,7 +542,7 @@ function initVersionBadge() {
   if (document.querySelector(".version-badge")) return;
   const el = document.createElement("div");
   el.className = "version-badge";
-  el.textContent = "v12";
+  el.textContent = "v13";
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
 }
@@ -561,14 +555,11 @@ initVersionBadge();
 initSplash();
 initNav();
 initStudentDirectory();
-initResources();
 initGalleryLightbox();
 initHeroChart();
-initStatCountUp();
-initChangelog();
+initChangelog();  // no-ops on pages without #changelogEntries
 initTodayDate();
 initHoverSfx();
-initHubNavSfx();
 
 // Profile modal + avatar picker boot
 import("./profile-modal.js")
@@ -596,6 +587,7 @@ const OPTIONAL_MODULES = [
   ["dashboard", "./dashboard.js", "initDashboard"],
   ["student management", "./student-manage.js", "initStudentManagement"],
   ["teachers", "./teachers.js", "initTeachers"],
+  ["teacher management", "./teacher-manage.js", "initTeacherManagement"],
   ["gallery", "./gallery.js", "initGallery"],
   ["achievements", "./achievements.js", "initAchievements"],
   ["manage page", "./manage.js", "initManagePage"],
