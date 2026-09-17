@@ -255,6 +255,19 @@
     </label>
 
     <button type="button" class="link-btn" id="themeResetBtn">Reset to default</button>
+    <div class="theme-audio-block">
+      <h4 class="theme-audio-title">Sound</h4>
+      <label class="theme-audio-row">
+        <span class="theme-audio-label">Background music</span>
+        <button type="button" class="bgm-toggle" id="bgmToggle" aria-pressed="false">Play</button>
+      </label>
+      <label class="theme-audio-row theme-audio-slider">
+        <span class="theme-audio-label">Volume</span>
+        <input type="range" id="bgmVolume" min="0" max="100" step="5" value="40">
+      </label>
+      <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then.</p>
+    </div>
+
   </div>
 </div>
 
