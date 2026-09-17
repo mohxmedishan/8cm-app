@@ -23,9 +23,7 @@ const BGM_CONFIG = {
     { file: "SubwooferLullaby.mp3", title: "Subwoofer Lullaby", startAt: 0 },
     { file: "MiceOnVenus.mp3", title: "Mice on Venus", startAt: 0 },
     { file: "Sweden.mp3", title: "Sweden", startAt: 0 },
-    // Otherside.mp3 is currently a 0-byte file in assets/audio — re-upload
-    // the real file, then uncomment this line (or it'll just fail to play):
-    // { file: "Otherside.mp3", title: "Otherside", startAt: 0 },
+    { file: "Otherside.mp3", title: "Otherside", startAt: 0 },
   ],
   defaultVolume: 0.4,
   loop: true,
