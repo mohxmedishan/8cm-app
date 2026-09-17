@@ -1,26 +1,479 @@
-<!-- INSERT INTO #manageTabs -->
-<button class="manage-tab" data-tab="monitors" type="button">Monitors</button>
+<!DOCTYPE html>
 
-<!-- INSERT INTO #manageContent -->
-<!-- MONITORS -->
-<div class="manage-panel" data-panel="monitors">
-  <div class="today-panel">
-    <div class="today-panel-head">
-      <h3 class="today-panel-title">Monitors</h3>
-      <span class="today-note">Gmail addresses only</span>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Monitor panel — 8CM</title>
+<meta content="#16171a" name="theme-color"/>
+<link href="https://8cm.vercel.app/manage.html" rel="canonical"/>
+<meta content="https://8cm.vercel.app/manage.html" property="og:url"/>
+<meta content="8CM" property="og:site_name"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="8CM." name="apple-mobile-web-app-title"/>
+<script>
+(function () {
+  try {
+    var a = localStorage.getItem('8cm-theme-accent');
+    if (a) document.documentElement.style.setProperty('--accent', a);
+    var m = localStorage.getItem('8cm-theme-mode');
+    if (m === 'light' || m === 'dark') {
+      document.documentElement.setAttribute('data-theme', m);
+    }
+  } catch (e) {}
+})();
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
+<link href="assets/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
+<link href="assets/cm-icon-192.png" rel="apple-touch-icon" sizes="192x192"/>
+<link href="manifest.json" rel="manifest"/>
+</head>
+<body>
+<div aria-hidden="true" class="splash" id="splash">
+<div class="splash-content">
+<img alt="" class="splash-logo" src="assets/cm-logo.png"/>
+<p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
+</div>
+</div>
+<script>
+(function(){
+  function hideSplash(){
+    var s=document.getElementById("splash");
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
+<div class="grain"></div>
+<header class="nav" id="nav">
+<div class="nav-inner">
+<a aria-label="8CM home" class="brand" href="index.html#top">
+<img alt="8CM" src="assets/cm-logo.png"/>
+</a>
+<nav class="nav-links" id="navLinks">
+  <a href="index.html#today" class="nav-link">Today</a>
+  <a href="index.html#students" class="nav-link">Students</a>
+  <a href="timetable.html" class="nav-link">Timetable</a>
+  <a href="index.html#gallery" class="nav-link">Gallery</a>
+
+  <div class="nav-item has-dropdown">
+    <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">
+      More <span class="tri">▾</span>
+    </button>
+    <div class="dropdown" id="moreDropdown">
+      <a href="index.html#events">Events</a>
+      <a href="index.html#houses">Houses</a>
+      <a href="index.html#achievements">Achievements</a>
+      <a href="index.html#resources">Resources</a>
+      <a href="index.html#stats">Stats</a>
+      <a href="index.html#about">About</a>
+      <a href="index.html#changelog">Changelog</a>
     </div>
-    <form class="task-form" id="monitorForm">
-      <div class="task-form-grid">
-        <label class="field field-wide">
-          <span>Gmail address</span>
-          <input type="email" name="email" placeholder="name@gmail.com" required>
-        </label>
-      </div>
-      <p class="auth-error" id="monitorFormError" hidden></p>
-      <div class="task-form-actions">
-        <button type="submit" class="btn btn-add-task btn-small">Add monitor</button>
-      </div>
-    </form>
-    <div class="task-list" id="monitorList"></div>
+  </div>
+</nav>
+<div class="nav-right">
+<button aria-label="Settings" class="icon-btn" id="settingsBtn" title="Settings" type="button">
+<svg aria-hidden="true" viewbox="0 0 24 24">
+<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="6" y2="6"></line>
+<circle cx="9" cy="6" fill="currentColor" r="2"></circle>
+<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="12" y2="12"></line>
+<circle cx="15" cy="12" fill="currentColor" r="2"></circle>
+<line stroke="currentColor" stroke-linecap="round" stroke-width="1.6" x1="4" x2="20" y1="18" y2="18"></line>
+<circle cx="11" cy="18" fill="currentColor" r="2"></circle>
+</svg>
+</button>
+<div class="nav-auth" id="authSlot"></div>
+<button aria-label="Toggle menu" class="burger" id="burger">
+<span></span><span></span><span></span>
+</button>
+</div>
+</div>
+</header>
+<main>
+<section class="page-hero">
+<div class="section-inner">
+<a class="back-to-dashboard" href="index.html#top">← Dashboard</a>
+</div>
+</section>
+<section class="manage" id="manage">
+<div class="section-inner">
+<div class="section-head">
+<h2>Monitor panel</h2>
+<p class="section-sub">Manage class content. Every change appears live across CM, and lands in the audit log.</p>
+</div>
+<div class="manage-locked" id="manageLocked"><p>Checking access…</p></div>
+<div hidden="" id="manageContent">
+<div class="manage-tabs" id="manageTabs">
+<button class="manage-tab active" data-tab="homework" type="button">Homework</button>
+<button class="manage-tab" data-tab="announcements" type="button">Announcements</button>
+<button class="manage-tab" data-tab="events" type="button">Events</button>
+<button class="manage-tab" data-tab="students" type="button">Students</button>
+<button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
+<button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
+<button class="manage-tab" data-tab="audit" type="button">Audit log</button>
+</div>
+<!-- HOMEWORK -->
+<div class="manage-panel active" data-panel="homework">
+<div class="today-panel" id="homeworkPanel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Homework</h3>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addHomeworkBtn">+ Add homework</button>
+</div>
+<div class="filter-pills" id="homeworkFilters">
+<button class="pill active" data-filter="all">All</button>
+<button class="pill" data-filter="pending">Pending</button>
+<button class="pill" data-filter="due-soon">Due soon</button>
+<button class="pill" data-filter="overdue">Overdue</button>
+<button class="pill" data-filter="completed">Completed</button>
+</div>
+<form class="task-form" hidden="" id="homeworkForm">
+<div class="task-form-grid">
+<label class="field"><span>Subject</span><select name="subject" required=""></select></label>
+<label class="field"><span>Priority</span>
+<select name="priority">
+<option value="low">Low</option>
+<option selected="" value="medium">Medium</option>
+<option value="high">High</option>
+</select>
+</label>
+<label class="field field-wide"><span>Title</span><input name="title" placeholder="Exercise 4.3" required="" type="text"/></label>
+<label class="field field-wide"><span>Description (optional)</span><input name="description" placeholder="Questions 1–10" type="text"/></label>
+<label class="field"><span>Due date</span><input name="dueDate" required="" type="date"/></label>
+</div>
+<p class="auth-error" hidden="" id="homeworkFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Add homework</button>
+</div>
+</form>
+<div class="task-list" id="homeworkList"></div>
+</div>
+</div>
+<!-- ANNOUNCEMENTS -->
+<div class="manage-panel" data-panel="announcements">
+<div class="today-panel" id="announcementPanel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Announcements</h3>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addAnnouncementBtn">+ Post announcement</button>
+</div>
+<form class="task-form" hidden="" id="announcementForm">
+<div class="task-form-grid">
+<label class="field field-wide"><span>Title</span><input name="title" placeholder="Sports day moved to Thursday" required="" type="text"/></label>
+<label class="field field-wide"><span>Content</span><input name="content" placeholder="Details students need to know" required="" type="text"/></label>
+<label class="field"><span>Category</span>
+<select name="category">
+<option>Important</option>
+<option>Class</option>
+<option>Exam</option>
+<option>Homework</option>
+<option>Event</option>
+<option selected="">General</option>
+</select>
+</label>
+<label class="field"><span>Priority</span>
+<select name="priority">
+<option selected="" value="normal">Normal</option>
+<option value="important">Important</option>
+</select>
+</label>
+<label class="field"><span>Date of event (optional)</span><input name="eventDate" type="date"/></label>
+<label class="field field-checkbox"><input name="pinned" type="checkbox"/><span>Pin to top</span></label>
+</div>
+<p class="auth-error" hidden="" id="announcementFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Post announcement</button>
+</div>
+</form>
+<div class="task-list" id="announcementList"></div>
+</div>
+</div>
+<!-- EVENTS -->
+<div class="manage-panel" data-panel="events">
+<div class="today-panel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Events</h3>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addEventBtn">+ Add event</button>
+</div>
+<form class="task-form" hidden="" id="eventForm">
+<div class="task-form-grid">
+<label class="field field-wide"><span>Title</span><input name="title" placeholder="Inter-school science fair" required="" type="text"/></label>
+<label class="field"><span>Date</span><input name="date" required="" type="date"/></label>
+<label class="field"><span>Time (optional)</span><input name="time" placeholder="9:00 AM" type="text"/></label>
+<label class="field"><span>Location</span><input name="location" placeholder="Main hall" type="text"/></label>
+<label class="field"><span>Category</span>
+<select name="category">
+<option>General</option>
+<option>Trip</option>
+<option>Competition</option>
+<option>Exam</option>
+<option>Celebration</option>
+</select>
+</label>
+<label class="field field-wide"><span>Description (optional)</span><input name="description" placeholder="What to bring, what to expect" type="text"/></label>
+</div>
+<p class="auth-error" hidden="" id="eventFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Add event</button>
+</div>
+</form>
+<div class="event-list" id="eventList"></div>
+</div>
+</div>
+<!-- STUDENTS -->
+<div class="manage-panel" data-panel="students">
+<div class="today-panel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Students</h3>
+<button class="btn btn-add-task btn-small" hidden="" id="addStudentBtn">+ Add student</button>
+</div>
+<form class="task-form" hidden="" id="studentForm">
+<div class="task-form-grid">
+<label class="field field-wide"><span>Name</span><input name="name" required="" type="text"/></label>
+<label class="field"><span>House</span>
+<select name="house">
+<option value="winter">Winter</option>
+<option value="autumn">Autumn</option>
+<option value="spring">Spring</option>
+<option value="summer">Summer</option>
+</select>
+</label>
+<label class="field"><span>Language</span>
+<select name="language">
+<option value="">—</option>
+<option value="Hindi">Hindi</option>
+<option value="Malayalam">Malayalam</option>
+<option value="French">French</option>
+</select>
+</label>
+<label class="field"><span>Islamic / Value Ed</span>
+<select name="islamic">
+<option value="">—</option>
+<option value="islamic">Islamic Education</option>
+<option value="value">Value Education</option>
+</select>
+</label>
+<label class="field"><span>Creative Arts</span>
+<select name="creative">
+<option value="">—</option>
+<option value="dance">Dance</option>
+<option value="music">Music</option>
+<option value="art">Art</option>
+</select>
+</label>
+<label class="field"><span>Transport</span><input name="transport" placeholder="OT or bus number" type="text"/></label>
+<label class="field"><span>Roll number</span><input min="1" name="rollNumber" required="" type="number"/></label>
+<label class="field field-checkbox"><input checked="" name="active" type="checkbox"/><span>Active</span></label>
+</div>
+<p class="auth-error" hidden="" id="studentFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Add student</button>
+</div>
+</form>
+<div class="task-list" id="studentManageList"></div>
+</div>
+</div>
+<!-- GALLERY -->
+<div class="manage-panel" data-panel="gallery">
+<div class="today-panel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Gallery</h3>
+<button class="btn btn-add-task btn-small" hidden="" id="addGalleryBtn">+ Add photo</button>
+</div>
+<form class="task-form" hidden="" id="galleryForm">
+<div class="task-form-grid">
+<label class="field field-wide"><span>Image URL</span><input inputmode="url" name="url" placeholder="https\://…" required="" type="url"/></label>
+<label class="field field-wide"><span>Title / caption</span><input name="title" required="" type="text"/></label>
+<label class="field"><span>Album</span><input name="album" placeholder="Trips, Assemblies, …" type="text"/></label>
+<label class="field"><span>Date (optional)</span><input name="date" type="date"/></label>
+</div>
+<p class="auth-error" hidden="" id="galleryFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Add photo</button>
+</div>
+</form>
+<div class="task-list" id="galleryManageList"></div>
+
+</div>
+</div>
+<!-- ACHIEVEMENTS -->
+<div class="manage-panel" data-panel="achievements">
+<div class="today-panel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Achievements</h3>
+<button class="btn btn-add-task btn-small" hidden="" id="addAchievementBtn">+ Add achievement</button>
+</div>
+<form class="task-form" hidden="" id="achievementForm">
+<div class="task-form-grid">
+<label class="field field-wide"><span>About</span>
+<select name="about">
+<option value="student">A student</option>
+<option value="class">The whole class</option>
+<option value="school">The school</option>
+<option value="other">Something else</option>
+</select>
+</label>
+<label class="field field-wide"><span>Student</span><select name="studentId"></select></label>
+<label class="field field-wide" hidden><span>Label</span><input type="text" name="aboutLabel" placeholder="e.g. Inter-house quiz"></label>
+<label class="field field-wide"><span>Title</span><input name="title" placeholder="Won inter-school quiz" required="" type="text"/></label>
+<label class="field field-wide"><span>Description (optional)</span><input name="description" type="text"/></label>
+<label class="field"><span>Category</span>
+<select name="category">
+<option>Academic</option>
+<option>Sport</option>
+<option>Competition</option>
+<option>Creative</option>
+<option>Service</option>
+<option selected="">General</option>
+</select>
+</label>
+<label class="field"><span>Date</span><input name="date" type="date"/></label>
+</div>
+<p class="auth-error" hidden="" id="achievementFormError"></p>
+<div class="task-form-actions">
+<button class="btn btn-ghost btn-small" data-action="cancel" type="button">Cancel</button>
+<button class="btn btn-add-task btn-small" type="submit">Add achievement</button>
+</div>
+</form>
+<div class="task-list" id="achievementManageList"></div>
+</div>
+</div>
+<!-- AUDIT LOG -->
+<div class="manage-panel" data-panel="audit">
+<div class="today-panel">
+<div class="today-panel-head">
+<h3 class="today-panel-title">Audit log</h3>
+<span class="today-note">Monitor-only · append-only</span>
+</div>
+<div class="task-list" id="auditLogList"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="footer">
+<div class="section-inner footer-inner">
+<p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+<p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+</div>
+</footer>
+<!-- shared modals (auth / claim / settings) — same as every other page -->
+<div class="modal-overlay" hidden="" id="authOverlay">
+<div class="modal-card">
+<button aria-label="Close" class="modal-close" id="authClose">✕</button>
+<div class="auth-tabs">
+<button class="auth-tab active" data-mode="signin" type="button">Sign in</button>
+<button class="auth-tab" data-mode="signup" type="button">Create account</button>
+</div>
+<p class="config-banner" hidden="" id="configBanner">
+⚠️ This site isn't connected to a real Firebase project yet — sign-in
+can't work until <code>firebase-config.js</code> has your project's
+real values.
+</p>
+<button class="btn-google" id="googleSignInBtn" type="button">
+<svg aria-hidden="true" class="google-icon" viewbox="0 0 18 18">
+<path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" fill="#4285F4"></path>
+<path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z" fill="#34A853"></path>
+<path d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z" fill="#FBBC05"></path>
+<path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"></path>
+</svg>
+<span>Continue with Google</span>
+</button>
+<div class="auth-divider"><span>or</span></div>
+<form class="auth-form" id="authForm" novalidate="">
+<label class="field"><span>Email</span><input autocomplete="email" name="email" required="" type="email"/></label>
+<label class="field" data-field="password">
+<span>Password</span>
+<div class="password-wrap">
+<input autocomplete="current-password" name="password" type="password"/>
+<button aria-label="Show password" aria-pressed="false" class="password-toggle" data-target="password" type="button">
+<svg aria-hidden="true" class="eye-icon eye-open" viewbox="0 0 24 24"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path></svg>
+<svg aria-hidden="true" class="eye-icon eye-closed" hidden="" viewbox="0 0 24 24"><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"></path></svg>
+</button>
+</div>
+</label>
+<label class="field" data-field="confirmPassword" hidden="">
+<span>Confirm password</span>
+<div class="password-wrap">
+<input autocomplete="new-password" name="confirmPassword" type="password"/>
+<button aria-label="Show password" aria-pressed="false" class="password-toggle" data-target="confirmPassword" type="button">
+<svg aria-hidden="true" class="eye-icon eye-open" viewbox="0 0 24 24"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path></svg>
+<svg aria-hidden="true" class="eye-icon eye-closed" hidden="" viewbox="0 0 24 24"><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"></path></svg>
+</button>
+</div>
+</label>
+<p class="auth-error" hidden="" id="authError"></p>
+<p class="auth-note" hidden="" id="authResetNote"></p>
+<button class="btn btn-primary" id="authSubmitBtn" type="submit">
+<span class="btn-label">Sign in</span>
+</button>
+<button class="link-btn" id="forgotPasswordBtn" type="button">Forgot password?</button>
+</form>
+</div>
+</div>
+<div class="loading-overlay" hidden="" id="loadingOverlay">
+<div class="loading-card">
+<span aria-hidden="true" class="loading-spinner"></span>
+<p class="loading-status" id="loadingStatus">Signing in…</p>
+</div>
+</div>
+<div class="modal-overlay" hidden="" id="claimOverlay">
+<div class="modal-card">
+<button aria-label="Close" class="modal-close" hidden="" id="claimClose">✕</button>
+<h3 id="claimModalTitle">Which one are you?</h3>
+<p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account.</p>
+<button class="link-btn claim-wrong-account" id="claimWrongAccountBtn" type="button">Not you? Sign out</button>
+<label class="field"><span>Your name</span><select id="claimSelect"></select></label>
+<p class="auth-error" hidden="" id="claimError"></p>
+<div class="modal-actions">
+<button class="link-btn" hidden="" id="claimCancelBtn" type="button">Cancel</button>
+<button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay" hidden="" id="settingsOverlay">
+<div class="modal-card settings-card">
+<button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
+<h3>Appearance</h3>
+<p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div class="theme-mode-row" role="tablist" aria-label="Color mode">
+<button type="button" class="theme-mode-btn" data-mode="dark" role="tab">Dark</button>
+<button type="button" class="theme-mode-btn" data-mode="light" role="tab">Light</button>
+</div>
+<div class="theme-swatches" id="themeSwatches"></div>
+<label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
+<button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
+</div>
+</div>
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
   </div>
 </div>
+
+<div class="modal-overlay" id="avatarPickerOverlay" hidden>
+  <div class="modal-card avatar-picker-card">
+    <button class="modal-close" id="avatarPickerClose" aria-label="Close">✕</button>
+    <h3>Choose your avatar</h3>
+    <p class="modal-sub">Your avatar is tied to your account, not to the student you've claimed. Switching students keeps your avatar.</p>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
+  </div>
+</div>
+<script src="script.js" type="module"></script>
+</body>
+</html>
