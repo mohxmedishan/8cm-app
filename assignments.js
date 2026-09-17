@@ -465,6 +465,18 @@ function applyMonitorVisibility() {
 
 let currentUid = null;
 
+function renderListLoading() {
+  const list = $("homeworkList");
+  if (!list) return;
+  list.innerHTML = `
+    <div class="task-loading">
+      <span class="task-loading-dot"></span>
+      <span class="task-loading-dot"></span>
+      <span class="task-loading-dot"></span>
+      <span class="task-loading-label">Loading homework…</span>
+    </div>`;
+}
+
 export function initAssignments() {
   const hasHomeworkPanel = !!$("homeworkList");
   const needsLiveData = hasHomeworkPanel || !!document.querySelector(".tt-grid");
