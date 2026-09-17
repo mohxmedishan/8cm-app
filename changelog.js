@@ -11,12 +11,12 @@ export const changelog = [
 {
   date: "2026-09-17",
   items: [
-    "V14: Background music now has a track chooser. Drop an MP3 into assets/audio/ and it appears in the Settings dropdown — pick one, it remembers your choice across reloads.",
-    "Fixed the Background music play/pause button. The whole row used to be clickable because it was wrapped in a <label>; the button now has its own predictable, larger hit area.",
-    "Audio controls redesigned: track picker on top, bigger Play/Pause button, wider volume slider.",
+    "V14: Background music has a real track chooser now — pick any song from the dropdown and it remembers your choice across reloads.",
+    "Each track's quiet intro is detected automatically the first time you play it (the browser reads the file's waveform, finds where it actually gets going, and skips ahead). Cached, so it's instant after the first play.",
+    "Fixed the Background music play button — the whole row used to be clickable because it was wrapped in a <label>. The button now has its own bigger, predictable hit area.",
+    "Wider volume slider, cleaner track picker styling.",
   ],
 },
-
   {
     date: "2026-09-17",
     items: [

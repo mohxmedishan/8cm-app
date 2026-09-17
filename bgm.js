@@ -1,108 +1,108 @@
 // ============================================
 // 8CM — Background music (v14)
 // ================================================================
-//  HOW TO ADD A TRACK
-// ----------------------------------------------------------------
-//  Two ways, in order of preference:
-//
-//  1) AUTOMATIC (works only if your host serves a directory index
-//     at assets/audio/ — some do, Vercel/Firebase Hosting don't by
-//     default). Just drop the MP3 in assets/audio/ and reload.
-//     Every .mp3 in the folder shows up in the dropdown.
-//
-//  2) EXPLICIT (always works). Add one line to
-//     BGM_CONFIG.fallbackTracks below. That's the whole change:
-//
-//       { file: "Mice on Venus.mp3", title: "Mice on Venus", startAt: 20 }
-//
-//     `startAt` is optional (seconds to skip — useful when a track
-//     has a long quiet intro). Omit it and the track plays from 0:00.
-//
-//  The chosen track, play/pause state, and volume all persist
-//  across reloads via localStorage.
+// HARDCODED TRACKS + automatic quiet-intro detection.
+// Vercel does not expose directory listings, so tracks are explicit.
+// The first play decodes the selected file in-browser and estimates
+// where meaningful audio begins. The detected offset is cached.
 // ================================================================
 
 const BGM_CONFIG = {
-  // Directory the tracks live in, relative to the site root.
   audioDir: "assets/audio/",
-
-  // Fallback / explicit track list. Always used for startAt and
-  // titles; also used as the full list when auto-discovery fails.
-  fallbackTracks: [
-    { file: "Sweden.mp3", title: "Sweden", startAt: 10 },
-    { file: "MiceOnVenus.mp3", title: "Mice on Venus", startAt: 40},
+  tracks: [
+    { file: "Taswell.mp3", title: "Taswell" },
+    { file: "AriaMath.mp3", title: "Aria Math" },
+    { file: "Danny.mp3", title: "Danny" },
+    { file: "LivingMice.mp3", title: "Living Mice" },
+    { file: "Haggstorm.mp3", title: "Haggstorm" },
+    { file: "WetHands.mp3", title: "Wet Hands" },
+    { file: "SubwooferLullaby.mp3", title: "Subwoofer Lullaby" },
   ],
-
   defaultVolume: 0.4,
   loop: true,
 };
 
 const STORAGE_PLAYING = "8cm:bgm:playing";
-const STORAGE_VOLUME  = "8cm:bgm:volume";
-const STORAGE_TRACK   = "8cm:bgm:track";
+const STORAGE_VOLUME = "8cm:bgm:volume";
+const STORAGE_TRACK = "8cm:bgm:track";
+const STORAGE_START_PREFIX = "8cm:bgm:startAt:";
 
 let audio = null;
 let wantsPlaying = false;
 let unlocked = false;
 let currentVolume = BGM_CONFIG.defaultVolume;
-let seekApplied = false;
-let tracks = [];
 let currentTrackIndex = 0;
+let appliedSeek = 0;
+let analyzing = false;
+const startCache = new Map();
 
-// ---------------------------------------------------------------
-// Track discovery
-// ---------------------------------------------------------------
-// Attempts to read the audio directory's index page and pull every
-// .mp3 link out of it. On hosts that don't expose a listing this
-// throws or returns nothing, and we fall back to fallbackTracks.
-// Either way, startAt/title from fallbackTracks takes precedence
-// when the same filename appears in both.
-async function discoverTracks() {
-  const discovered = [];
-
+async function detectStartTime(url) {
+  const res = await fetch(url, { cache: "force-cache" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const buf = await res.arrayBuffer();
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) throw new Error("Web Audio unavailable");
+  const ctx = new AudioCtx();
+  let audioBuffer;
   try {
-    const res = await fetch(BGM_CONFIG.audioDir, { cache: "no-store" });
-    if (res.ok) {
-      const text = await res.text();
-      const matches = [...text.matchAll(/href="([^"]+\.mp3)"/gi)];
-      const seen = new Set();
-      matches.forEach((m) => {
-        const raw = decodeURIComponent(m[1]);
-        const file = raw.split("/").pop();
-        if (!file || seen.has(file)) return;
-        seen.add(file);
-        discovered.push({
-          file,
-          title: file.replace(/\.mp3$/i, "").replace(/[_-]+/g, " "),
-          startAt: 0,
-        });
-      });
-    }
-  } catch {
-    // Expected on Vercel, Firebase Hosting, Netlify, etc. Silent.
+    audioBuffer = await ctx.decodeAudioData(buf.slice(0));
+  } finally {
+    ctx.close().catch(() => {});
   }
-
-  // Merge: prefer fallbackTracks metadata (title, startAt) when a
-  // discovered file matches; add fallback-only files at the end.
-  const seen = new Set();
-  const merged = [];
-  discovered.forEach((t) => {
-    if (seen.has(t.file)) return;
-    seen.add(t.file);
-    const fallback = BGM_CONFIG.fallbackTracks.find((f) => f.file === t.file);
-    merged.push(fallback || t);
-  });
-  BGM_CONFIG.fallbackTracks.forEach((t) => {
-    if (seen.has(t.file)) return;
-    seen.add(t.file);
-    merged.push(t);
-  });
-  return merged;
+  const channel = audioBuffer.getChannelData(0);
+  const sampleRate = audioBuffer.sampleRate;
+  const windowSize = Math.floor(sampleRate * 0.1);
+  const windowCount = Math.floor(channel.length / windowSize);
+  if (windowCount < 4) return 0;
+  const rms = new Float32Array(windowCount);
+  let peak = 0;
+  for (let i = 0; i < windowCount; i++) {
+    const start = i * windowSize;
+    let sum = 0;
+    for (let j = 0; j < windowSize; j++) {
+      const x = channel[start + j];
+      sum += x * x;
+    }
+    rms[i] = Math.sqrt(sum / windowSize);
+    if (rms[i] > peak) peak = rms[i];
+  }
+  const threshold = Math.max(peak * 0.2, 0.02);
+  let startWindow = 0;
+  for (let i = 0; i < windowCount - 3; i++) {
+    if (rms[i] < threshold) continue;
+    const avg = (rms[i] + rms[i + 1] + rms[i + 2] + rms[i + 3]) / 4;
+    if (avg >= threshold) { startWindow = i; break; }
+  }
+  return Math.max(0, (startWindow * windowSize) / sampleRate - 0.5);
 }
 
-// ---------------------------------------------------------------
-// Prefs
-// ---------------------------------------------------------------
+async function ensureStartTime(track) {
+  if (typeof track.startAt === "number") return track.startAt;
+  if (startCache.has(track.file)) return startCache.get(track.file);
+  try {
+    const cached = localStorage.getItem(STORAGE_START_PREFIX + track.file);
+    if (cached !== null) {
+      const v = parseFloat(cached);
+      if (!isNaN(v)) { startCache.set(track.file, v); return v; }
+    }
+  } catch {}
+  analyzing = true;
+  reflectUI();
+  try {
+    const seconds = await detectStartTime(BGM_CONFIG.audioDir + track.file);
+    startCache.set(track.file, seconds);
+    try { localStorage.setItem(STORAGE_START_PREFIX + track.file, String(seconds)); } catch {}
+    return seconds;
+  } catch (err) {
+    console.warn("[8CM] Quiet-intro detection failed for", track.file, err);
+    startCache.set(track.file, 0);
+    return 0;
+  } finally {
+    analyzing = false;
+    reflectUI();
+  }
+}
+
 function readPrefs() {
   try {
     wantsPlaying = localStorage.getItem(STORAGE_PLAYING) === "1";
@@ -110,7 +110,7 @@ function readPrefs() {
     if (!isNaN(v) && v >= 0 && v <= 1) currentVolume = v;
     const savedFile = localStorage.getItem(STORAGE_TRACK);
     if (savedFile) {
-      const idx = tracks.findIndex((x) => x.file === savedFile);
+      const idx = BGM_CONFIG.tracks.findIndex(x => x.file === savedFile);
       if (idx >= 0) currentTrackIndex = idx;
     }
   } catch {}
@@ -120,31 +120,26 @@ function writePrefs() {
   try {
     localStorage.setItem(STORAGE_PLAYING, wantsPlaying ? "1" : "0");
     localStorage.setItem(STORAGE_VOLUME, String(currentVolume));
-    localStorage.setItem(STORAGE_TRACK, tracks[currentTrackIndex]?.file || "");
+    localStorage.setItem(STORAGE_TRACK, BGM_CONFIG.tracks[currentTrackIndex]?.file || "");
   } catch {}
 }
 
-// ---------------------------------------------------------------
-// Audio element
-// ---------------------------------------------------------------
-function buildAudio() {
-  if (audio) return audio;
-  const track = tracks[currentTrackIndex];
+async function buildAudio() {
+  const track = BGM_CONFIG.tracks[currentTrackIndex];
   if (!track) return null;
-
+  const startAt = await ensureStartTime(track);
+  appliedSeek = startAt;
   audio = new Audio();
   audio.src = BGM_CONFIG.audioDir + track.file;
   audio.loop = BGM_CONFIG.loop;
-  audio.preload = "metadata";
+  audio.preload = "auto";
   audio.volume = currentVolume;
-
-  if (track.startAt > 0) {
+  if (startAt > 0) {
     const applySeek = () => {
-      if (seekApplied) return;
-      if (!audio.duration || !isFinite(audio.duration)) return;
+      if (!audio || appliedSeek <= 0 || !audio.duration || !isFinite(audio.duration)) return;
       try {
-        audio.currentTime = Math.min(track.startAt, audio.duration - 1);
-        seekApplied = true;
+        audio.currentTime = Math.min(appliedSeek, audio.duration - 1);
+        appliedSeek = 0;
       } catch {}
     };
     audio.addEventListener("loadedmetadata", applySeek);
@@ -156,29 +151,23 @@ function buildAudio() {
 function destroyAudio() {
   if (!audio) return;
   try { audio.pause(); } catch {}
-  audio.src = "";
+  try { audio.src = ""; } catch {}
   audio = null;
-  seekApplied = false;
+  appliedSeek = 0;
 }
 
 async function attemptPlay() {
-  const a = buildAudio();
+  const a = await buildAudio();
   if (!a) return false;
-  try {
-    await a.play();
-    unlocked = true;
-    return true;
-  } catch {
-    return false;
-  }
+  try { await a.play(); unlocked = true; return true; }
+  catch { return false; }
 }
 
 function armUnlock() {
   if (unlocked) return;
   const unlock = async () => {
     if (unlocked) return;
-    const ok = await attemptPlay();
-    if (ok) {
+    if (await attemptPlay()) {
       document.removeEventListener("pointerdown", unlock);
       document.removeEventListener("keydown", unlock);
     }
@@ -187,15 +176,10 @@ function armUnlock() {
   document.addEventListener("keydown", unlock);
 }
 
-// ---------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------
-export function isBgmPlaying() {
-  return wantsPlaying && audio && !audio.paused;
-}
+export function isBgmPlaying() { return wantsPlaying && audio && !audio.paused; }
 
 export async function playBgm() {
-  if (!tracks.length) return false;
+  if (!BGM_CONFIG.tracks.length) return false;
   wantsPlaying = true;
   writePrefs();
   const ok = await attemptPlay();
@@ -211,10 +195,7 @@ export function pauseBgm() {
   reflectUI();
 }
 
-export function toggleBgm() {
-  if (wantsPlaying) pauseBgm();
-  else playBgm();
-}
+export function toggleBgm() { if (wantsPlaying) pauseBgm(); else playBgm(); }
 
 export function setBgmVolume(v) {
   currentVolume = Math.max(0, Math.min(1, v));
@@ -223,27 +204,20 @@ export function setBgmVolume(v) {
   reflectUI();
 }
 
-export function selectTrack(index) {
-  if (index < 0 || index >= tracks.length) return;
-  if (index === currentTrackIndex) return;
+export async function selectTrack(index) {
+  if (index < 0 || index >= BGM_CONFIG.tracks.length || index === currentTrackIndex) return;
   const wasPlaying = wantsPlaying;
   currentTrackIndex = index;
   writePrefs();
   destroyAudio();
-  if (wasPlaying) playBgm();
+  if (wasPlaying) await playBgm();
   reflectUI();
 }
 
-// ---------------------------------------------------------------
-// UI — replaces the audio block inside the Settings modal.
-// Doing this here (rather than editing every HTML file) keeps the
-// three-audio-controls markup in one place and guarantees it's
-// identical across all pages.
-// ---------------------------------------------------------------
 function renderAudioBlock() {
   const block = document.querySelector(".theme-audio-block");
-  if (!block || block.dataset.bgmRendered) return;
-  block.dataset.bgmRendered = "true";
+  if (!block || block.dataset.bgmRendered === "v14") return;
+  block.dataset.bgmRendered = "v14";
   block.innerHTML = `
     <h4 class="theme-audio-title">Sound</h4>
     <div class="bgm-track-row">
@@ -266,16 +240,7 @@ function renderTrackOptions() {
   const select = document.getElementById("bgmTrackSelect");
   if (!select) return;
   select.innerHTML = "";
-  if (!tracks.length) {
-    const opt = document.createElement("option");
-    opt.textContent = "No tracks found";
-    opt.disabled = true;
-    select.appendChild(opt);
-    select.disabled = true;
-    return;
-  }
-  select.disabled = false;
-  tracks.forEach((t, i) => {
+  BGM_CONFIG.tracks.forEach((t, i) => {
     const opt = document.createElement("option");
     opt.value = String(i);
     opt.textContent = t.title;
@@ -287,62 +252,42 @@ function renderTrackOptions() {
 function reflectUI() {
   const toggle = document.getElementById("bgmToggle");
   if (toggle) {
-    const on = wantsPlaying;
-    toggle.setAttribute("aria-pressed", on ? "true" : "false");
-    toggle.textContent = on ? "Pause" : "Play";
-    toggle.disabled = !tracks.length;
-    if (!tracks.length) toggle.title = "No tracks found in assets/audio/";
+    if (analyzing) {
+      toggle.textContent = "Analyzing…";
+      toggle.disabled = true;
+    } else {
+      toggle.setAttribute("aria-pressed", wantsPlaying ? "true" : "false");
+      toggle.textContent = wantsPlaying ? "Pause" : "Play";
+      toggle.disabled = false;
+    }
   }
-
   const select = document.getElementById("bgmTrackSelect");
-  if (select && tracks.length) select.value = String(currentTrackIndex);
-
+  if (select) select.value = String(currentTrackIndex);
   const slider = document.getElementById("bgmVolume");
-  if (slider && Math.abs(parseFloat(slider.value) / 100 - currentVolume) > 0.01) {
+  if (slider && Math.abs(parseFloat(slider.value) / 100 - currentVolume) > 0.01)
     slider.value = String(Math.round(currentVolume * 100));
-  }
-
-  const note = document.querySelector(".theme-audio-note");
-  if (note) {
-    note.textContent = tracks.length
-      ? "SFX are always on. BGM only plays after you press Play — browsers block autoplay until then."
-      : "No tracks found in assets/audio/. Drop an MP3 in and reload.";
-  }
 }
 
 function wireControls() {
   const toggle = document.getElementById("bgmToggle");
   if (toggle) toggle.addEventListener("click", toggleBgm);
-
   const select = document.getElementById("bgmTrackSelect");
-  if (select) {
-    select.addEventListener("change", (e) => {
-      const idx = parseInt(e.target.value, 10);
-      if (!isNaN(idx)) selectTrack(idx);
-    });
-  }
-
+  if (select) select.addEventListener("change", e => {
+    const idx = parseInt(e.target.value, 10);
+    if (!isNaN(idx)) selectTrack(idx);
+  });
   const slider = document.getElementById("bgmVolume");
-  if (slider) {
-    slider.addEventListener("input", (e) => setBgmVolume(parseFloat(e.target.value) / 100));
-  }
+  if (slider) slider.addEventListener("input", e => setBgmVolume(parseFloat(e.target.value) / 100));
 }
 
 export async function initBgm() {
   renderAudioBlock();
-
-  tracks = await discoverTracks();
   readPrefs();
-
   renderTrackOptions();
   reflectUI();
   wireControls();
-
-  if (wantsPlaying && tracks.length) armUnlock();
-
-  // Cross-tab sync — if the user hits Play in one tab, every other
-  // open tab follows.
-  window.addEventListener("storage", (e) => {
+  if (wantsPlaying && BGM_CONFIG.tracks.length) armUnlock();
+  window.addEventListener("storage", e => {
     if (e.key === STORAGE_PLAYING) {
       const wanted = e.newValue === "1";
       if (wanted && !wantsPlaying) playBgm();
@@ -353,7 +298,7 @@ export async function initBgm() {
       if (!isNaN(v)) setBgmVolume(v);
     }
     if (e.key === STORAGE_TRACK) {
-      const idx = tracks.findIndex((x) => x.file === e.newValue);
+      const idx = BGM_CONFIG.tracks.findIndex(x => x.file === e.newValue);
       if (idx >= 0 && idx !== currentTrackIndex) selectTrack(idx);
     }
   });
