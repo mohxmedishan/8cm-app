@@ -149,3 +149,10 @@ export const changelog = [
     ],
   },
 ];
+
+// Single source of truth for the version watermark in the corner of
+// every page (see initVersionBadge in script.js). That used to be a
+// separately hand-typed string over there, which only got updated
+// when someone remembered to — this way, whatever version tops this
+// list is automatically what the watermark shows.
+export const currentVersion = changelog[0]?.version || null;

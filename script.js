@@ -354,6 +354,79 @@ function initHouseCards() {
       window.location.href = `archives.html#students?house=${house}`;
     });
   });
+
+  // Fill each card's count + student list from the real roster (see
+  // renderHouseCardLists below) and keep it that way — onStudents()
+  // fires again whenever a monitor edits/moves a student, so this
+  // never goes stale the way the old hand-typed counts/descriptions did.
+  import("./students.js")
+    .then((m) => {
+      m.onStudents((list) => renderHouseCardLists(list));
+      m.loadStudents().catch(() => {});
+    })
+    .catch((err) => console.error("[8CM] Failed to load house rosters:", err));
+
+  window.addEventListener("load", equalizeHouseCardHeights);
+  let houseResizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(houseResizeTimer);
+    houseResizeTimer = setTimeout(equalizeHouseCardHeights, 150);
+  });
+}
+
+const escapeHouseName = (v) =>
+  String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
+
+// Replaces each house card's hardcoded count/description with the
+// real count and a plain vertical list of names for that house, then
+// re-measures so every card matches the tallest one (see
+// equalizeHouseCardHeights). Click-to-filter is untouched — the
+// listener above is bound to the whole .house-card element, so a
+// click anywhere inside, name list included, still bubbles up to it.
+function renderHouseCardLists(list) {
+  const cards = document.querySelectorAll(".house-card[data-house]");
+  if (!cards.length) return;
+
+  cards.forEach((card) => {
+    const house = card.dataset.house;
+    const body = card.querySelector(".house-card-body");
+    if (!house || !body) return;
+
+    const members = list
+      .filter((s) => s.house === house)
+      .slice()
+      .sort((a, b) => (a.rollNumber || 0) - (b.rollNumber || 0));
+
+    const countEl = body.querySelector(".house-count");
+    if (countEl) countEl.textContent = `${members.length} student${members.length === 1 ? "" : "s"}`;
+
+    let listEl = body.querySelector(".house-student-list");
+    if (!listEl) {
+      const oldDesc = body.querySelector(".house-desc");
+      if (oldDesc) oldDesc.remove();
+      listEl = document.createElement("ul");
+      listEl.className = "house-student-list";
+      body.appendChild(listEl);
+    }
+    listEl.innerHTML = members.map((s) => `<li>${escapeHouseName(s.name)}</li>`).join("");
+  });
+
+  equalizeHouseCardHeights();
+}
+
+// Every house card is stretched to match whichever card is naturally
+// tallest right now — a 3-student house and an 11-student house line
+// up either way — instead of assuming any one house will always be
+// the biggest. Recomputed on every re-render and on resize.
+function equalizeHouseCardHeights() {
+  const cards = document.querySelectorAll(".house-card[data-house]");
+  if (!cards.length) return;
+  cards.forEach((card) => { card.style.minHeight = ""; });
+  let max = 0;
+  cards.forEach((card) => { max = Math.max(max, card.getBoundingClientRect().height); });
+  cards.forEach((card) => { card.style.minHeight = `${max}px`; });
 }
 
 // ============================================
@@ -604,6 +677,14 @@ function initVersionBadge() {
   el.textContent = window.__cmVersion || "v14.1";
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
+
+  // changelog.js's currentVersion (the newest entry's version field)
+  // is the single source of truth here — this used to be a separate
+  // hardcoded string that only updated when someone remembered to
+  // bump it by hand, so it silently fell behind the real changelog.
+  import("./changelog.js")
+    .then((m) => { el.textContent = m.currentVersion ? `v${m.currentVersion}` : "v14.3"; })
+    .catch(() => { el.textContent = "v14.3"; });
 }
 
 // ============================================
@@ -683,6 +764,18 @@ initVersionBadge();
 // ============================================
 // Boot — every page
 // ============================================
+// Background music kicks off before anything else in this file. The
+// <head> of every page has already asked the browser to modulepreload
+// bgm.js (and preload the current track's audio) before script.js even
+// started running, so this import() should resolve against warm cache
+// — but starting it first here still means initBgm()'s own work
+// (reading prefs, calling play()) begins as early in the page's life
+// as this module can make it, instead of queued behind unrelated UI
+// setup that has nothing to do with audio continuity.
+import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
+  console.error("[8CM] BGM module failed:", err);
+});
+
 initSplash();
 initNav();
 initStudentDirectory();
@@ -701,12 +794,6 @@ import("./profile-modal.js")
     m.initProfileModal();
   })
   .catch((err) => console.error("Failed to init profile modal:", err));
-
-
-// Background music is independent of Firebase and safe to lazy-load on every page.
-import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
-  console.error("[8CM] BGM module failed:", err);
-});
 
 // Firebase-backed modules are lazy. A blocked third-party SDK must not stop
 // static navigation, the directory, splash handling, or other local UI.
