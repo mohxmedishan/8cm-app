@@ -8,6 +8,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { loadTeachers, onTeachers, invalidateTeachersCache } from "./teachers-data.js";
 import { logAction } from "./audit.js";
@@ -136,7 +137,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError("Couldn't save that — check your monitor access and try again.");
+    setFormError(describeWriteError(err, "save"));
   } finally {
     btn.disabled = false;
     btn.textContent = original;
@@ -163,7 +164,7 @@ async function handleDeactivate(id) {
   } catch (err) {
     console.error("Deactivate failed:", err);
     playError();
-    alert("Couldn't remove that — check your monitor access.");
+    alert(describeWriteError(err, "remove"));
   }
 }
 
@@ -178,7 +179,7 @@ async function handleReactivate(id) {
   } catch (err) {
     console.error("Reactivate failed:", err);
     playError();
-    alert("Couldn't reactivate that — check your monitor access.");
+    alert(describeWriteError(err, "reactivate"));
   }
 }
 

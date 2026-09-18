@@ -6,6 +6,7 @@ import {
   onSnapshot, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
@@ -90,7 +91,7 @@ function renderManageList() {
   items.forEach((g) => {
     const row = document.createElement("div");
     row.className = "manage-row";
-    row.innerHTML = `<div class="manage-thumb"><img src="${escapeAttr(g.url)}" alt=""></div><div class="manage-row-body"><p class="task-subject">${escapeAttr(g.title)}</p><p class="task-detail">${escapeAttr(g.album || "—")}${g.date ? " · " + escapeAttr(g.date) : ""}</p></div><div class="task-monitor-actions">${!g.isSeed ? `<button class="task-icon-btn" data-action="edit" data-id="${escapeAttr(g.id)}">✎</button><button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeAttr(g.id)}">✕</button>` : ""}</div>`;
+    row.innerHTML = `<div class="manage-thumb"><img src="${escapeAttr(g.url)}" alt=""></div><div class="manage-row-body"><p class="task-subject">${escapeAttr(g.title)}${g.isSeed ? '<span class="inactive-tag">static</span>' : ""}</p><p class="task-detail">${escapeAttr(g.album || "—")}${g.date ? " · " + escapeAttr(g.date) : ""}</p></div><div class="task-monitor-actions">${!g.isSeed ? `<button class="task-icon-btn" data-action="edit" data-id="${escapeAttr(g.id)}">✎</button><button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeAttr(g.id)}">✕</button>` : ""}</div>`;
     list.appendChild(row);
   });
   list.querySelectorAll('[data-action="edit"]').forEach((b) =>
@@ -159,7 +160,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError("Couldn't save that — check your monitor access and try again.");
+    setFormError(describeWriteError(err, "save"));
   } finally {
     b.disabled = false;
     b.textContent = old;
@@ -175,7 +176,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert("Couldn't delete that — check your monitor access.");
+    alert(describeWriteError(err, "delete"));
   }
 }
 

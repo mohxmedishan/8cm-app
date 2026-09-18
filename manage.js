@@ -71,7 +71,17 @@ function renderGate({ user, monitor }) {
   if (!monitor) {
     gate.hidden = false;
     content.hidden = true;
-    gate.innerHTML = `<p>This page is for monitors only. You're signed in as ${escapeHtml(user.email || "an account")}, which isn't on the monitor list.</p>`;
+    // This is a UI-only read, driven by the same computeIsMonitor()
+    // check that Firestore's own rules enforce for every write (see
+    // isMonitor() in firestore.rules) — so if this gate is wrong,
+    // writes will be wrong too, and vice versa. If someone lands here
+    // who believes they should be a monitor, the account shown below
+    // needs one of: its email in MONITOR_EMAILS (auth.js) AND the
+    // matching isMonitorEmail() list in firestore.rules, a doc at
+    // monitors/{their uid}, or monitor: true on users/{their uid} —
+    // and that change needs to exist in the *live* Firestore project,
+    // not just this repo.
+    gate.innerHTML = `<p>This page is for monitors only. You're signed in as ${escapeHtml(user.email || "an account")} (uid: ${escapeHtml(user.uid)}), which isn't currently recognized as a monitor.</p>`;
     return;
   }
   gate.hidden = true;

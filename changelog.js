@@ -9,6 +9,23 @@
 // ============================================
 export const changelog = [
 {
+  date: "2026-09-18",
+  version: "15.0",
+  items: [
+    "Merged in monitor invites (add a monitor by Gmail before they've ever signed in), a real teacher roster with a Firestore-over-seed merge so edits no longer wipe untouched teachers, and a rebuilt links stack that supports up to 8 named links per homework/announcement/event.",
+    "Fixed a bad merge that had silently reverted several V14.3 fixes back to V14.1: background music restarting on every page instead of resuming, light mode not applying on 8 pages, the two-column Settings layout, the BGM loop toggle, and readable Firestore error messages (achievements, announcements, homework, events, gallery, students, teachers all went back to generic 'check your monitor access' errors).",
+  ],
+},
+{
+  date: "2026-09-18",
+  version: "14.3",
+  items: [
+    "V14.3: Settings modal now lays Appearance and Sound out side by side instead of stacked, with Sound given equal weight, and the Loop toggle moved off the cramped Track row onto its own line.",
+    "Fixed light mode not applying correctly on 8 of the site's pages — their boot script never read the saved dark/light preference at all, so they always started dark and only corrected if the account/theme scripts happened to load in time.",
+    "Background music now keeps playing across page navigation instead of restarting — it resumes from where it left off. A real page refresh still starts the track over, as intended.",
+  ],
+},
+{
   date: "2026-09-17",
   items: [
     "V14.1: Fixed monitors being unable to save homework or announcements — a case-sensitivity mismatch between the sign-in check and the security rules was silently rejecting their writes.",
