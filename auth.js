@@ -228,17 +228,31 @@ export async function ensureProfileDoc(user) {
 // ------------------------------------------------
 // Student identity claiming — claims/{studentId}, doc ID = studentId
 // ------------------------------------------------
-// Claiming and switching both go through this one transaction so the
+// Claiming and switching both go through this one function so the
 // "does anyone else already own this student" check and the write
 // that claims it happen atomically — no gap where two accounts can
 // both pass the check and then both write. See firestore.rules for
 // the server-side half of this guarantee (a create against an
 // existing claims/{id} doc is rejected as an unauthorized update).
+// The users/{uid} profile mirror is written separately afterward —
+// see the comment inside claimTransaction for why.
 async function claimTransaction(uid, student, releaseId) {
   const claimRef = doc(db, "claims", student.id);
   const userRef = profileRef(uid);
   const oldClaimRef = releaseId && releaseId !== student.id ? doc(db, "claims", releaseId) : null;
 
+  // This only touches the claims/ collection. It's kept as a
+  // transaction so the "is this student already taken" read and the
+  // write that claims it stay atomic — that's the anti-race guarantee
+  // (see firestore.rules). The users/{uid} mirror write used to live
+  // in this same transaction, but firestore.rules validates it with
+  // get(claims/{id}).data.uid == request.auth.uid, and a get() inside
+  // a transaction can't see that transaction's own not-yet-committed
+  // writes. That made every claim attempt fail with a permission
+  // error no matter which student was picked. Writing the claim doc
+  // first and committing it, THEN mirroring it onto the profile as a
+  // separate write, means the rule's get() sees an already-committed
+  // claims/{id} doc and passes.
   await runTransaction(db, async (tx) => {
     const claimSnap = await tx.get(claimRef);
     if (claimSnap.exists() && claimSnap.data().uid !== uid) {
@@ -256,17 +270,17 @@ async function claimTransaction(uid, student, releaseId) {
       studentName: student.name,
       claimedAt: serverTimestamp(),
     });
-
-    tx.set(
-      userRef,
-      {
-        claimedStudentId: student.id,
-        claimedStudentName: student.name,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
   });
+
+  await setDoc(
+    userRef,
+    {
+      claimedStudentId: student.id,
+      claimedStudentName: student.name,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }
 
 async function syncDisplayName(uid, name) {
