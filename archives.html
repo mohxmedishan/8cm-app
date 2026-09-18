@@ -236,8 +236,16 @@
         <div class="search-wrap">
           <input type="text" id="teacherSearchInput" placeholder="Search a teacher or subject…" autocomplete="off">
         </div>
-        <p class="result-count" id="teacherResultCount">— teachers</p>
+        <div class="filter-row" id="teacherFilterRow">
+          <button class="filter-box" data-filter-key="category" type="button">
+            <span class="filter-box-label">Subject</span>
+            <span class="filter-box-value" data-value-for="category">All</span>
+          </button>
+          <button class="filter-clear" id="teacherFilterClear" hidden type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="teacherFilterDropdownHost"></div>
       </div>
+      <p class="result-count" id="teacherResultCount">— teachers</p>
       <div class="teacher-grid" id="teacherGrid"></div>
     </div>
   </section>

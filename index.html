@@ -259,20 +259,415 @@
     </div>
   </section>
 
-  <section class="footer-toggles" id="footerToggles">
-    <div class="section-inner">
-      <div class="footer-toggle-row">
-        <button type="button" class="footer-toggle-btn" data-toggle-target="footerChangelogPanel">Changelog</button>
-        <button type="button" class="footer-toggle-btn" data-toggle-target="footerMonitorsPanel">Monitors</button>
+
+
+</main>
+
+<footer class="footer">
+  <div class="section-inner footer-inner">
+    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+  </div>
+</footer>
+
+<div class="modal-overlay" hidden="" id="authOverlay">
+<div class="modal-card">
+<button aria-label="Close" class="modal-close" id="authClose">✕</button>
+<div class="auth-tabs">
+<button class="auth-tab active" data-mode="signin" type="button">Sign in</button>
+<button class="auth-tab" data-mode="signup" type="button">Create account</button>
+</div>
+<p class="config-banner" hidden="" id="configBanner">
+      ⚠️ This site isn't connected to a real Firebase project yet — sign-in
+      can't work until <code>firebase-config.js</code> has your project's
+      real values instead of the <code>REPLACE_WITH_…</code> placeholders.
+    </p>
+<button class="btn-google" id="googleSignInBtn" type="button">
+<svg aria-hidden="true" class="google-icon" viewbox="0 0 18 18">
+<path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" fill="#4285F4"></path>
+<path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z" fill="#34A853"></path>
+<path d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z" fill="#FBBC05"></path>
+<path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"></path>
+</svg>
+<span>Continue with Google</span>
+</button>
+<div class="auth-divider"><span>or</span></div>
+<form class="auth-form" id="authForm" novalidate="">
+<label class="field">
+<span>Email</span>
+<input autocomplete="email" name="email" required="" type="email"/>
+</label>
+<label class="field" data-field="password">
+<span>Password</span>
+<div class="password-wrap">
+<input autocomplete="current-password" name="password" type="password"/>
+<button aria-label="Show password" aria-pressed="false" class="password-toggle" data-target="password" type="button">
+<svg aria-hidden="true" class="eye-icon eye-open" viewbox="0 0 24 24"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path></svg>
+<svg aria-hidden="true" class="eye-icon eye-closed" hidden="" viewbox="0 0 24 24"><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"></path></svg>
+</button>
+</div>
+</label>
+<label class="field" data-field="confirmPassword" hidden="">
+<span>Confirm password</span>
+<div class="password-wrap">
+<input autocomplete="new-password" name="confirmPassword" type="password"/>
+<button aria-label="Show password" aria-pressed="false" class="password-toggle" data-target="confirmPassword" type="button">
+<svg aria-hidden="true" class="eye-icon eye-open" viewbox="0 0 24 24"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"></path></svg>
+<svg aria-hidden="true" class="eye-icon eye-closed" hidden="" viewbox="0 0 24 24"><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"></path></svg>
+</button>
+</div>
+</label>
+<p class="auth-error" hidden="" id="authError"></p>
+<p class="auth-note" hidden="" id="authResetNote"></p>
+<button class="btn btn-primary" id="authSubmitBtn" type="submit">
+<span class="btn-label">Sign in</span>
+</button>
+<button class="link-btn" id="forgotPasswordBtn" type="button">Forgot password?</button>
+</form>
+</div>
+</div>
+<!-- ============================================
+     Immersive loading overlay — shown during
+     async Firebase calls (sign-in / sign-up / Google)
+     ============================================ -->
+<div class="loading-overlay" hidden="" id="loadingOverlay">
+<div class="loading-card">
+<span aria-hidden="true" class="loading-spinner"></span>
+<p class="loading-status" id="loadingStatus">Signing in…</p>
+</div>
+</div>
+<!-- ============================================
+     Identity claim — mandatory before using the account.
+     No skip/close: this modal only ever gets hidden once a
+     claim actually succeeds (see auth-ui.js).
+     ============================================ -->
+<div class="modal-overlay" hidden="" id="claimOverlay">
+<div class="modal-card">
+<button aria-label="Close" class="modal-close" hidden="" id="claimClose">✕</button>
+<h3 id="claimModalTitle">Which one are you?</h3>
+<p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account. This links your account to that student.</p>
+<button class="link-btn claim-wrong-account" id="claimWrongAccountBtn" type="button">Not you? Sign out</button>
+<label class="field">
+<span>Your name</span>
+<select id="claimSelect"></select>
+</label>
+<p class="auth-error" hidden="" id="claimError"></p>
+<div class="modal-actions">
+<button class="link-btn" hidden="" id="claimCancelBtn" type="button">Cancel</button>
+<button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
+</div>
+</div>
+</div>
+<!-- ============================================
+     Settings — appearance / theme picker
+     ============================================ -->
+<div class="modal-overlay" id="settingsOverlay" hidden>
+<div class="modal-card settings-card">
+<button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
+<div class="settings-columns">
+<div class="settings-col settings-col-appearance">
+<h3>Appearance</h3>
+<p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div aria-label="Color mode" class="theme-mode-row" role="tablist">
+<button class="theme-mode-btn" data-mode="dark" role="tab" type="button">Dark</button>
+<button class="theme-mode-btn" data-mode="light" role="tab" type="button">Light</button>
+</div>
+<div class="theme-swatches" id="themeSwatches"></div>
+<label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
+<button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
+</div>
+<div class="settings-col settings-col-sound">
+<div class="theme-audio-block"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="avatarPickerOverlay" hidden>
+  <div class="modal-card avatar-picker-card">
+    <button class="modal-close" id="avatarPickerClose" aria-label="Close">✕</button>
+    <h3>Choose your avatar</h3>
+    <p class="modal-sub">Your avatar is tied to your account, not to the student you've claimed. Switching students keeps your avatar.</p>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
+  </div>
+</div>
+<script src="script.js" type="module"></script>
+<div class="lightbox-overlay" hidden="" id="lightboxOverlay">
+<button aria-label="Close photo" class="lightbox-close" id="lightboxClose">✕</button>
+<figure class="lightbox-frame">
+<img alt="" id="lightboxImage" src=""/>
+<figcaption id="lightboxCaption"></figcaption>
+</figure>
+</div></body>
+</html>
+tml>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8CM.</title>
+<meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba.">
+<meta name="theme-color" content="#16171a">
+<link rel="canonical" href="https://8cm.vercel.app/">
+<meta property="og:url" content="https://8cm.vercel.app/">
+<meta property="og:site_name" content="8CM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="8CM.">
+<script>
+(function () {
+  try {
+    var m = localStorage.getItem('8cm-theme-mode');
+    var mode = (m === 'light' || m === 'dark') ? m : 'dark';
+    document.documentElement.setAttribute('data-theme', mode);
+    var resolved = localStorage.getItem('8cm-theme-accent-resolved-' + mode);
+    var raw = localStorage.getItem('8cm-theme-accent');
+    var accent = resolved || raw;
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  // Warm the cache for the background-music module and whichever
+  // track is currently selected, before any other script on this
+  // page runs. bgm.js already resumes playback the instant the page
+  // is ready (see its v14.3 notes) rather than waiting for a click,
+  // but on a plain multi-page site the browser still has to re-fetch
+  // the module and the audio file fresh on every navigation unless
+  // something has already asked for them. Doing that here, as early
+  // as possible, is what actually shrinks the audible gap — it can't
+  // be eliminated outright (the previous page's <audio> element is
+  // genuinely torn down on navigation), but the new page can have
+  // both ready to go the moment it's ready to play instead of
+  // starting the fetches from scratch.
+  try {
+    var modLink = document.createElement('link');
+    modLink.rel = 'modulepreload';
+    modLink.href = 'bgm.js';
+    document.head.appendChild(modLink);
+
+    if (localStorage.getItem('8cm:bgm:playing') === '1') {
+      var file = localStorage.getItem('8cm:bgm:track');
+      if (file) {
+        var audioLink = document.createElement('link');
+        audioLink.rel = 'preload';
+        audioLink.as = 'audio';
+        audioLink.href = 'assets/audio/' + file;
+        document.head.appendChild(audioLink);
+      }
+    }
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/logos/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
+<link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-content">
+    <img src="assets/logos/cm-logo.png" alt="" class="splash-logo">
+    <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
+  </div>
+</div>
+<script>
+(function(){
+  function hideSplash(){
+    var s=document.getElementById("splash");
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
+<div class="grain"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand" aria-label="8CM home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#today" class="nav-link">Today</a>
+      <a href="#events" class="nav-link">Events</a>
+      <a href="#achievements" class="nav-link">Achievements</a>
+      <a href="archives.html" class="nav-link">Archives</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
+      </button>
+      <div class="nav-auth" id="authSlot"></div>
+      <button class="burger" id="burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="hero-kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
+        <h1 class="hero-title">Thirty desks,<br>four houses,<br>one classroom that's ours.</h1>
+        <p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
+        <div class="hero-actions">
+          <a href="archives.html#students" class="btn btn-primary">Meet the class</a>
+          <a href="archives.html#houses" class="btn btn-ghost">See the houses</a>
+          <a href="archives.html#timetable" class="btn btn-ghost">See the timetable</a>
+        </div>
       </div>
-      <div class="footer-toggle-panel" id="footerChangelogPanel" hidden>
-        <div id="changelogEntries" class="changelog-inline"></div>
-      </div>
-      <div class="footer-toggle-panel" id="footerMonitorsPanel" hidden>
-        <div id="publicMonitorsList"></div>
+      <div class="hero-visual">
+        <p class="hero-visual-label">Houses, by headcount</p>
+        <div class="bar-chart" id="heroChart">
+          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="11" data-max="11"></div></div><span class="bar-count">11</span></div>
+          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
+          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
+          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="3" data-max="11"></div></div><span class="bar-count">3</span></div>
+        </div>
       </div>
     </div>
   </section>
+
+  <section class="today" id="today">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>What's for today</h2>
+        <p class="section-sub" id="todayDate">Homework and announcements — kept current so anyone checking knows what's due.</p>
+      </div>
+      <div class="my-day-card" id="myDayCard" hidden>
+        <p class="my-day-greeting" id="myDayGreeting"></p>
+        <div class="my-day-stats" id="myDayStats"></div>
+        <div class="my-day-class" id="myDayClass"></div>
+        <div class="my-day-teasers" id="myDayTeasers"></div>
+      </div>
+      <div class="today-grid">
+        <div class="today-panel" id="homeworkPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Homework</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addHomeworkBtn" hidden>+ Add homework</button>
+          </div>
+          <div class="filter-pills" id="homeworkFilters">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill" data-filter="pending">Pending</button>
+            <button class="pill" data-filter="due-soon">Due soon</button>
+            <button class="pill" data-filter="overdue">Overdue</button>
+            <button class="pill" data-filter="completed">Completed</button>
+          </div>
+          <form class="task-form" id="homeworkForm" hidden>
+            <div class="task-form-grid">
+              <label class="field"><span>Subject</span><select name="subject" required></select></label>
+              <label class="field"><span>Priority</span><select name="priority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select></label>
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Exercise 4.3" required></label>
+              <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="Questions 1–10"></label>
+              <label class="field"><span>Due date</span><input type="date" name="dueDate" required></label>
+              <div class="field field-wide">
+  <span>Links (optional)</span>
+  <div class="links-stack" id="homeworkLinksStack"></div>
+  <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+</div>
+            </div>
+            <p class="auth-error" id="homeworkFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Add homework</button>
+            </div>
+          </form>
+          <div class="task-list" id="homeworkList"></div>
+        </div>
+        <div class="today-panel" id="announcementPanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Announcements</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addAnnouncementBtn" hidden>+ Post announcement</button>
+          </div>
+          <form class="task-form" id="announcementForm" hidden>
+            <div class="task-form-grid">
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Sports day moved to Thursday" required></label>
+              <label class="field field-wide"><span>Content</span><input type="text" name="content" placeholder="Details students need to know" required></label>
+              <label class="field"><span>Category</span><select name="category"><option>Important</option><option>Class</option><option>Exam</option><option>Homework</option><option>Event</option><option selected>General</option></select></label>
+              <label class="field"><span>Priority</span><select name="priority"><option value="normal" selected>Normal</option><option value="important">Important</option></select></label>
+              <label class="field"><span>Date of event (optional)</span><input type="date" name="eventDate"></label>
+              <label class="field field-checkbox"><input type="checkbox" name="pinned"><span>Pin to top</span></label>
+              <div class="field field-wide">
+                <span>Links (optional)</span>
+                <div class="links-stack" id="announcementLinksStack"></div>
+                <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+              </div>
+            </div>
+            <p class="auth-error" id="announcementFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Post announcement</button>
+            </div>
+          </form>
+          <div class="task-list" id="announcementList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="events-page" id="events">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Events</h2>
+        <p class="section-sub">Trips, competitions, and anything else worth marking on 8CM's calendar.</p>
+      </div>
+      <div class="next-event-banner" id="nextEventBanner" hidden></div>
+      <div class="today-panel-head">
+        <span class="today-note">Synced from Firestore — sign in as monitor to edit.</span>
+        <button class="btn btn-add-task btn-small monitor-only" id="addEventBtn" hidden>+ Add event</button>
+      </div>
+      <form class="task-form" id="eventForm" hidden>
+        <div class="task-form-grid">
+          <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Inter-school science fair" required></label>
+          <label class="field"><span>Date</span><input type="date" name="date" required></label>
+          <label class="field"><span>Time (optional)</span><input type="text" name="time" placeholder="9:00 AM"></label>
+          <label class="field"><span>Location</span><input type="text" name="location" placeholder="Main hall"></label>
+          <label class="field"><span>Category</span><select name="category"><option>General</option><option>Trip</option><option>Competition</option><option>Exam</option><option>Celebration</option></select></label>
+          <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="What to bring, what to expect"></label>
+          <div class="field field-wide">
+            <span>Links (optional)</span>
+            <div class="links-stack" id="eventLinksStack"></div>
+            <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+          </div>
+        </div>
+        <p class="auth-error" id="eventFormError" hidden></p>
+        <div class="task-form-actions">
+          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn btn-add-task btn-small">Add event</button>
+        </div>
+      </form>
+      <div class="event-list" id="eventList"></div>
+      <div class="empty-state" id="eventsEmptyState" hidden>
+        <p class="empty-title">Nothing scheduled yet.</p>
+        <p class="empty-body">When 8CM has a trip, competition, or something worth marking on a calendar, it lands here.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="achievements" id="achievements">
+    <div class="section-inner">
+      <div class="section-head"><h2>Achievements</h2></div>
+      <div id="achievementsList"></div>
+    </div>
+  </section>
+
+
 
 </main>
 

@@ -229,7 +229,11 @@ function initStudentDirectory() {
     const opt = OPTIONS[key].find((o) => o.value === filters[key]);
     valEl.textContent = opt ? opt.label : "All";
     const box = filterRow.querySelector(`[data-filter-key="${key}"]`);
-    if (box) box.classList.toggle("is-active", !!filters[key]);
+    if (box) {
+      const active = !!filters[key];
+      box.classList.toggle("is-active", active);
+      if (key === "house") box.dataset.houseColor = active ? filters.house : "";
+    }
   }
 
   function closeDropdown() {
@@ -714,78 +718,6 @@ function initVersionBadge() {
     .catch(() => { el.textContent = "v14.3"; });
 }
 
-// ============================================
-// Bottom-of-page Changelog / Monitors toggles
-// ------------------------------------------------
-// Changelog reuses the #changelogEntries container initChangelog()
-// already knows how to fill (see initChangelog below) — it just
-// happens to also exist on this page now, tucked inside a hidden
-// panel. Monitors is a lazy one-time fetch: auth.js (and Firestore)
-// only get pulled in if someone actually opens that panel.
-// ============================================
-function initFooterToggles() {
-  const buttons = document.querySelectorAll(".footer-toggle-btn");
-  if (!buttons.length) return;
-
-  const escapeHtml = (v) =>
-    String(v ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-    })[c]);
-
-  let monitorsLoaded = false;
-  function loadPublicMonitors() {
-    if (monitorsLoaded) return;
-    monitorsLoaded = true;
-    const list = document.getElementById("publicMonitorsList");
-    if (!list) return;
-    list.innerHTML = `<p class="task-empty">Loading…</p>`;
-    import("./auth.js")
-      .then((mod) => mod.getMonitorDirectory())
-      .then((directory) => {
-        if (!directory.length) {
-          list.innerHTML = `<p class="task-empty">No monitors found.</p>`;
-          return;
-        }
-        list.innerHTML = directory
-          .map(
-            (m) => `
-          <div class="manage-row">
-            <div class="manage-row-body">
-              <p class="task-subject">${escapeHtml(m.email)}${m.builtIn ? ' <span class="inactive-tag">built-in</span>' : ""}</p>
-            </div>
-          </div>`
-          )
-          .join("");
-      })
-      .catch((err) => {
-        console.error("Failed to load monitor directory:", err);
-        list.innerHTML = `<p class="task-empty">Couldn't load the monitor list right now.</p>`;
-        monitorsLoaded = false; // allow a retry on next open
-      });
-  }
-
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const panel = document.getElementById(btn.dataset.toggleTarget);
-      if (!panel) return;
-      const opening = panel.hidden;
-
-      // Only one panel open at a time, so the section stays compact.
-      document.querySelectorAll(".footer-toggle-panel").forEach((p) => { p.hidden = true; });
-      buttons.forEach((b) => b.classList.remove("active"));
-
-      if (opening) {
-        panel.hidden = false;
-        btn.classList.add("active");
-        playOpen();
-        if (btn.dataset.toggleTarget === "footerMonitorsPanel") loadPublicMonitors();
-      } else {
-        playClose();
-      }
-    });
-  });
-}
-
 initVersionBadge();
 
 // ============================================
@@ -810,7 +742,6 @@ initHouseCards();
 initGalleryLightbox();
 initHeroChart();
 initChangelog();  // no-ops on pages without #changelogEntries
-initFooterToggles();
 initTodayDate();
 initHoverSfx();
 

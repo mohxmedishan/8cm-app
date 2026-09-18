@@ -778,11 +778,15 @@ h1, h2, h3 {
 }
 
 .house-dot {
+  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 5px;
+  vertical-align: middle;
+  margin-right: 6px;
+  margin-top: -1px;
+  background: var(--text-faint);
 }
 .house-dot.winter { background: var(--house-winter); }
 .house-dot.autumn { background: var(--house-autumn); }
@@ -1592,7 +1596,8 @@ h1, h2, h3 {
   color: var(--text-muted);
 }
 .field input,
-.field select {
+.field select,
+.field textarea {
   background: var(--bg-elevated-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
@@ -1601,11 +1606,18 @@ h1, h2, h3 {
   font-family: var(--font-body);
   font-size: 0.9rem;
   width: 100%;
+  box-sizing: border-box;
 }
 .field input:focus,
-.field select:focus {
+.field select:focus,
+.field textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+.field textarea {
+  resize: vertical;
+  min-height: 84px;
+  line-height: 1.45;
 }
 
 /* Password field + eye toggle */
@@ -2970,7 +2982,8 @@ html[data-theme="light"] .pill.active {
 
 html[data-theme="light"] .search-wrap input,
 html[data-theme="light"] .field input,
-html[data-theme="light"] .field select {
+html[data-theme="light"] .field select,
+html[data-theme="light"] .field textarea {
   background: #ffffff;
   border-color: #cfcbc1;
   color: var(--text);
@@ -4099,3 +4112,27 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* House filter — only the selected house uses its own colour. */
+.filter-box[data-filter-key="house"][data-house-color="winter"].is-active { border-color: var(--house-winter); }
+.filter-box[data-filter-key="house"][data-house-color="winter"].is-active .filter-box-value { color: var(--house-winter); }
+.filter-box[data-filter-key="house"][data-house-color="autumn"].is-active { border-color: var(--house-autumn); }
+.filter-box[data-filter-key="house"][data-house-color="autumn"].is-active .filter-box-value { color: var(--house-autumn); }
+.filter-box[data-filter-key="house"][data-house-color="spring"].is-active { border-color: var(--house-spring); }
+.filter-box[data-filter-key="house"][data-house-color="spring"].is-active .filter-box-value { color: var(--house-spring); }
+.filter-box[data-filter-key="house"][data-house-color="summer"].is-active { border-color: var(--house-summer); }
+.filter-box[data-filter-key="house"][data-house-color="summer"].is-active .filter-box-value { color: var(--house-summer); }
+
+.manage-thumb-avatar {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+}
+.monitor-row .manage-row-body .task-detail { line-height: 1.4; }
+
+.student-card .house-pill.house-winter .house-dot { background: var(--house-winter); }
+.student-card .house-pill.house-autumn .house-dot { background: var(--house-autumn); }
+.student-card .house-pill.house-spring .house-dot { background: var(--house-spring); }
+.student-card .house-pill.house-summer .house-dot { background: var(--house-summer); }

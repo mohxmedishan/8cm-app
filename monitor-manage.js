@@ -1,19 +1,25 @@
 // ============================================
 // 8CM — Monitor management (monitor-only, add-by-Gmail)
 // ------------------------------------------------
-// Firestore: monitorInvites/{email} — see auth.js (inviteMonitor,
-// revokeMonitorInvite, listMonitorInvites) for the read/write logic,
-// and firestore.rules for the actual server-side enforcement, which
-// is the real authority here, not this file.
+// Reads and writes monitorInvites/{email} via auth.js. The list view
+// merges three sources so it shows WHO each monitor actually is:
+//   · MONITOR_EMAILS (bootstrap, from source)
+//   · monitorInvites/{email} (added in this panel)
+//   · settings/monitors.uids → users/{uid} (people who've signed in
+//     at least once — this is where we get their student name + avatar)
 // ============================================
-import { subscribeAuth, inviteMonitor, revokeMonitorInvite, listMonitorInvites, MONITOR_EMAILS } from "./auth.js";
+import {
+  subscribeAuth, inviteMonitor, revokeMonitorInvite, listMonitorInvites,
+  MONITOR_EMAILS,
+} from "./auth.js";
 import { logAction } from "./audit.js";
 import { playSuccess, playError, playDelete } from "./sound.js";
+import { avatarMarkup, getAvatarForUid, loadAvatars } from "./avatars.js";
 
 const $ = (id) => document.getElementById(id);
 let isCurrentMonitor = false;
 let currentUser = null;
-let invites = [];
+let monitorItems = null; // null = not loaded yet, [] = loaded empty
 
 function escapeHtml(v) {
   return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
@@ -28,60 +34,149 @@ function setFormError(message) {
   el.textContent = message || "";
 }
 
-async function refresh() {
-  invites = await listMonitorInvites().catch((err) => {
-    console.error("Failed to load monitor invites:", err);
-    return null;
-  });
-  render();
+// ------------------------------------------------
+// Build the merged list
+// ------------------------------------------------
+async function buildMonitorList() {
+  const items = [];
+  const byEmail = new Map();
+
+  const add = (item) => {
+    const email = (item.email || "").toLowerCase();
+    if (email && byEmail.has(email)) {
+      const merged = Object.assign(byEmail.get(email), item);
+      return merged;
+    }
+    const merged = { ...item, email };
+    items.push(merged);
+    if (email) byEmail.set(email, merged);
+    return merged;
+  };
+
+  // 1. Built-in bootstrap emails (from auth.js source)
+  MONITOR_EMAILS.forEach((email) => add({ email, builtIn: true }));
+
+  // 2. Email invites (people who may not have signed in yet)
+  let invitesLoaded = true;
+  try {
+    const invites = await listMonitorInvites();
+    invites.forEach((i) =>
+      add({ email: i.email, invitedByEmail: i.invitedByEmail, inviteId: i.id })
+    );
+  } catch (err) {
+    console.error("[8CM] Failed to load monitor invites:", err);
+    invitesLoaded = false;
+  }
+
+  // 3. Signed-in monitors (from settings/monitors.uids → users/{uid})
+  //    This is what gives us each monitor's student name and — via the
+  //    avatar module — their pfp.
+  try {
+    const { db } = await import("./firebase-config.js");
+    const { doc, getDoc } = await import(
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    );
+    const snap = await getDoc(doc(db, "settings", "monitors"));
+    if (snap.exists()) {
+      const uids = Object.keys(snap.data().uids || {});
+      for (const uid of uids) {
+        try {
+          const userSnap = await getDoc(doc(db, "users", uid));
+          const data = userSnap.exists() ? userSnap.data() : {};
+          add({
+            uid,
+            email: data.email || "",
+            studentName: data.claimedStudentName || null,
+          });
+        } catch (err) {
+          console.error("[8CM] Failed to load monitor user doc", uid, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[8CM] Failed to load monitor uid list:", err);
+  }
+
+  return { items, invitesLoaded };
 }
 
-function render() {
+async function refresh() {
+  await loadAvatars().catch(() => {});
+  const { items, invitesLoaded } = await buildMonitorList();
+  monitorItems = items;
+  render(invitesLoaded);
+}
+
+// ------------------------------------------------
+// Render
+// ------------------------------------------------
+function render(invitesLoaded = true) {
   const list = $("monitorManageList");
   if (!list) return;
+
   if (!isCurrentMonitor) {
     list.innerHTML = `<p class="task-empty">Only monitors can manage monitors.</p>`;
     return;
   }
-  if (invites === null) {
-    list.innerHTML = `<p class="task-empty">Couldn't load the monitor list right now.</p>`;
+  if (monitorItems === null) {
+    list.innerHTML = `<div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading monitors…</span></div>`;
+    return;
+  }
+  if (monitorItems.length === 0) {
+    list.innerHTML = `<p class="task-empty">No monitors found.</p>`;
     return;
   }
 
-  const builtInRows = MONITOR_EMAILS.map(
-    (email) => `
-      <div class="manage-row">
-        <div class="manage-row-body">
-          <p class="task-subject">${escapeHtml(email)} <span class="inactive-tag">built-in</span></p>
-          <p class="task-detail">Always a monitor — set in the project's source, not removable here.</p>
-        </div>
-      </div>`
-  ).join("");
+  const warn = !invitesLoaded
+    ? `<p class="task-empty" style="border-bottom:1px solid var(--border-soft)">Couldn't read invites — check that <code>firestore.rules</code> has been deployed. Signed-in monitors are still listed below.</p>`
+    : "";
 
-  const inviteRows = invites.length
-    ? invites
-        .map(
-          (i) => `
-      <div class="manage-row">
-        <div class="manage-row-body">
-          <p class="task-subject">${escapeHtml(i.email)}</p>
-          <p class="task-detail">${i.invitedByEmail ? `Added by ${escapeHtml(i.invitedByEmail)}` : "Added by a monitor"}</p>
-        </div>
-        <div class="task-monitor-actions">
-          <button class="task-icon-btn task-icon-btn-danger" data-action="revoke" data-email="${escapeHtml(i.email)}" aria-label="Revoke monitor access">✕</button>
-        </div>
-      </div>`
-        )
-        .join("")
-    : `<p class="task-empty">No additional monitors added yet.</p>`;
+  list.innerHTML = warn + monitorItems
+    .map((m) => {
+      const avatarId = m.uid ? getAvatarForUid(m.uid) : null;
+      const avatarHtml = avatarMarkup(
+        avatarId,
+        m.studentName || m.email || "?",
+        44
+      );
 
-  list.innerHTML = builtInRows + inviteRows;
+      const primary = m.studentName || m.email || "(unknown)";
+      const secondaryParts = [];
+      if (m.studentName && m.email) secondaryParts.push(m.email);
+      if (m.builtIn) secondaryParts.push("Built-in");
+      if (m.invitedByEmail) secondaryParts.push(`Added by ${m.invitedByEmail}`);
+      if (!m.uid && !m.builtIn) secondaryParts.push("Not yet signed in");
+
+      return `
+        <div class="manage-row monitor-row">
+          <div class="manage-thumb manage-thumb-avatar">${avatarHtml}</div>
+          <div class="manage-row-body">
+            <p class="task-subject">${escapeHtml(primary)}${
+              m.builtIn ? ' <span class="inactive-tag">built-in</span>' : ""
+            }</p>
+            <p class="task-detail">${escapeHtml(secondaryParts.join(" · "))}</p>
+          </div>
+          <div class="task-monitor-actions">
+            ${
+              !m.builtIn && !m.uid && m.inviteId
+                ? `<button class="task-icon-btn task-icon-btn-danger" data-action="revoke" data-email="${escapeHtml(
+                    m.email
+                  )}" aria-label="Revoke monitor access">✕</button>`
+                : ""
+            }
+          </div>
+        </div>`;
+    })
+    .join("");
 
   list.querySelectorAll('[data-action="revoke"]').forEach((btn) => {
     btn.addEventListener("click", () => handleRevoke(btn.dataset.email));
   });
 }
 
+// ------------------------------------------------
+// Add / revoke
+// ------------------------------------------------
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
@@ -99,18 +194,25 @@ async function handleSubmit(e) {
       resourceType: "monitor",
       resourceId: email,
       summary: `Added ${email} as a monitor`,
-    });
+    }).catch(() => {});
     playSuccess();
     form.reset();
     await refresh();
   } catch (err) {
-    console.error("Add monitor failed:", err);
+    console.error("[8CM] Add monitor failed:", err);
     playError();
-    setFormError(
-      err && err.code === "monitor-invite/invalid-email"
-        ? err.message
-        : "Couldn't add that monitor — check the address and your monitor access, then try again."
-    );
+    const code = err && err.code;
+    if (code === "monitor-invite/invalid-email") {
+      setFormError(err.message);
+    } else if (code === "permission-denied") {
+      setFormError(
+        "Firestore rejected the write. Either firestore.rules hasn't been deployed to this project yet, or this account isn't recognized as a monitor server-side (rules check the email allowlist + monitors/{uid} + users/{uid}.monitor + monitorInvites/{email} — not the client-side check). Redeploy the rules and try again."
+      );
+    } else {
+      setFormError(
+        `Couldn't add that monitor (${code || "unknown error"}). Try again.`
+      );
+    }
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = original;
@@ -118,20 +220,24 @@ async function handleSubmit(e) {
 }
 
 async function handleRevoke(email) {
-  if (!confirm(`Remove ${email} as a monitor? They'll lose monitor access immediately.`)) return;
+  if (!confirm(`Remove ${email} as a monitor? They'll lose access immediately.`)) return;
   try {
     await revokeMonitorInvite(email);
     await logAction("deleted", {
       resourceType: "monitor",
       resourceId: email,
       summary: `Removed ${email} as a monitor`,
-    });
+    }).catch(() => {});
     playDelete();
     await refresh();
   } catch (err) {
-    console.error("Revoke monitor failed:", err);
+    console.error("[8CM] Revoke monitor failed:", err);
     playError();
-    alert("Couldn't remove that monitor — check your monitor access and try again.");
+    alert(
+      err && err.code === "permission-denied"
+        ? "Firestore rejected the delete — check that firestore.rules is deployed."
+        : "Couldn't remove that monitor. Try again."
+    );
   }
 }
 
