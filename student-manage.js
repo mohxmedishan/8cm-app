@@ -9,7 +9,6 @@ import { subscribeAuth } from "./auth.js";
 import { loadStudents, onStudents, invalidateStudentsCache } from "./students.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
-import { describeWriteError } from "./error-utils.js";
 
 const $ = (id) => document.getElementById(id);
 let isCurrentMonitor = false;
@@ -145,7 +144,7 @@ async function handleSubmit(e) {
     }
     playSuccess(); closeForm({ silent: true }); await invalidateStudentsCache(); claimsLoaded = false;
   } catch (err) {
-    console.error("Save failed:", err); playError(); setFormError(describeWriteError(err, "save"));
+    console.error("Save failed:", err); playError(); setFormError("Couldn't save that — check your monitor access and try again.");
   } finally { btn.disabled = false; btn.textContent = original; }
 }
 async function handleDeactivate(id) {
@@ -155,7 +154,7 @@ async function handleDeactivate(id) {
     await setDoc(doc(db, "students", id), { active: false }, { merge: true });
     await logAction("deactivated", { resourceType: "student", resourceId: id, summary: `Deactivated student: ${student.name}` });
     playDelete(); await invalidateStudentsCache();
-  } catch (err) { console.error("Deactivate failed:", err); playError(); alert(describeWriteError(err, "deactivate")); }
+  } catch (err) { console.error("Deactivate failed:", err); playError(); alert("Couldn't deactivate that — check your monitor access."); }
 }
 async function handleReleaseClaim(studentId) {
   const student = currentList.find((s) => s.id === studentId); if (!student) return;
@@ -164,7 +163,7 @@ async function handleReleaseClaim(studentId) {
     await deleteDoc(doc(db, "claims", studentId));
     await logAction("released-claim", { resourceType: "claim", resourceId: studentId, summary: `Released identity claim on ${student.name}` });
     playDelete(); claimsByStudent.delete(studentId); render();
-  } catch (err) { console.error("Release claim failed:", err); playError(); alert(describeWriteError(err, "release that claim")); }
+  } catch (err) { console.error("Release claim failed:", err); playError(); alert("Couldn't release that claim — check your monitor access."); }
 }
 
 export function initStudentManagement() {

@@ -27,89 +27,17 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
+import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[c]);
-
-// ------------------------------------------------
-// Multi-link field
-// ------------------------------------------------
-const MAX_LINKS = 6;
-
-function appendLinkInput(container, value = "", index) {
-  const count = container.querySelectorAll(".link-input-row").length;
-  if (count >= MAX_LINKS) return;
-
-  const row = document.createElement("div");
-  row.className = "link-input-row";
-  const label = index !== undefined ? index + 1 : count + 1;
-
-  const input = document.createElement("input");
-  input.type = "url";
-  input.className = "link-input";
-  input.setAttribute("inputmode", "url");
-  input.placeholder = `Link ${label} (paste a URL)`;
-  input.value = value || "";
-  input.dataset.index = String(label);
-
-  input.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter") return;
-    e.preventDefault();
-    if (!input.value.trim()) return;
-    if (row !== container.lastElementChild) return;
-    if (container.querySelectorAll(".link-input-row").length >= MAX_LINKS) return;
-    appendLinkInput(container, "", undefined);
-    const lastInput = container.lastElementChild.querySelector("input");
-    if (lastInput) lastInput.focus();
-  });
-
-  input.addEventListener("paste", () => {
-    setTimeout(() => {
-      if (!input.value.trim()) return;
-      if (row !== container.lastElementChild) return;
-      if (container.querySelectorAll(".link-input-row").length >= MAX_LINKS) return;
-      appendLinkInput(container, "", undefined);
-    }, 0);
-  });
-
-  row.appendChild(input);
-  container.appendChild(row);
-}
-
-function setLinkInputs(container, links) {
-  if (!container) return;
-  container.innerHTML = "";
-  const cleaned = (links || []).map((l) => (typeof l === "string" ? l : l?.url || "")).filter(Boolean);
-  if (cleaned.length === 0) {
-    appendLinkInput(container, "", 0);
-  } else {
-    cleaned.slice(0, MAX_LINKS).forEach((url, i) => appendLinkInput(container, url, i));
-    if (cleaned.length < MAX_LINKS) appendLinkInput(container, "", cleaned.length);
-  }
-}
-
-function readLinkInputs(container) {
-  if (!container) return [];
-  return Array.from(container.querySelectorAll(".link-input"))
-    .map((i) => i.value.trim())
-    .filter(Boolean)
-    .map((url) => normalizeUrl(url));
-}
-
-function normalizeUrl(raw) {
-  const v = raw.trim();
-  if (!v) return "";
-  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-}
-
 
 // ------------------------------------------------
 // Shared cache + pub/sub — see module comment above
@@ -266,7 +194,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert(describeWriteError(err, "delete"));
+    alert("Couldn't delete that — check your monitor access and try again.");
   }
 }
 
@@ -290,8 +218,7 @@ function openForm(assignment) {
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
   form.priority.value = (assignment && assignment.priority) || "medium";
   const linkStack = $("homeworkLinksStack");
-  const existingLinks = assignment?.links || (assignment?.link ? [assignment.link] : []);
-  setLinkInputs(linkStack, existingLinks);
+  setLinkStack(linkStack, assignment);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = assignment ? "Save changes" : "Add homework";
@@ -321,7 +248,7 @@ function setFormError(message) {
 async function handleSubmit(e) {
   e.preventDefault();
   const form = e.target;
-  const links = readLinkInputs($("homeworkLinksStack"));
+  const links = readLinkStack($("homeworkLinksStack"));
   const payload = {
     subject: form.subject.value.trim(),
     title: form.title.value.trim(),
@@ -329,7 +256,10 @@ async function handleSubmit(e) {
     dueDate: form.dueDate.value,
     priority: form.priority.value,
     links,
-    link: links[0] || "",
+    // Legacy single-link field, kept only so a page still on an old
+    // cached script.js reads *something* sane; new code always reads
+    // `links`.
+    link: links[0] ? links[0].url : "",
   };
   if (!payload.subject || !payload.title || !payload.dueDate) return;
 
@@ -364,7 +294,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError(describeWriteError(err, "save"));
+    setFormError("Couldn't save that — check your monitor access and try again.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = original;
@@ -419,12 +349,7 @@ function renderList() {
         <p class="task-subject">${escapeHtml(a.title)}</p>
         <p class="task-detail">${escapeHtml(a.description || "")}</p>
         <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
-        ${(() => {
-          const list = a.links || (a.link ? [a.link] : []);
-          return list.map((url, i) =>
-            `<a class="task-link-chip" href="${escapeHtml(url)}" target="_blank" rel="noopener">${list.length > 1 ? `Link ${i + 1}` : "Resource"}</a>`
-          ).join("");
-        })()}
+        ${linkChipsHtml(a)}
       </div>
       <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
       <div class="hw-actions">

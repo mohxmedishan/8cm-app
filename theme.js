@@ -143,14 +143,6 @@ function getStoredAccent() {
 function setStoredAccent(hex) {
   try { localStorage.setItem(STORAGE_KEY, hex); } catch {}
 }
-// Caches the fully-computed accent for a given mode (the vibrant
-// light-mode variant, or the raw dark-mode hex) so the inline boot
-// script in <head> can paint the correct shade on the very first
-// frame, before this module has even loaded — instead of painting the
-// raw picked hex and then visibly correcting it a moment later.
-function cacheResolvedAccent(mode, hex) {
-  try { localStorage.setItem(`8cm-theme-accent-resolved-${mode}`, hex); } catch {}
-}
 function applyTheme(hex) {
   const isLight = document.documentElement.getAttribute("data-theme") === "light";
   const root = document.documentElement.style;
@@ -165,7 +157,6 @@ function applyTheme(hex) {
     root.setProperty("--accent-vibrant-2", lighten(vibrant, 0.22));
     root.setProperty("--accent-soft", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22)`);
 
-    cacheResolvedAccent("light", vibrant);
     reflectActiveSwatch(hex);
   } else {
     const rgb = hexToRgb(hex);
@@ -176,7 +167,6 @@ function applyTheme(hex) {
     root.setProperty("--accent-vibrant-2", lighten(hex, 0.18));
     root.setProperty("--accent-soft", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.14)`);
 
-    cacheResolvedAccent("dark", hex);
     reflectActiveSwatch(hex);
   }
 }
