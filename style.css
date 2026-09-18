@@ -3755,9 +3755,9 @@ html[data-theme="light"] .link-input {
 /* ============================================
    V14 — BGM track chooser + play button fix
    ============================================ */
-.bgm-track-row { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+.bgm-track-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
 .bgm-track-select {
-  width:100%; padding:10px 34px 10px 12px; background-color:var(--bg-elevated-2);
+  flex:1; min-width:0; padding:10px 34px 10px 12px; background-color:var(--bg-elevated-2);
   border:1px solid var(--border); border-radius:var(--radius-s); color:var(--text);
   font-family:var(--font-body); font-size:.9rem; cursor:pointer;
   transition:border-color .2s var(--ease); appearance:none; -webkit-appearance:none;
@@ -3771,3 +3771,20 @@ html[data-theme="light"] .bgm-track-select { background-color:#fff; border-color
 .bgm-toggle:disabled { opacity:.55; cursor:wait; }
 .theme-audio-slider { gap:14px; }
 .theme-audio-slider input[type="range"] { height:24px; cursor:pointer; }
+
+/* ============================================
+   V14.2 — BGM loop toggle, next to the track selector
+   ============================================ */
+.bgm-loop-toggle {
+  flex-shrink:0; min-width:76px; min-height:40px; padding:8px 14px;
+  border:1px solid var(--border); border-radius:var(--radius-s);
+  background-color:var(--bg-elevated-2); color:var(--text-muted);
+  font-family:var(--font-body); font-size:.78rem; font-weight:500; line-height:1;
+  cursor:pointer; transition:border-color .2s var(--ease), color .2s var(--ease), background-color .2s var(--ease);
+}
+.bgm-loop-toggle:hover { border-color:var(--accent); color:var(--accent-strong); }
+.bgm-loop-toggle.is-active,
+.bgm-loop-toggle[aria-pressed="true"] {
+  border-color:var(--accent); color:var(--accent-strong); background-color:var(--accent-soft, var(--bg-elevated-2));
+}
+html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:#d5d1c6; }

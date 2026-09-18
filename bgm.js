@@ -26,18 +26,23 @@ const BGM_CONFIG = {
     { file: "Otherside.mp3", title: "Otherside", startAt: 0 },
   ],
   defaultVolume: 0.4,
+  // Default for a first-ever visit (no saved preference yet). Once
+  // the person touches the Loop button, their choice is what's read
+  // from STORAGE_LOOP on every later load instead.
   loop: true,
 };
 
 const STORAGE_PLAYING = "8cm:bgm:playing";
 const STORAGE_VOLUME = "8cm:bgm:volume";
 const STORAGE_TRACK = "8cm:bgm:track";
+const STORAGE_LOOP = "8cm:bgm:loop";
 
 let audio = null;
 let wantsPlaying = false;
 let unlocked = false;
 let currentVolume = BGM_CONFIG.defaultVolume;
 let currentTrackIndex = 0;
+let loopEnabled = BGM_CONFIG.loop;
 let playRequestId = 0; // guards against overlapping play attempts (see attemptPlay)
 
 function readPrefs() {
@@ -50,6 +55,8 @@ function readPrefs() {
       const idx = BGM_CONFIG.tracks.findIndex(x => x.file === savedFile);
       if (idx >= 0) currentTrackIndex = idx;
     }
+    const savedLoop = localStorage.getItem(STORAGE_LOOP);
+    if (savedLoop === "1" || savedLoop === "0") loopEnabled = savedLoop === "1";
   } catch {}
 }
 
@@ -58,7 +65,23 @@ function writePrefs() {
     localStorage.setItem(STORAGE_PLAYING, wantsPlaying ? "1" : "0");
     localStorage.setItem(STORAGE_VOLUME, String(currentVolume));
     localStorage.setItem(STORAGE_TRACK, BGM_CONFIG.tracks[currentTrackIndex]?.file || "");
+    localStorage.setItem(STORAGE_LOOP, loopEnabled ? "1" : "0");
   } catch {}
+}
+
+// When loop is off and a track finishes, advance to the next one
+// (wrapping back to the first after the last) and keep playing.
+// Native <audio>.loop handles the "on" case entirely on its own —
+// it repeats the same track without ever firing "ended" — so this
+// only needs to do anything when loop is off.
+async function handleTrackEnded() {
+  if (loopEnabled) return;
+  const nextIndex = (currentTrackIndex + 1) % BGM_CONFIG.tracks.length;
+  currentTrackIndex = nextIndex;
+  writePrefs();
+  destroyAudio();
+  if (wantsPlaying) await playBgm();
+  reflectUI();
 }
 
 function buildAudio() {
@@ -67,9 +90,10 @@ function buildAudio() {
   const startAt = typeof track.startAt === "number" && track.startAt > 0 ? track.startAt : 0;
   const a = new Audio();
   a.src = BGM_CONFIG.audioDir + track.file;
-  a.loop = BGM_CONFIG.loop;
+  a.loop = loopEnabled;
   a.preload = "auto";
   a.volume = currentVolume;
+  a.addEventListener("ended", handleTrackEnded);
   if (startAt > 0) {
     let seeked = false;
     const applySeek = () => {
@@ -167,6 +191,19 @@ export function setBgmVolume(v) {
   reflectUI();
 }
 
+export function isBgmLoopEnabled() { return loopEnabled; }
+
+// On: the current track repeats itself forever. Off: it plays once,
+// then advances to the next track (wrapping around after the last).
+export function setBgmLoop(enabled) {
+  loopEnabled = !!enabled;
+  if (audio) audio.loop = loopEnabled;
+  writePrefs();
+  reflectUI();
+}
+
+export function toggleBgmLoop() { setBgmLoop(!loopEnabled); }
+
 export async function selectTrack(index) {
   if (index < 0 || index >= BGM_CONFIG.tracks.length || index === currentTrackIndex) return;
   const wasPlaying = wantsPlaying;
@@ -179,13 +216,14 @@ export async function selectTrack(index) {
 
 function renderAudioBlock() {
   const block = document.querySelector(".theme-audio-block");
-  if (!block || block.dataset.bgmRendered === "v14.1") return;
-  block.dataset.bgmRendered = "v14.1";
+  if (!block || block.dataset.bgmRendered === "v14.2") return;
+  block.dataset.bgmRendered = "v14.2";
   block.innerHTML = `
     <h4 class="theme-audio-title">Sound</h4>
     <div class="bgm-track-row">
       <label class="theme-audio-label" for="bgmTrackSelect">Track</label>
       <select class="bgm-track-select" id="bgmTrackSelect" aria-label="Choose background music"></select>
+      <button type="button" class="bgm-loop-toggle" id="bgmLoopToggle" aria-pressed="false" title="When on, repeats this track. When off, plays through to the next.">Loop: Off</button>
     </div>
     <div class="theme-audio-row">
       <span class="theme-audio-label">Background music</span>
@@ -195,7 +233,7 @@ function renderAudioBlock() {
       <label class="theme-audio-label" for="bgmVolume">Volume</label>
       <input type="range" id="bgmVolume" min="0" max="100" step="5" value="40">
     </div>
-    <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then.</p>
+    <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then. Loop on repeats the current track; loop off moves to the next track when one ends.</p>
   `;
 }
 
@@ -224,6 +262,12 @@ function reflectUI() {
   const slider = document.getElementById("bgmVolume");
   if (slider && Math.abs(parseFloat(slider.value) / 100 - currentVolume) > 0.01)
     slider.value = String(Math.round(currentVolume * 100));
+  const loopBtn = document.getElementById("bgmLoopToggle");
+  if (loopBtn) {
+    loopBtn.setAttribute("aria-pressed", loopEnabled ? "true" : "false");
+    loopBtn.textContent = loopEnabled ? "Loop: On" : "Loop: Off";
+    loopBtn.classList.toggle("is-active", loopEnabled);
+  }
 }
 
 function wireControls() {
@@ -236,6 +280,8 @@ function wireControls() {
   });
   const slider = document.getElementById("bgmVolume");
   if (slider) slider.addEventListener("input", e => setBgmVolume(parseFloat(e.target.value) / 100));
+  const loopBtn = document.getElementById("bgmLoopToggle");
+  if (loopBtn) loopBtn.addEventListener("click", toggleBgmLoop);
 }
 
 // Note on multiple tabs: each tab now owns its own playback

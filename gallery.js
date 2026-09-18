@@ -6,6 +6,7 @@ import {
   onSnapshot, query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
@@ -159,7 +160,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError("Couldn't save that — check your monitor access and try again.");
+    setFormError(describeWriteError(err, "save"));
   } finally {
     b.disabled = false;
     b.textContent = old;
@@ -175,7 +176,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert("Couldn't delete that — check your monitor access.");
+    alert(describeWriteError(err, "delete"));
   }
 }
 
