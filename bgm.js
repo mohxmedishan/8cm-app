@@ -1,5 +1,5 @@
 // ============================================
-// 8CM — Background music (v14.1)
+// 8CM — Background music (v14.3)
 // ================================================================
 // HARDCODED TRACKS + a fixed, manually-set start offset per track.
 // Vercel does not expose directory listings, so tracks are explicit.
@@ -9,6 +9,31 @@
 // track gets going — slow, unreliable on some files, and not worth
 // it). If a track has a slow intro you want to skip, set `startAt`
 // (seconds) on that track below by ear. Defaults to 0 (start of file).
+//
+// v14.3 — continuity across page navigation + a roomier Settings
+// layout.
+//
+// This is a plain multi-page site, not a single-page app: every
+// internal link is a full document load, which necessarily tears
+// down the <audio> element and this whole module along with it.
+// There's no way around that from here. What WAS avoidable is what
+// used to happen next: initBgm() only *armed* an unlock listener and
+// waited for the next click/keypress on the new page before playing
+// anything, resuming each track from its fixed `startAt` rather than
+// wherever it had gotten to — so every click to another page produced
+// an audible gap and then a restart. Now the current track's position
+// is saved continuously, and on load we (a) try to resume playback
+// the instant the page is ready instead of waiting on a gesture, and
+// (b) if that works, seek straight back to the saved position instead
+// of `startAt`. On most browsers, once the site has been played once,
+// this is genuinely gapless. `startAt` is still used for a track
+// that's never been played yet. A real page *refresh* (not a link
+// click) intentionally clears the saved position, so the track
+// restarts fresh — matching what "refresh" implies everywhere else on
+// the web.
+//
+// Also: the Track selector, Loop toggle, and Play/Pause are now three
+// separate rows instead of Track+Loop being squeezed into one row.
 // ================================================================
 
 const BGM_CONFIG = {
@@ -36,6 +61,7 @@ const STORAGE_PLAYING = "8cm:bgm:playing";
 const STORAGE_VOLUME = "8cm:bgm:volume";
 const STORAGE_TRACK = "8cm:bgm:track";
 const STORAGE_LOOP = "8cm:bgm:loop";
+const STORAGE_POSITION = "8cm:bgm:position"; // { file, time, savedAt }
 
 let audio = null;
 let wantsPlaying = false;
@@ -44,6 +70,8 @@ let currentVolume = BGM_CONFIG.defaultVolume;
 let currentTrackIndex = 0;
 let loopEnabled = BGM_CONFIG.loop;
 let playRequestId = 0; // guards against overlapping play attempts (see attemptPlay)
+let resumeSeconds = 0; // where to seek to on the *next* buildAudio() call
+let positionTimer = null;
 
 function readPrefs() {
   try {
@@ -69,6 +97,51 @@ function writePrefs() {
   } catch {}
 }
 
+// Was this document load a genuine refresh (F5 / reload button /
+// address-bar Enter), as opposed to clicking a link to get here (or
+// back/forward)? The Navigation Timing API can tell the two apart;
+// browsers without it just fall back to "not a reload," i.e. always
+// try to resume — the safe direction, since the worst case there is a
+// track resuming a few seconds into itself instead of restarting.
+function wasHardRefresh() {
+  try {
+    const nav = performance.getEntriesByType("navigation")[0];
+    if (nav) return nav.type === "reload";
+    if (performance.navigation) return performance.navigation.type === 1;
+  } catch {}
+  return false;
+}
+
+function readSavedPosition() {
+  try {
+    const raw = localStorage.getItem(STORAGE_POSITION);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSavedPosition() {
+  if (!audio) return;
+  try {
+    const track = BGM_CONFIG.tracks[currentTrackIndex];
+    if (!track || !isFinite(audio.currentTime)) return;
+    localStorage.setItem(STORAGE_POSITION, JSON.stringify({
+      file: track.file,
+      time: audio.currentTime,
+      savedAt: Date.now(),
+    }));
+  } catch {}
+}
+
+function startPositionTimer() {
+  stopPositionTimer();
+  positionTimer = setInterval(writeSavedPosition, 3000);
+}
+function stopPositionTimer() {
+  if (positionTimer) { clearInterval(positionTimer); positionTimer = null; }
+}
+
 // When loop is off and a track finishes, advance to the next one
 // (wrapping back to the first after the last) and keep playing.
 // Native <audio>.loop handles the "on" case entirely on its own —
@@ -78,6 +151,7 @@ async function handleTrackEnded() {
   if (loopEnabled) return;
   const nextIndex = (currentTrackIndex + 1) % BGM_CONFIG.tracks.length;
   currentTrackIndex = nextIndex;
+  resumeSeconds = 0; // a track we're advancing into on our own starts at its own startAt
   writePrefs();
   destroyAudio();
   if (wantsPlaying) await playBgm();
@@ -87,19 +161,21 @@ async function handleTrackEnded() {
 function buildAudio() {
   const track = BGM_CONFIG.tracks[currentTrackIndex];
   if (!track) return null;
-  const startAt = typeof track.startAt === "number" && track.startAt > 0 ? track.startAt : 0;
+  const configuredStart = typeof track.startAt === "number" && track.startAt > 0 ? track.startAt : 0;
+  const seekTarget = resumeSeconds > 0 ? resumeSeconds : configuredStart;
+  resumeSeconds = 0; // one-shot — only applies to the very next build
   const a = new Audio();
   a.src = BGM_CONFIG.audioDir + track.file;
   a.loop = loopEnabled;
   a.preload = "auto";
   a.volume = currentVolume;
   a.addEventListener("ended", handleTrackEnded);
-  if (startAt > 0) {
+  if (seekTarget > 0) {
     let seeked = false;
     const applySeek = () => {
       if (seeked || !a.duration || !isFinite(a.duration)) return;
       try {
-        a.currentTime = Math.min(startAt, Math.max(0, a.duration - 1));
+        a.currentTime = Math.min(seekTarget, Math.max(0, a.duration - 1));
         seeked = true;
       } catch {}
     };
@@ -111,11 +187,12 @@ function buildAudio() {
 
 // Stops and fully releases whatever is currently assigned to `audio`.
 // Called before every new Audio() is created so there is never more
-// than one track playing at once — previously a fast double
-// play()/toggle (or the old cross-tab sync) could build a second
-// <audio> element while the first was still sounding, and the two
-// would overlap indefinitely since nothing ever paused the first one.
+// than one track playing at once — a fast double play()/toggle could
+// otherwise build a second <audio> element while the first was still
+// sounding, and the two would overlap indefinitely since nothing ever
+// paused the first one.
 function destroyAudio() {
+  stopPositionTimer();
   if (!audio) return;
   try { audio.pause(); } catch {}
   try { audio.removeAttribute("src"); audio.load(); } catch {}
@@ -143,6 +220,7 @@ async function attemptPlay() {
       return false;
     }
     unlocked = true;
+    startPositionTimer();
     return true;
   } catch {
     if (myRequest === playRequestId && audio === a) audio = null;
@@ -157,6 +235,7 @@ function armUnlock() {
     if (await attemptPlay()) {
       document.removeEventListener("pointerdown", unlock);
       document.removeEventListener("keydown", unlock);
+      reflectUI();
     }
   };
   document.addEventListener("pointerdown", unlock, { passive: true });
@@ -178,6 +257,7 @@ export async function playBgm() {
 export function pauseBgm() {
   wantsPlaying = false;
   writePrefs();
+  writeSavedPosition();
   destroyAudio();
   reflectUI();
 }
@@ -208,6 +288,7 @@ export async function selectTrack(index) {
   if (index < 0 || index >= BGM_CONFIG.tracks.length || index === currentTrackIndex) return;
   const wasPlaying = wantsPlaying;
   currentTrackIndex = index;
+  resumeSeconds = 0; // a track someone just picked starts at its own startAt, not a stale saved time
   writePrefs();
   destroyAudio();
   if (wasPlaying) await playBgm();
@@ -216,14 +297,18 @@ export async function selectTrack(index) {
 
 function renderAudioBlock() {
   const block = document.querySelector(".theme-audio-block");
-  if (!block || block.dataset.bgmRendered === "v14.2") return;
-  block.dataset.bgmRendered = "v14.2";
+  if (!block || block.dataset.bgmRendered === "v14.3") return;
+  block.dataset.bgmRendered = "v14.3";
   block.innerHTML = `
-    <h4 class="theme-audio-title">Sound</h4>
+    <h3>Sound</h3>
+    <p class="modal-sub">Pick a track, whether it loops, and how loud it plays.</p>
     <div class="bgm-track-row">
       <label class="theme-audio-label" for="bgmTrackSelect">Track</label>
       <select class="bgm-track-select" id="bgmTrackSelect" aria-label="Choose background music"></select>
-      <button type="button" class="bgm-loop-toggle" id="bgmLoopToggle" aria-pressed="false" title="When on, repeats this track. When off, plays through to the next.">Loop: Off</button>
+    </div>
+    <div class="theme-audio-row">
+      <span class="theme-audio-label">Loop this track</span>
+      <button type="button" class="bgm-loop-toggle" id="bgmLoopToggle" aria-pressed="false" title="On repeats this track. Off plays through to the next.">Off</button>
     </div>
     <div class="theme-audio-row">
       <span class="theme-audio-label">Background music</span>
@@ -233,7 +318,7 @@ function renderAudioBlock() {
       <label class="theme-audio-label" for="bgmVolume">Volume</label>
       <input type="range" id="bgmVolume" min="0" max="100" step="5" value="40">
     </div>
-    <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then. Loop on repeats the current track; loop off moves to the next track when one ends.</p>
+    <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then. Once started, it keeps going as you move between pages instead of restarting; only refreshing the page starts it over.</p>
   `;
 }
 
@@ -265,7 +350,7 @@ function reflectUI() {
   const loopBtn = document.getElementById("bgmLoopToggle");
   if (loopBtn) {
     loopBtn.setAttribute("aria-pressed", loopEnabled ? "true" : "false");
-    loopBtn.textContent = loopEnabled ? "Loop: On" : "Loop: Off";
+    loopBtn.textContent = loopEnabled ? "On" : "Off";
     loopBtn.classList.toggle("is-active", loopEnabled);
   }
 }
@@ -284,19 +369,56 @@ function wireControls() {
   if (loopBtn) loopBtn.addEventListener("click", toggleBgmLoop);
 }
 
-// Note on multiple tabs: each tab now owns its own playback
-// independently, on purpose. v14 used to sync "playing" across tabs
-// via the storage event, which meant opening the site in a second tab
-// (or a link in a new tab) could silently start a *second* audio
-// stream playing on top of the first the moment you pressed Play in
-// either one — with no user gesture in the other tab to justify it.
-// Preferences (track/volume) still persist via localStorage and apply
-// the next time a page loads; only cross-tab auto-play was removed.
+// Note on multiple tabs: each tab owns its own playback independently,
+// on purpose. Syncing "playing" across tabs would mean opening the
+// site in a second tab (or a link in a new tab) could silently start
+// a *second* audio stream playing on top of the first the moment you
+// press Play in either one — with no user gesture in the other tab to
+// justify it. Preferences (track/volume/loop) still persist via
+// localStorage and apply the next time a page loads; only cross-tab
+// auto-play is intentionally left out. Playback *position* is handled
+// differently (see the v14.3 note at the top) so that moving between
+// pages in the SAME tab feels continuous instead of restarting.
 export async function initBgm() {
   renderAudioBlock();
   readPrefs();
+
+  const hardRefresh = wasHardRefresh();
+  if (hardRefresh) {
+    // Explicit refresh: honor it as an intentional restart. Drop the
+    // saved mid-track position so the track resumes at its configured
+    // startAt like it always used to, instead of silently reappearing
+    // wherever it happened to be.
+    try { localStorage.removeItem(STORAGE_POSITION); } catch {}
+  } else {
+    const saved = readSavedPosition();
+    const track = BGM_CONFIG.tracks[currentTrackIndex];
+    if (saved && track && saved.file === track.file && saved.time > 0) {
+      resumeSeconds = saved.time;
+    }
+  }
+
   renderTrackOptions();
   reflectUI();
   wireControls();
-  if (wantsPlaying && BGM_CONFIG.tracks.length) armUnlock();
+
+  if (wantsPlaying && BGM_CONFIG.tracks.length) {
+    // Try to just resume immediately — on a normal in-site navigation
+    // this usually succeeds without needing another click (the browser
+    // remembers this origin already has permission to play audio), and
+    // that's what actually delivers "doesn't restart when you switch
+    // pages." If the browser blocks it, fall back to the old
+    // click-to-unlock behavior exactly as before.
+    const ok = await attemptPlay();
+    if (!ok) armUnlock();
+    reflectUI();
+  }
+
+  // Catch the moment a navigation actually happens, in addition to the
+  // periodic timer in startPositionTimer(), so a fast click-through
+  // doesn't lose up to 3s of position.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") writeSavedPosition();
+  });
+  window.addEventListener("pagehide", writeSavedPosition);
 }

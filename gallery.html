@@ -16,8 +16,13 @@
 <script>
 (function () {
   try {
-    var a = localStorage.getItem('8cm-theme-accent');
-    if (a) document.documentElement.style.setProperty('--accent', a);
+    var m = localStorage.getItem('8cm-theme-mode');
+    var mode = (m === 'light' || m === 'dark') ? m : 'dark';
+    document.documentElement.setAttribute('data-theme', mode);
+    var resolved = localStorage.getItem('8cm-theme-accent-resolved-' + mode);
+    var raw = localStorage.getItem('8cm-theme-accent');
+    var accent = resolved || raw;
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
   } catch (e) {}
 })();
 </script>
@@ -242,34 +247,23 @@
      Settings — appearance / theme picker
      ============================================ -->
 <div class="modal-overlay" id="settingsOverlay" hidden>
-  <div class="modal-card settings-card">
-    <button class="modal-close" id="settingsClose" aria-label="Close">✕</button>
-    <h3>Appearance</h3>
-    <p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
-
-    <div class="theme-swatches" id="themeSwatches"></div>
-
-    <label class="field theme-custom-field">
-      <span>Custom color</span>
-      <input type="color" id="themeCustomInput" value="#6b9a8f">
-    </label>
-
-    <button type="button" class="link-btn" id="themeResetBtn">Reset to default</button>
-    <div class="theme-audio-block">
-      <h4 class="theme-audio-title">Sound</h4>
-      <label class="theme-audio-row">
-        <span class="theme-audio-label">Background music</span>
-        <button type="button" class="bgm-toggle" id="bgmToggle" aria-pressed="false">Play</button>
-      </label>
-      <label class="theme-audio-row theme-audio-slider">
-        <span class="theme-audio-label">Volume</span>
-        <input type="range" id="bgmVolume" min="0" max="100" step="5" value="40">
-      </label>
-      <p class="theme-audio-note">SFX are always on. BGM only plays after you press Play — browsers block autoplay until then.</p>
-    </div>
-
-  </div>
+<div class="modal-card settings-card">
+<button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
+<div class="settings-columns">
+<div class="settings-col settings-col-appearance">
+<h3>Appearance</h3>
+<p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div class="theme-swatches" id="themeSwatches"></div>
+<label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
+<button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
 </div>
+<div class="settings-col settings-col-sound">
+<div class="theme-audio-block"></div>
+</div>
+</div>
+</div>
+</div>
+
 
 <!-- ============================================
      Gallery lightbox — 4KWallpapers-style zoom view
