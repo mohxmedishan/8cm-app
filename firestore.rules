@@ -222,6 +222,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isMonitor();
     }
+    
+    match /notices/{noticeId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
 
     match /archiveMaterials/{materialId} {
       allow read: if true;

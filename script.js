@@ -774,7 +774,8 @@ import("./profile-modal.js")
 const OPTIONAL_MODULES = [
   ["auth", "./auth-ui.js", "initAuthUI"],
   ["assignments", "./assignments.js", "initAssignments"],
-  ["announcements", "./announcements.js", "initAnnouncements"],
+  ["resources", "./resources.js", "initResources"],
+  ["notices", "./notices.js", "initNotices"],
   ["events", "./events.js", "initEvents"],
   ["timetable", "./timetable-live.js", "initTimetableLive"],
   ["timetable announcements", "./timetable-announcements.js", "initTimetableAnnouncements"],

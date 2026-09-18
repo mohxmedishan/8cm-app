@@ -4272,3 +4272,28 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 .student-card .house-pill.house-autumn .house-dot { background: var(--house-autumn); }
 .student-card .house-pill.house-spring .house-dot { background: var(--house-spring); }
 .student-card .house-pill.house-summer .house-dot { background: var(--house-summer); }
+
+
+/* ============================================
+   V16 — Homework / Announcements / Resources layout
+   ============================================ */
+.today-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+#homeworkPanel {
+  grid-column: 1 / -1; /* full width on the top row */
+}
+@media (max-width: 860px) {
+  .today-grid { grid-template-columns: 1fr; }
+  #homeworkPanel { grid-column: auto; }
+}
+
+/* "Important" tag on notices */
+.task-tag.important {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+}

@@ -10,7 +10,7 @@
 // per-period, they're per-day, so mixing them into the grid would
 // misrepresent them. This just adds an extra visual layer.
 // ============================================
-import { onAnnouncements, activeAnnouncements } from "./announcements.js";
+import { onAnnouncements, activeAnnouncements } from "./notices.js";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri"];
 const DAY_DOW = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };

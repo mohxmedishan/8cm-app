@@ -2,7 +2,7 @@ import { getStudentsSync, onStudents } from "./students.js";
 import { subscribeAuth } from "./auth.js";
 import { getLiveStatus } from "./timetable-data.js";
 import { onAssignments, getUpcomingForMe, dueBucket } from "./assignments.js";
-import { onAnnouncements, pinnedAnnouncement } from "./announcements.js";
+import { onAnnouncements, pinnedAnnouncement } from "./notices.js";
 import { onEvents, nextEvent, daysUntil } from "./events.js";
 
 const $ = (id) => document.getElementById(id);

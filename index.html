@@ -210,7 +210,57 @@
           <div class="task-list" id="announcementList"></div>
         </div>
       </div>
-    </div>
+        <div class="today-panel" id="noticePanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Announcements</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addNoticeBtn" hidden>+ Post announcement</button>
+          </div>
+          <form class="task-form" id="noticeForm" hidden>
+            <div class="task-form-grid">
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Sports day moved to Thursday" required></label>
+              <label class="field field-wide"><span>Content</span><input type="text" name="content" placeholder="Details students need to know" required></label>
+              <label class="field"><span>Category</span><select name="category"><option>Important</option><option>Class</option><option>Exam</option><option>Homework</option><option>Event</option><option selected>General</option></select></label>
+              <label class="field"><span>Priority</span><select name="priority"><option value="normal" selected>Normal</option><option value="important">Important</option></select></label>
+              <label class="field"><span>Date of event (optional)</span><input type="date" name="eventDate"></label>
+              <label class="field field-checkbox"><input type="checkbox" name="pinned"><span>Pin to top</span></label>
+              <div class="field field-wide">
+                <span>Links (optional)</span>
+                <div class="links-stack" id="noticeLinksStack"></div>
+                <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+              </div>
+            </div>
+            <p class="auth-error" id="noticeFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Post announcement</button>
+            </div>
+          </form>
+          <div class="task-list" id="noticeList"></div>
+        </div>
+        <div class="today-panel" id="resourcePanel">
+          <div class="today-panel-head">
+            <h3 class="today-panel-title">Resources</h3>
+            <button class="btn btn-add-task btn-small monitor-only" id="addResourceBtn" hidden>+ Add resource</button>
+          </div>
+          <form class="task-form" id="resourceForm" hidden>
+            <div class="task-form-grid">
+              <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Math practice sheet" required></label>
+              <label class="field field-wide"><span>Description</span><input type="text" name="content" placeholder="What this resource is for" required></label>
+              <label class="field field-checkbox"><input type="checkbox" name="pinned"><span>Pin to top</span></label>
+              <div class="field field-wide">
+                <span>Links (optional)</span>
+                <div class="links-stack" id="resourceLinksStack"></div>
+                <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+              </div>
+            </div>
+            <p class="auth-error" id="resourceFormError" hidden></p>
+            <div class="task-form-actions">
+              <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+              <button type="submit" class="btn btn-add-task btn-small">Add resource</button>
+            </div>
+          </form>
+          <div class="task-list" id="resourceList"></div>
+        </div>
   </section>
 
   <section class="events-page" id="events">
