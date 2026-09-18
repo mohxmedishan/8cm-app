@@ -308,6 +308,7 @@ export async function claimStudentIdentity(uid, student, currentProfile) {
 
   await claimTransaction(uid, student, null);
   cacheClaim(uid, student.id, student.name);
+  patchSharedProfile({ claimedStudentId: student.id, claimedStudentName: student.name });
   await syncDisplayName(uid, student.name);
 }
 
@@ -323,6 +324,7 @@ export async function switchStudentIdentity(uid, student, currentProfile) {
   const releaseId = currentProfile && currentProfile.claimedStudentId;
   await claimTransaction(uid, student, releaseId || null);
   cacheClaim(uid, student.id, student.name);
+  patchSharedProfile({ claimedStudentId: student.id, claimedStudentName: student.name });
   await syncDisplayName(uid, student.name);
 }
 
@@ -335,30 +337,75 @@ export async function saveThemePreference(uid, theme) {
 }
 
 // ------------------------------------------------
-// Global auth state
+// Global auth state — one shared subscription, broadcast to everyone
 // ------------------------------------------------
-// callback receives { user, profile, monitor }. `user` is the raw
-// Firebase user (or null when signed out); `profile` is the Firestore
-// users/{uid} doc (or null until it loads / if it doesn't exist yet);
-// `monitor` is a UI-only convenience flag — see computeIsMonitor().
-export function subscribeAuth(callback) {
+// Every page module (auth-ui.js, profile-modal.js, dashboard.js, and
+// a dozen others) calls subscribeAuth(callback) independently. This
+// used to create a SEPARATE onAuthStateChanged listener per caller,
+// each keeping its own private copy of {user, profile, monitor}.
+//
+// A claim or switch is a Firestore write, not a Firebase auth-state
+// change, so it never re-fires onAuthStateChanged at all — none of
+// those private copies would ever hear about a freshly-claimed
+// identity on their own. auth-ui.js worked around this for itself by
+// manually splicing the new claimedStudentId into its own local copy
+// right after a successful claim. But that patch was local to
+// auth-ui.js: every OTHER module (profile-modal.js's "Change avatar" /
+// "Switch student" row included) kept showing the pre-claim profile
+// — with no claimedStudentId — until the page was fully reloaded,
+// which is the only thing that re-runs onAuthStateChanged from
+// scratch and re-fetches a fresh profile. That's why a student who
+// just claimed and immediately opened "View profile" in the same
+// session wouldn't see "Change" on their own avatar, even though
+// someone whose session had already survived a reload since their
+// claim looked completely normal.
+//
+// Fix: keep ONE shared state object and ONE underlying Firebase
+// listener, and broadcast every update — including an in-place claim
+// patch — to every subscriber at once.
+let sharedAuthState = { user: null, profile: null, monitor: false };
+let authStateReady = false;
+const authListeners = new Set();
+let firebaseListenerStarted = false;
+
+function broadcastAuthState() {
+  authListeners.forEach((callback) => {
+    try {
+      callback(sharedAuthState);
+    } catch (err) {
+      console.error("subscribeAuth callback error:", err);
+    }
+  });
+}
+
+function startFirebaseAuthListener() {
+  if (firebaseListenerStarted) return;
+  firebaseListenerStarted = true;
+
   let initial = true;
   let nullTimer = null;
-  return onAuthStateChanged(auth, async (user) => {
+
+  onAuthStateChanged(auth, async (user) => {
     if (nullTimer) { clearTimeout(nullTimer); nullTimer = null; }
 
     if (!user && initial) {
       initial = false;
       nullTimer = setTimeout(() => {
         nullTimer = null;
-        if (!auth.currentUser) callback({ user: null, profile: null, monitor: false });
+        if (!auth.currentUser) {
+          sharedAuthState = { user: null, profile: null, monitor: false };
+          authStateReady = true;
+          broadcastAuthState();
+        }
       }, 500);
       return;
     }
     initial = false;
 
     if (!user) {
-      callback({ user: null, profile: null, monitor: false });
+      sharedAuthState = { user: null, profile: null, monitor: false };
+      authStateReady = true;
+      broadcastAuthState();
       return;
     }
 
@@ -380,6 +427,35 @@ export function subscribeAuth(callback) {
     }
 
     const monitor = await computeIsMonitor(user);
-    callback({ user, profile, monitor });
+    sharedAuthState = { user, profile, monitor };
+    authStateReady = true;
+    broadcastAuthState();
   });
+}
+
+// callback receives { user, profile, monitor }. `user` is the raw
+// Firebase user (or null when signed out); `profile` is the Firestore
+// users/{uid} doc (or null until it loads / if it doesn't exist yet);
+// `monitor` is a UI-only convenience flag — see computeIsMonitor().
+// A late subscriber (a module that mounts after the first auth event
+// already fired) is caught up immediately with the current state
+// instead of waiting for the next Firebase event, which may never come.
+export function subscribeAuth(callback) {
+  startFirebaseAuthListener();
+  authListeners.add(callback);
+  if (authStateReady) callback(sharedAuthState);
+  return () => authListeners.delete(callback);
+}
+
+// Merges a patch into the current shared profile and immediately
+// notifies every subscribeAuth listener in every module — this is
+// what makes a freshly-claimed identity show up everywhere right
+// away instead of only in whichever module happened to trigger the
+// claim. See the comment above subscribeAuth for the full story.
+function patchSharedProfile(patch) {
+  sharedAuthState = {
+    ...sharedAuthState,
+    profile: { ...(sharedAuthState.profile || {}), ...patch },
+  };
+  broadcastAuthState();
 }

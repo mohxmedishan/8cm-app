@@ -3017,6 +3017,15 @@ html[data-theme="light"] .student-card:hover {
 .avatar-edit:hover .avatar-edit-overlay,
 .avatar-edit:focus-visible .avatar-edit-overlay { opacity: 1; }
 
+/* Touchscreens have no persistent :hover state, so on phones/tablets
+   the overlay above never appeared — the button was still there and
+   still tappable, it was just invisible, which looked like the
+   feature was missing entirely. Show it by default wherever the
+   primary input has no hover capability. */
+@media (hover: none) {
+  .avatar-edit-overlay { opacity: 1; }
+}
+
 .profile-header {
   text-align: center;
   margin-bottom: 22px;

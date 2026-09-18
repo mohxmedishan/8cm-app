@@ -379,19 +379,12 @@ async function handleClaimConfirm() {
     } else {
       await claimStudentIdentity(latestState.user.uid, student, latestState.profile);
     }
-    // Firestore writes don't re-trigger onAuthStateChanged, so the
-    // reactive state never hears about this on its own — that's what
-    // used to force a manual page reload before the claimed name and
-    // house/transport stats would show up. Patch it in directly here
-    // instead of waiting on a listener that will never fire.
-    latestState = {
-      ...latestState,
-      profile: {
-        ...(latestState.profile || {}),
-        claimedStudentId: student.id,
-        claimedStudentName: student.name,
-      },
-    };
+    // claimStudentIdentity/switchStudentIdentity now broadcast the new
+    // claimedStudentId to every subscribeAuth listener (this module's
+    // own included) the instant the claim commits, so latestState is
+    // already up to date here — no manual patch needed, and every
+    // other open module (profile-modal.js, dashboard.js, etc.) picks
+    // it up too instead of only this one.
     renderAuthSlot();
     playSuccess();
     closeClaimModal();
