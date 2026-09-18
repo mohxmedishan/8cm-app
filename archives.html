@@ -26,6 +26,39 @@
   } catch (e) {}
 })();
 </script>
+<script>
+(function () {
+  // Warm the cache for the background-music module and whichever
+  // track is currently selected, before any other script on this
+  // page runs. bgm.js already resumes playback the instant the page
+  // is ready (see its v14.3 notes) rather than waiting for a click,
+  // but on a plain multi-page site the browser still has to re-fetch
+  // the module and the audio file fresh on every navigation unless
+  // something has already asked for them. Doing that here, as early
+  // as possible, is what actually shrinks the audible gap — it can't
+  // be eliminated outright (the previous page's <audio> element is
+  // genuinely torn down on navigation), but the new page can have
+  // both ready to go the moment it's ready to play instead of
+  // starting the fetches from scratch.
+  try {
+    var modLink = document.createElement('link');
+    modLink.rel = 'modulepreload';
+    modLink.href = 'bgm.js';
+    document.head.appendChild(modLink);
+
+    if (localStorage.getItem('8cm:bgm:playing') === '1') {
+      var file = localStorage.getItem('8cm:bgm:track');
+      if (file) {
+        var audioLink = document.createElement('link');
+        audioLink.rel = 'preload';
+        audioLink.as = 'audio';
+        audioLink.href = 'assets/audio/' + file;
+        document.head.appendChild(audioLink);
+      }
+    }
+  } catch (e) {}
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -213,7 +246,7 @@
   <section class="hub-section students" id="students">
     <div class="section-inner">
       <div class="section-head">
-        <h2>Find someone</h2>
+        <h2>Students</h2>
         <p class="section-sub">Search a name, or filter by house, transport, and language.</p>
       </div>
       <div class="controls">
@@ -252,10 +285,14 @@
         <p class="section-sub">Every student in 8CM belongs to one.</p>
       </div>
       <div class="house-grid">
-        <article class="house-card" data-house="winter" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">8 students</p><p class="house-desc">The quiet-confidence house — never the loudest, rarely the last.</p></div></article>
-        <article class="house-card" data-house="autumn" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">11 students</p><p class="house-desc">The biggest house in the room, and it acts like it.</p></div></article>
-        <article class="house-card" data-house="spring" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">8 students</p><p class="house-desc">Right in the middle of the pack, and comfortable there.</p></div></article>
-        <article class="house-card" data-house="summer" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">3 students</p><p class="house-desc">Smallest house in the batch. Every point counts more.</p></div></article>
+        <!-- house-count and the student list below it are filled in by
+             renderHouseCardLists() in script.js, from the real student
+             roster — never hardcoded, so a monitor moving someone
+             between houses updates this automatically. -->
+        <article class="house-card" data-house="winter" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="autumn" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="spring" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="summer" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
       </div>
     </div>
   </section>

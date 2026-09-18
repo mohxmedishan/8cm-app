@@ -10,6 +10,7 @@
 export const changelog = [
 {
   date: "2026-09-18",
+  version: "14.3",
   items: [
     "V14.3: Settings modal now lays Appearance and Sound out side by side instead of stacked, with Sound given equal weight, and the Loop toggle moved off the cramped Track row onto its own line.",
     "Fixed light mode not applying correctly on 8 of the site's pages — their boot script never read the saved dark/light preference at all, so they always started dark and only corrected if the account/theme scripts happened to load in time.",
@@ -157,3 +158,10 @@ export const changelog = [
     ],
   },
 ];
+
+// Single source of truth for the version watermark in the corner of
+// every page (see initVersionBadge in script.js). That used to be a
+// separately hand-typed string over there, which only got updated
+// when someone remembered to — this way, whatever version tops this
+// list is automatically what the watermark shows.
+export const currentVersion = changelog[0]?.version || null;

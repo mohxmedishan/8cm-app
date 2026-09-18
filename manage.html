@@ -26,6 +26,39 @@
   } catch (e) {}
 })();
 </script>
+<script>
+(function () {
+  // Warm the cache for the background-music module and whichever
+  // track is currently selected, before any other script on this
+  // page runs. bgm.js already resumes playback the instant the page
+  // is ready (see its v14.3 notes) rather than waiting for a click,
+  // but on a plain multi-page site the browser still has to re-fetch
+  // the module and the audio file fresh on every navigation unless
+  // something has already asked for them. Doing that here, as early
+  // as possible, is what actually shrinks the audible gap — it can't
+  // be eliminated outright (the previous page's <audio> element is
+  // genuinely torn down on navigation), but the new page can have
+  // both ready to go the moment it's ready to play instead of
+  // starting the fetches from scratch.
+  try {
+    var modLink = document.createElement('link');
+    modLink.rel = 'modulepreload';
+    modLink.href = 'bgm.js';
+    document.head.appendChild(modLink);
+
+    if (localStorage.getItem('8cm:bgm:playing') === '1') {
+      var file = localStorage.getItem('8cm:bgm:track');
+      if (file) {
+        var audioLink = document.createElement('link');
+        audioLink.rel = 'preload';
+        audioLink.as = 'audio';
+        audioLink.href = 'assets/audio/' + file;
+        document.head.appendChild(audioLink);
+      }
+    }
+  } catch (e) {}
+})();
+</script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
@@ -62,25 +95,8 @@
 <img alt="8CM" src="assets/cm-logo.png"/>
 </a>
 <nav class="nav-links" id="navLinks">
-  <a href="index.html#today" class="nav-link">Today</a>
-  <a href="index.html#students" class="nav-link">Students</a>
-  <a href="archives.html" class="nav-link">Timetable</a>
-  <a href="index.html#gallery" class="nav-link">Gallery</a>
-
-  <div class="nav-item has-dropdown">
-    <button class="nav-link nav-dropdown-trigger" id="moreTrigger" aria-expanded="false">
-      More <span class="tri">▾</span>
-    </button>
-    <div class="dropdown" id="moreDropdown">
-      <a href="index.html#events">Events</a>
-      <a href="index.html#houses">Houses</a>
-      <a href="index.html#achievements">Achievements</a>
-      <a href="index.html#resources">Resources</a>
-      <a href="index.html#stats">Stats</a>
-      <a href="index.html#about">About</a>
-      <a href="index.html#changelog">Changelog</a>
-    </div>
-  </div>
+  <a href="index.html#top" class="nav-link">Home</a>
+  <a href="archives.html" class="nav-link">Archives</a>
 </nav>
 <div class="nav-right">
 <button aria-label="Settings" class="icon-btn" id="settingsBtn" title="Settings" type="button">
