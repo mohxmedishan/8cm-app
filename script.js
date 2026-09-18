@@ -734,6 +734,30 @@ function initVersionBadge() {
     .catch(() => { el.textContent = "v14.3"; });
 }
 
+// ============================================
+// Anchor re-jump after dynamic content loads
+// ------------------------------------------------
+// "Meet the class" → archives.html#students lands in the wrong place
+// because the browser's native jump fires before the student grid /
+// house rosters / teacher cards have rendered. Those push the target
+// section down, so the original scroll position ends up pointing at
+// empty space. Re-running the jump after the initial render settles
+// puts you where you actually asked to go.
+// ============================================
+function initAnchorRescue() {
+  function jump() {
+    const hash = location.hash;
+    if (!hash || hash.length < 2) return;
+    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    if (!el) return;
+    el.scrollIntoView({ behavior: "auto", block: "start" });
+  }
+  if (document.readyState === "complete") setTimeout(jump, 60);
+  else window.addEventListener("load", () => setTimeout(jump, 60), { once: true });
+  setTimeout(jump, 900);
+  setTimeout(jump, 2000);
+}
+
 initVersionBadge();
 
 // ============================================
@@ -753,6 +777,7 @@ import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
 
 initSplash();
 initNav();
+initAnchorRescue();
 initStudentDirectory();
 initHouseCards();
 initGalleryLightbox();
@@ -774,8 +799,7 @@ import("./profile-modal.js")
 const OPTIONAL_MODULES = [
   ["auth", "./auth-ui.js", "initAuthUI"],
   ["assignments", "./assignments.js", "initAssignments"],
-  ["resources", "./resources.js", "initResources"],
-  ["notices", "./notices.js", "initNotices"],
+  ["announcements", "./announcements.js", "initAnnouncements"],
   ["events", "./events.js", "initEvents"],
   ["timetable", "./timetable-live.js", "initTimetableLive"],
   ["timetable announcements", "./timetable-announcements.js", "initTimetableAnnouncements"],

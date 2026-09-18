@@ -4299,3 +4299,103 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
     grid-column: auto;
   }
 }
+
+/* ============================================
+   V16.2 — Anchor offset fix
+   ============================================ */
+.hub-section,
+#today, #events, #achievements, #timetable,
+#teachers, #students, #gallery, #houses,
+#quick-links, #archive-materials {
+  scroll-margin-top: 120px;
+}
+@media (max-width: 720px) {
+  .hub-section,
+  #today, #events, #achievements, #timetable,
+  #teachers, #students, #gallery, #houses,
+  #quick-links, #archive-materials {
+    scroll-margin-top: 90px;
+  }
+}
+/* ============================================
+   V16.2 — Mobile polish
+   ============================================ */
+@media (max-width: 720px) {
+  .task-icon-btn,
+  .task-icon-btn-text { min-width: 36px; min-height: 36px; }
+  .icon-btn { width: 40px; height: 40px; }
+  .icon-btn svg { width: 19px; height: 19px; }
+  .today-panel-head { padding: 14px 16px; gap: 10px; }
+  .announcement-row { padding: 14px 16px; }
+  .task-row { padding: 14px 16px; }
+  .manage-row { padding: 12px 16px; }
+  .event-card { padding: 14px 16px; }
+  .hero { padding: 56px 20px 72px; }
+  .hero-grid { gap: 32px; }
+  .hero-title { font-size: clamp(2rem, 8vw, 2.6rem); }
+  .hero-sub { font-size: 1rem; }
+  .hero-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .hero-actions .btn { width: 100%; justify-content: center; padding: 14px 20px; font-size: 0.95rem; }
+  .today, .events-page, .achievements, .gallery, .students, .houses,
+  .stats, .changelog-section, .resources, .timetable, .about,
+  .archives, .hub-section { padding: 48px 0; }
+  .section-head { margin-bottom: 26px; }
+  .section-head h2 { font-size: 1.55rem; }
+  .hub-title { font-size: 1.75rem; }
+  .section-sub { font-size: 0.92rem; }
+  .student-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .student-card { padding: 12px 14px; }
+  .student-card-top { gap: 10px; margin-bottom: 10px; }
+  .student-card .cm-avatar { width: 36px !important; height: 36px !important; font-size: 14px !important; }
+  .student-name { font-size: 0.86rem; }
+  .student-card-roll { font-size: 0.68rem; }
+  .student-card .student-meta > span { font-size: 0.68rem; padding: 2px 7px; }
+  .controls { gap: 12px; flex-direction: column; align-items: stretch; }
+  .search-wrap { width: 100%; }
+  .search-wrap input { width: 100%; font-size: 0.95rem; padding: 12px 14px; }
+  .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .filter-box { min-width: 0; width: 100%; padding: 10px 12px; }
+  .filter-clear { grid-column: 1 / -1; padding: 10px; }
+  .filter-pills { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 10px 16px 8px; scrollbar-width: none; }
+  #homeworkFilters { padding: 10px 16px 0; }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .filter-pills .pill { flex-shrink: 0; }
+  .announcement-caret { width: 26px; height: 26px; }
+  .announcement-caret svg { width: 18px; height: 18px; }
+  .announcement-head .task-subject { font-size: 0.9rem; }
+  .announcement-head .task-tag { font-size: 0.66rem; padding: 3px 8px; }
+  .hw-actions { gap: 8px; }
+  .hw-complete-btn { padding: 8px 14px; font-size: 0.78rem; }
+  .tt-detail-panel { padding: 14px 16px; }
+  .tt-detail-subject { font-size: 0.95rem; }
+  a.tt-detail-hw { padding: 10px 14px; font-size: 0.85rem; }
+  .house-student-list li { padding: 5px 8px; font-size: 0.88rem; }
+  .modal-overlay { padding: 14px; }
+  .modal-card { max-width: 100%; padding: 22px 20px; }
+  .profile-card, .avatar-picker-card, .settings-card { max-width: 100%; max-height: 88vh; }
+  .manage-tabs { grid-template-columns: repeat(2, 1fr); }
+  .dropdown a { padding: 12px 14px; font-size: 0.92rem; }
+  .dropdown-action { padding: 12px 0; font-size: 0.9rem; }
+  .nav-links { padding: 18px 20px 28px; }
+  .nav-links .nav-link { padding: 12px 0; font-size: 0.95rem; }
+  .version-badge { bottom: 8px; right: 8px; padding: 4px 9px; font-size: 0.6rem; }
+  .splash-logo { width: 120px; }
+  .splash-tagline { font-size: 0.82rem; }
+  .lightbox-close { width: 44px; height: 44px; }
+  .quick-links-grid { grid-template-columns: 1fr; }
+  .quick-link-card { padding: 16px 18px; }
+  .teacher-grid { grid-template-columns: 1fr; }
+  .manage-panel .task-form-actions { flex-direction: column-reverse; }
+  .manage-panel .task-form-actions .btn { width: 100%; }
+}
+@media (max-width: 420px) {
+  .section-inner { padding: 0 16px; }
+  .nav-inner { padding: 14px 16px; }
+  .hero { padding: 44px 16px 56px; }
+  .hero-title { font-size: 2rem; }
+  .hub-title { font-size: 1.6rem; }
+  .section-head h2 { font-size: 1.4rem; }
+  .student-grid { grid-template-columns: 1fr 1fr; }
+  .announcement-head { flex-wrap: wrap; gap: 6px; }
+  .announcement-head .task-subject { flex-basis: 100%; white-space: normal; }
+}

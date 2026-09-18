@@ -8,6 +8,24 @@
 // To add an entry: put a new object at the TOP of this array.
 // ============================================
 export const changelog = [
+  {
+    date: "2026-09-18",
+    version: "16.0",
+    items: [
+      "Announcements split into two sections. The old Announcements section is now Resources — same Firestore collection, renamed in the UI only, so nothing already posted is lost. A fresh Announcements section was added alongside it with the full category / priority / event-date field set. On the homepage, Homework now spans the top full width, and Announcements (left) and Resources (right) sit beside each other underneath.",
+      "Announcements collapse by default now: title, category badge, and a chevron on the front row with the monitor Pin/Edit/Delete buttons flush right; click anywhere on the row to expand the description and links, and the buttons slide down to their own row. Changelog entries work the same way — click a date to reveal that entry's items. Expanded state survives live Firestore updates.",
+      "Announcement priority and pinning actually do something now. Pinned items sit at the top permanently until unpinned or replaced by a different pin; within each pin tier, priority:important sorts above normal. Both sort rules run before the fallback newest-first.",
+      "Archive materials are monitor-managed. New Manage panel tab with kicker, title, description, and an optional link per card. The three originals stay as fallback content until Firestore has any real docs.",
+      "Quick links are monitor-managed too. New Manage panel tab lets a monitor add a title, description, URL, and pick from a set of premade inline-SVG logos (WhatsApp, Classroom, Campus, Drive, Docs, Sheets, Calendar, Video, Form, Chat, Book, Link, Globe) — no file uploads. The three defaults now pull their logos from assets/logos/WA-logo.png, GC-logo.png, and DC-logo.png.",
+      "Teacher directory got search + a subject-category filter (Mathematics / Sciences & computing / Languages / Humanities & PE / Creative arts / Other), matching the student-directory dropdown-filter UI. Result count moved below the search bar.",
+      "Only the house filter's outline takes a house colour now — language, transport, Islamic, and creative filters stay on the accent from Appearance settings. Student cards show a coloured dot on their house tag again (the dot was inline, so width/height never applied).",
+      "Anchor links land in the right place now. scroll-margin-top raised to 120px on every scrollable section, plus a post-load re-jump that fires after Firestore content has finished pushing the target down — that's what was making 'Meet the class' and 'See the houses' land in the wrong spot.",
+      "Fixed the Monitors tab: rewrote monitor-manage.js to merge three sources (bootstrap emails from source, monitorInvites/{email} docs, and settings/monitors.uids → users/{uid} docs) so the list shows each monitor's avatar, claimed student name, and email. The add form now reports the real error when rules haven't been deployed, instead of blaming monitor access for every failure. Monitor-panel tabs are a proper grid instead of sizing per label.",
+      "Removed the Changelog / Monitors accordion from the bottom of the homepage — Changelog has its own page and Monitors lives in the Manage panel. Hero bar chart rows on the homepage navigate to the filtered student list again (was building an invalid ?house=#students URL). Archive material description is a real textarea now, with correct dark-mode styling.",
+      "Mobile UI pass: hero buttons stack full-width, section padding halved, student grid drops to 2-per-row on a phone, filter row becomes a 2-col grid, homework filter pills scroll horizontally instead of wrapping, every icon button grew to a 36–40px tap target, modal cards use the phone's full width, nav dropdown items got real padding, and the version badge shrank so it stops covering content.",
+    ],
+  },
+
 {
   date: "2026-09-18",
   version: "15.0",
