@@ -51,8 +51,23 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.monitor == true;
     }
 
+    // Monitor invites: lets an existing monitor grant the role to a
+    // Gmail address BEFORE that person has ever signed in — at that
+    // point their Firebase Auth uid doesn't exist yet, so it can't be
+    // used as a monitors/{uid} doc ID the way the dynamic path above
+    // is. The invite doc, keyed by the lowercased email itself, IS
+    // the grant: once that address signs in, isMonitor() recognizes
+    // it immediately via isInvitedMonitorEmail() below. Restricted to
+    // @gmail.com by the create rule itself, not just the "Add
+    // monitor" form's client-side input — same lower-cased comparison
+    // approach as isMonitorEmail() above, for the same reason.
+    function isInvitedMonitorEmail() {
+      return isSignedIn() && request.auth.token.email != null &&
+        exists(/databases/$(database)/documents/monitorInvites/$(request.auth.token.email.lower()));
+    }
+
     function isMonitor() {
-      return isMonitorEmail() || isMonitorDoc() || isMonitorFlag();
+      return isMonitorEmail() || isMonitorDoc() || isMonitorFlag() || isInvitedMonitorEmail();
     }
 
     // A claimedStudentId written onto a user's own profile is only
@@ -78,6 +93,28 @@ service cloud.firestore {
     match /monitors/{uid} {
       allow read: if isSignedIn();
       allow write: if isMonitor();
+    }
+
+    // ================================================================
+    // monitorInvites/{email} — doc ID = the invited address, lower-
+    // cased. Public read: this is the "Monitors" list shown at the
+    // bottom of the main page to every visitor, signed in or not,
+    // same openness as students/teachers. Only an existing monitor
+    // can create one, only for a real-looking @gmail.com address, and
+    // the stored `email` field must match the doc ID exactly — so
+    // there's no way to create an invite at one address that actually
+    // grants a different one. No update: revoking access is a
+    // delete-and-recreate, not an edit, so there's no path that
+    // silently changes who a standing invite belongs to.
+    // ================================================================
+    match /monitorInvites/{email} {
+      allow read: if true;
+      allow create: if isMonitor() &&
+        email == email.lower() &&
+        email.matches('^[^@\\s]+@gmail\\.com$') &&
+        request.resource.data.email == email;
+      allow update: if false;
+      allow delete: if isMonitor();
     }
 
     // ================================================================

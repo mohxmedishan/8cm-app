@@ -24,7 +24,6 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playExternal } from "./sound.js";
 
@@ -170,7 +169,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert(describeWriteError(err, "delete that task"));
+    alert("Couldn't delete that task — check your monitor access and try again.");
   }
 }
 
@@ -203,7 +202,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setTaskFormError(describeWriteError(err, "save that task"));
+    setTaskFormError("Couldn't save that task — check your monitor access and try again.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = originalLabel;

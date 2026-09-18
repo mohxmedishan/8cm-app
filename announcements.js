@@ -18,10 +18,10 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
+import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -106,7 +106,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert(describeWriteError(err, "delete"));
+    alert("Couldn't delete that — check your monitor access and try again.");
   }
 }
 
@@ -129,6 +129,7 @@ function openForm(a) {
   form.priority.value = (a && a.priority) || "normal";
   form.eventDate.value = (a && a.eventDate) || "";
   form.pinned.checked = !!(a && a.pinned);
+  setLinkStack($("announcementLinksStack"), a);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = a ? "Save changes" : "Post announcement";
@@ -143,6 +144,8 @@ function closeForm({ silent = false } = {}) {
   form.hidden = true;
   editingId = null;
   setFormError(null);
+  const linkStack = $("announcementLinksStack");
+  if (linkStack) linkStack.innerHTML = "";
   if (!silent) playClose();
 }
 
@@ -163,6 +166,7 @@ async function handleSubmit(e) {
     priority: form.priority.value,
     eventDate: form.eventDate.value || null,
     pinned: form.pinned.checked,
+    links: readLinkStack($("announcementLinksStack")),
   };
   if (!payload.title || !payload.content) return;
 
@@ -196,7 +200,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError(describeWriteError(err, "save"));
+    setFormError("Couldn't save that — check your monitor access and try again.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = original;
@@ -224,6 +228,7 @@ function render() {
         <p class="task-subject">${escapeHtml(a.title)}</p>
       </div>
       <p class="task-detail">${escapeHtml(a.content)}</p>
+      ${linkChipsHtml(a)}
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${escapeHtml(a.id)}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
         <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit announcement">✎</button>

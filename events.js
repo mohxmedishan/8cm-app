@@ -17,10 +17,10 @@ import {
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
+import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -96,7 +96,7 @@ async function handleDelete(id) {
   } catch (err) {
     console.error("Delete failed:", err);
     playError();
-    alert(describeWriteError(err, "delete"));
+    alert("Couldn't delete that — check your monitor access and try again.");
   }
 }
 
@@ -110,6 +110,7 @@ function openForm(ev) {
   form.location.value = (ev && ev.location) || "";
   form.category.value = (ev && ev.category) || "General";
   form.description.value = (ev && ev.description) || "";
+  setLinkStack($("eventLinksStack"), ev);
   setFormError(null);
   form.hidden = false;
   form.querySelector('button[type="submit"]').textContent = ev ? "Save changes" : "Add event";
@@ -124,6 +125,8 @@ function closeForm({ silent = false } = {}) {
   form.hidden = true;
   editingId = null;
   setFormError(null);
+  const linkStack = $("eventLinksStack");
+  if (linkStack) linkStack.innerHTML = "";
   if (!silent) playClose();
 }
 
@@ -144,6 +147,7 @@ async function handleSubmit(e) {
     location: form.location.value.trim(),
     category: form.category.value,
     description: form.description.value.trim(),
+    links: readLinkStack($("eventLinksStack")),
   };
   if (!payload.title || !payload.date) return;
 
@@ -177,7 +181,7 @@ async function handleSubmit(e) {
   } catch (err) {
     console.error("Save failed:", err);
     playError();
-    setFormError(describeWriteError(err, "save"));
+    setFormError("Couldn't save that — check your monitor access and try again.");
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = original;
@@ -235,6 +239,7 @@ function render() {
         <h3>${escapeHtml(ev.title)}</h3>
         <p class="event-meta">${[ev.time, ev.location].filter(Boolean).map(escapeHtml).join(" · ")}</p>
         ${ev.description ? `<p class="event-desc">${escapeHtml(ev.description)}</p>` : ""}
+        ${linkChipsHtml(ev)}
       </div>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(ev.id)}" aria-label="Edit event">✎</button>

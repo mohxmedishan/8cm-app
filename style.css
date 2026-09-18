@@ -15,10 +15,10 @@
   --accent-soft: rgba(107, 154, 143, 0.14);
   --accent-strong: #86b3a8;
 
-  --house-winter: #7ea8c4;
-  --house-autumn: #c1723a;
-  --house-spring: #7c9a5d;
-  --house-summer: #d9a441;
+  --house-winter: #b7cedc;
+  --house-autumn: #d39f79;
+  --house-spring: #a5c485;
+  --house-summer: #e4c487;
 
   --danger: #c1665a;
   --danger-soft: rgba(193, 102, 90, 0.14);
@@ -1177,6 +1177,12 @@ h1, h2, h3 {
    card that opens wherever the resource actually
    lives (Google Form, Drive folder, worksheet…)
    ============================================ */
+.item-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.item-links .task-link-chip { margin-top: 6px; }
 .task-link-chip {
   display: inline-flex;
   align-items: center;
@@ -1223,7 +1229,52 @@ h1, h2, h3 {
   border-color: var(--accent);
 }
 
+/* ============================================
+   Bottom-of-page Changelog / Monitors toggles
+   ============================================ */
+.footer-toggles { padding: 8px 0 40px; }
+.footer-toggle-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.footer-toggle-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 18px;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.footer-toggle-btn:hover { border-color: var(--accent); color: var(--text); }
+.footer-toggle-btn.active { border-color: var(--accent); color: var(--accent-strong); }
+.footer-toggle-panel {
+  max-width: 640px;
+  margin: 18px auto 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-m);
+  padding: 18px 20px;
+}
+
 .resource-card h3 { font-size: 1.02rem; margin-bottom: 6px; }
+.resource-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.resource-card-head h3 { margin-bottom: 0; }
+.resource-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
 .resource-card p {
   color: var(--text-muted);
   font-size: 0.85rem;
@@ -2029,29 +2080,7 @@ body.lightbox-locked { overflow: hidden; }
 /* ============================================
    Settings — appearance / theme picker
    ============================================ */
-.settings-card { max-width: 640px; }
-
-.settings-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  align-items: start;
-}
-.settings-col-appearance {
-  border-right: 1px solid var(--border-soft);
-  padding-right: 30px;
-}
-@media (max-width: 640px) {
-  .settings-card { max-width: 380px; }
-  .settings-columns { grid-template-columns: 1fr; gap: 0; }
-  .settings-col-appearance {
-    border-right: none;
-    padding-right: 0;
-    padding-bottom: 22px;
-    margin-bottom: 22px;
-    border-bottom: 1px solid var(--border-soft);
-  }
-}
+.settings-card { max-width: 380px; }
 
 .theme-swatches {
   display: flex;
@@ -3742,15 +3771,37 @@ html[data-theme="light"] .bgm-toggle[aria-pressed="true"] {
 
 /* ============================================
    V13.1.1 — Multi-link input stack
+   V15 — extended with an optional per-link name field
    ============================================ */
 .links-stack {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.link-input-row { position: relative; }
+.link-input-row {
+  display: flex;
+  gap: 8px;
+}
+.link-name-input {
+  flex: 0 0 34%;
+  min-width: 100px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  transition: border-color 0.2s var(--ease);
+}
+.link-name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.link-name-input::placeholder { color: var(--text-faint); }
 .link-input {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--bg-elevated-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-s);
@@ -3770,16 +3821,23 @@ html[data-theme="light"] .bgm-toggle[aria-pressed="true"] {
   color: var(--text-faint);
   margin: 6px 0 0;
 }
-html[data-theme="light"] .link-input {
+html[data-theme="light"] .link-input,
+html[data-theme="light"] .link-name-input {
   background: #ffffff;
   border-color: #cfcbc1;
+}
+@media (max-width: 520px) {
+  /* Stack name above URL rather than squeezing both into unusable
+     widths on a phone. */
+  .link-input-row { flex-direction: column; }
+  .link-name-input { flex-basis: auto; }
 }
 /* ============================================
    V14 — BGM track chooser + play button fix
    ============================================ */
-.bgm-track-row { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.bgm-track-row { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
 .bgm-track-select {
-  flex:1; min-width:0; padding:10px 34px 10px 12px; background-color:var(--bg-elevated-2);
+  width:100%; padding:10px 34px 10px 12px; background-color:var(--bg-elevated-2);
   border:1px solid var(--border); border-radius:var(--radius-s); color:var(--text);
   font-family:var(--font-body); font-size:.9rem; cursor:pointer;
   transition:border-color .2s var(--ease); appearance:none; -webkit-appearance:none;
@@ -3793,53 +3851,3 @@ html[data-theme="light"] .bgm-track-select { background-color:#fff; border-color
 .bgm-toggle:disabled { opacity:.55; cursor:wait; }
 .theme-audio-slider { gap:14px; }
 .theme-audio-slider input[type="range"] { height:24px; cursor:pointer; }
-
-/* ============================================
-   V14.2 — BGM loop toggle, next to the track selector
-   ============================================ */
-.bgm-loop-toggle {
-  flex-shrink:0; min-width:76px; min-height:40px; padding:8px 14px;
-  border:1px solid var(--border); border-radius:var(--radius-s);
-  background-color:var(--bg-elevated-2); color:var(--text-muted);
-  font-family:var(--font-body); font-size:.78rem; font-weight:500; line-height:1;
-  cursor:pointer; transition:border-color .2s var(--ease), color .2s var(--ease), background-color .2s var(--ease);
-}
-.bgm-loop-toggle:hover { border-color:var(--accent); color:var(--accent-strong); }
-.bgm-loop-toggle.is-active,
-.bgm-loop-toggle[aria-pressed="true"] {
-  border-color:var(--accent); color:var(--accent-strong); background-color:var(--accent-soft, var(--bg-elevated-2));
-}
-html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:#d5d1c6; }
-
-/* ============================================
-   V14.3 — Settings modal: horizontal Appearance / Sound
-   columns (equal width), and an un-cramped audio block.
-   These are the final word on the selectors below — they
-   intentionally override the stacked-layout spacing that
-   earlier rules set for `.theme-audio-block` etc. up above.
-   ============================================ */
-.theme-audio-block {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: none;
-}
-.settings-col-sound h3 { margin-bottom: 8px; }
-.settings-col-sound .modal-sub { margin-bottom: 18px; }
-
-/* Track select, Loop toggle and Play/Pause are now three separate
-   rows instead of Track+Loop sharing one cramped row. */
-.bgm-track-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.bgm-track-row .bgm-track-select { flex: 1; }
-
-.bgm-loop-toggle {
-  min-width: 64px;
-}
-
-@media (max-width: 640px) {
-  .settings-card { padding: 24px 22px 20px; }
-}

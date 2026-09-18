@@ -18,7 +18,10 @@ import {
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
+  deleteDoc,
+  collection,
   runTransaction,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -47,6 +50,76 @@ function monitorRef(uid) {
   return doc(db, "monitors", uid);
 }
 
+// ------------------------------------------------
+// Monitor invites (add-by-Gmail)
+// ------------------------------------------------
+// A second onboarding path alongside the bootstrap email list and the
+// monitors/{uid} doc: a monitor can grant the role to a Gmail address
+// before that person has ever signed in. See firestore.rules for why
+// the doc is keyed by the lowercased email itself rather than a uid,
+// and for the real (server-side) @gmail.com restriction — the check
+// here is just what lets the "Add monitor" form give a friendly error
+// instead of a raw permission-denied.
+function inviteRef(email) {
+  return doc(db, "monitorInvites", email);
+}
+
+/** Lowercases/trims and requires an @gmail.com address; null otherwise. */
+export function normalizeMonitorEmail(raw) {
+  const email = String(raw || "").trim().toLowerCase();
+  return /^[^@\s]+@gmail\.com$/.test(email) ? email : null;
+}
+
+export async function inviteMonitor(email, invitedBy) {
+  const normalized = normalizeMonitorEmail(email);
+  if (!normalized) {
+    const err = new Error("Enter a valid @gmail.com address.");
+    err.code = "monitor-invite/invalid-email";
+    throw err;
+  }
+  await setDoc(inviteRef(normalized), {
+    email: normalized,
+    invitedByEmail: (invitedBy && invitedBy.email) || "",
+    invitedByUid: (invitedBy && invitedBy.uid) || "",
+    invitedAt: serverTimestamp(),
+  });
+  return normalized;
+}
+
+export async function revokeMonitorInvite(email) {
+  const normalized = normalizeMonitorEmail(email) || String(email || "").trim().toLowerCase();
+  await deleteDoc(inviteRef(normalized));
+}
+
+// One-time fetch (not live) of every invited-by-email monitor —
+// there are only ever a couple of these, so a snapshot on demand is
+// simpler than a standing listener nobody asked to keep open.
+export async function listMonitorInvites() {
+  const snap = await getDocs(collection(db, "monitorInvites"));
+  return snap.docs
+    .map((d) => ({ ...d.data(), id: d.id }))
+    .sort((a, b) => (a.email || "").localeCompare(b.email || ""));
+}
+
+/**
+ * The full "who are the monitors" list for the public panel at the
+ * bottom of the main page: the permanent bootstrap emails (already
+ * shipped in this file's own source, so listing them here reveals
+ * nothing new) plus every active invite. Deliberately does not
+ * include monitors/{uid} docs — that collection requires sign-in to
+ * read, so an anonymous visitor's request would just fail; the
+ * invite path is the one meant for onboarding additional monitors
+ * going forward anyway.
+ */
+export async function getMonitorDirectory() {
+  const invites = await listMonitorInvites().catch((err) => {
+    console.error("Failed to load monitor invites:", err);
+    return [];
+  });
+  const bootstrap = MONITOR_EMAILS.map((email) => ({ email, builtIn: true }));
+  return [...bootstrap, ...invites.map((i) => ({ ...i, builtIn: false }))];
+}
+
 // Authoritative-enough for UI purposes: checks the email allowlist
 // first (no read needed), then falls back to a single doc read for
 // monitors added dynamically. Firestore rules are what actually
@@ -69,6 +142,16 @@ export async function computeIsMonitor(user) {
     // Also honor a monitor: true flag on the user's own profile doc.
     const profile = await getDoc(doc(db, "users", user.uid));
     if (profile.exists() && profile.data().monitor === true) return true;
+    // Also honor a standing invite for this account's email — see
+    // inviteMonitor() above and isInvitedMonitorEmail() in
+    // firestore.rules, which is the actual authority; this just lets
+    // the UI light up immediately on the invited person's first
+    // sign-in instead of waiting on a page reload.
+    const email = normalizeMonitorEmail(user.email);
+    if (email) {
+      const invite = await getDoc(doc(db, "monitorInvites", email));
+      if (invite.exists()) return true;
+    }
     return false;
   } catch (err) {
     console.error("Failed to check monitor status:", err);

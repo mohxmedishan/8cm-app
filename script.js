@@ -363,9 +363,25 @@ function initResources() {
   const resourceGrid = document.getElementById("resourceGrid");
   if (!resourceGrid) return;
 
+  // Google's official 4-color "G" mark — same SVG paths used by this
+  // site's own "Continue with Google" button, so it's verified
+  // accurate rather than an approximation from memory.
+  const googleIcon = `<svg class="resource-icon" viewBox="0 0 18 18" aria-hidden="true">
+    <path d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" fill="#4285F4"/>
+    <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z" fill="#34A853"/>
+    <path d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z" fill="#FBBC05"/>
+    <path d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/>
+  </svg>`;
+  // Not ADIS's actual logo — a generic campus/portal glyph. Swap in
+  // the school's real icon file here whenever one's available.
+  const campusIcon = `<svg class="resource-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3 2 8l10 5 8-4.2V15h2V8L12 3z" fill="currentColor"/>
+    <path d="M6 11.5V16c0 1.66 2.69 3 6 3s6-1.34 6-3v-4.5l-6 3-6-3z" fill="currentColor" opacity="0.55"/>
+  </svg>`;
+
   const resources = [
-    { name: "Google Classroom", description: "Assignments, materials, and class-wide posts.", url: "https://classroom.google.com" },
-    { name: "Digital Campus (DC)", description: "School portal for grades, attendance, and notices.", url: "https://ict.adiswathba.com/ADIS1/" },
+    { name: "Google Classroom", description: "Assignments, materials, and class-wide posts.", url: "https://classroom.google.com", icon: googleIcon },
+    { name: "Digital Campus (DC)", description: "School portal for grades, attendance, and notices.", url: "https://ict.adiswathba.com/ADIS1/", icon: campusIcon },
   ];
 
   resources.forEach((r) => {
@@ -374,7 +390,7 @@ function initResources() {
     card.href = r.url;
     card.target = "_blank";
     card.rel = "noopener";
-    card.innerHTML = `<h3>${r.name}</h3><p>${r.description}</p><span class="resource-note">Open →</span>`;
+    card.innerHTML = `<div class="resource-card-head">${r.icon}<h3>${r.name}</h3></div><p>${r.description}</p><span class="resource-note">Open →</span>`;
     card.addEventListener("click", () => playExternal());
     resourceGrid.appendChild(card);
   });
@@ -585,9 +601,81 @@ function initVersionBadge() {
   if (document.querySelector(".version-badge")) return;
   const el = document.createElement("div");
   el.className = "version-badge";
-  el.textContent = window.__cmVersion || "v14.3";
+  el.textContent = window.__cmVersion || "v14.1";
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
+}
+
+// ============================================
+// Bottom-of-page Changelog / Monitors toggles
+// ------------------------------------------------
+// Changelog reuses the #changelogEntries container initChangelog()
+// already knows how to fill (see initChangelog below) — it just
+// happens to also exist on this page now, tucked inside a hidden
+// panel. Monitors is a lazy one-time fetch: auth.js (and Firestore)
+// only get pulled in if someone actually opens that panel.
+// ============================================
+function initFooterToggles() {
+  const buttons = document.querySelectorAll(".footer-toggle-btn");
+  if (!buttons.length) return;
+
+  const escapeHtml = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    })[c]);
+
+  let monitorsLoaded = false;
+  function loadPublicMonitors() {
+    if (monitorsLoaded) return;
+    monitorsLoaded = true;
+    const list = document.getElementById("publicMonitorsList");
+    if (!list) return;
+    list.innerHTML = `<p class="task-empty">Loading…</p>`;
+    import("./auth.js")
+      .then((mod) => mod.getMonitorDirectory())
+      .then((directory) => {
+        if (!directory.length) {
+          list.innerHTML = `<p class="task-empty">No monitors found.</p>`;
+          return;
+        }
+        list.innerHTML = directory
+          .map(
+            (m) => `
+          <div class="manage-row">
+            <div class="manage-row-body">
+              <p class="task-subject">${escapeHtml(m.email)}${m.builtIn ? ' <span class="inactive-tag">built-in</span>' : ""}</p>
+            </div>
+          </div>`
+          )
+          .join("");
+      })
+      .catch((err) => {
+        console.error("Failed to load monitor directory:", err);
+        list.innerHTML = `<p class="task-empty">Couldn't load the monitor list right now.</p>`;
+        monitorsLoaded = false; // allow a retry on next open
+      });
+  }
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const panel = document.getElementById(btn.dataset.toggleTarget);
+      if (!panel) return;
+      const opening = panel.hidden;
+
+      // Only one panel open at a time, so the section stays compact.
+      document.querySelectorAll(".footer-toggle-panel").forEach((p) => { p.hidden = true; });
+      buttons.forEach((b) => b.classList.remove("active"));
+
+      if (opening) {
+        panel.hidden = false;
+        btn.classList.add("active");
+        playOpen();
+        if (btn.dataset.toggleTarget === "footerMonitorsPanel") loadPublicMonitors();
+      } else {
+        playClose();
+      }
+    });
+  });
 }
 
 initVersionBadge();
@@ -602,6 +690,7 @@ initHouseCards();
 initGalleryLightbox();
 initHeroChart();
 initChangelog();  // no-ops on pages without #changelogEntries
+initFooterToggles();
 initTodayDate();
 initHoverSfx();
 
@@ -632,6 +721,7 @@ const OPTIONAL_MODULES = [
   ["student management", "./student-manage.js", "initStudentManagement"],
   ["teachers", "./teachers.js", "initTeachers"],
   ["teacher management", "./teacher-manage.js", "initTeacherManagement"],
+  ["monitor management", "./monitor-manage.js", "initMonitorManagement"],
   ["gallery", "./gallery.js", "initGallery"],
   ["achievements", "./achievements.js", "initAchievements"],
   ["manage page", "./manage.js", "initManagePage"],
