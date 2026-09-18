@@ -4272,28 +4272,30 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 .student-card .house-pill.house-autumn .house-dot { background: var(--house-autumn); }
 .student-card .house-pill.house-spring .house-dot { background: var(--house-spring); }
 .student-card .house-pill.house-summer .house-dot { background: var(--house-summer); }
-
-
 /* ============================================
-   V16 — Homework / Announcements / Resources layout
+   V16.1 — Today grid: Homework full width on top,
+   Announcements (left) + Resources (right) below.
    ============================================ */
 .today-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
   gap: 20px;
   align-items: start;
 }
-#homeworkPanel {
-  grid-column: 1 / -1; /* full width on the top row */
+.today-grid > #homeworkPanel {
+  grid-column: 1 / -1;
+}
+.today-grid > #noticePanel {
+  grid-column: 1;
+}
+.today-grid > #resourcePanel {
+  grid-column: 2;
 }
 @media (max-width: 860px) {
-  .today-grid { grid-template-columns: 1fr; }
-  #homeworkPanel { grid-column: auto; }
-}
-
-/* "Important" tag on notices */
-.task-tag.important {
-  border-color: var(--danger);
-  color: var(--danger);
-  background: var(--danger-soft);
+  .today-grid { grid-template-columns: 1fr !important; }
+  .today-grid > #homeworkPanel,
+  .today-grid > #noticePanel,
+  .today-grid > #resourcePanel {
+    grid-column: auto;
+  }
 }
