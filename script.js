@@ -585,7 +585,7 @@ function initVersionBadge() {
   if (document.querySelector(".version-badge")) return;
   const el = document.createElement("div");
   el.className = "version-badge";
-  el.textContent = window.__cmVersion || "v14.1";
+  el.textContent = window.__cmVersion || "v14.3";
   el.setAttribute("aria-hidden", "true");
   document.body.appendChild(el);
 }
