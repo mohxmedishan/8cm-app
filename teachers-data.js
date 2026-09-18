@@ -63,13 +63,21 @@ export async function loadTeachers({ forceRefresh = false } = {}) {
         "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
       );
       const snap = await getDocs(collection(db, "teachers"));
-      if (snap.empty) return TEACHERS_SEED;
-      const list = [];
+
+      // Firestore docs are laid on top of the seed roster, matched by
+      // id, rather than replacing it outright. The seed IS the real
+      // staff list — it just hasn't been written into Firestore as
+      // actual documents. Without this merge, the moment a monitor
+      // added or edited even one teacher, every seed teacher whose id
+      // didn't happen to match a Firestore doc would vanish from the
+      // directory, since a non-empty Firestore collection used to win
+      // outright over the seed.
+      const byId = new Map(TEACHERS_SEED.map((t) => [t.id, t]));
       snap.forEach((d) => {
-        const data = d.data();
-        if (data.active === false) return;
-        list.push({ id: d.id, ...data });
+        byId.set(d.id, { id: d.id, ...d.data() });
       });
+
+      const list = Array.from(byId.values()).filter((t) => t.active !== false);
       list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
       return list;
     } catch (err) {
@@ -87,8 +95,12 @@ export async function loadTeachers({ forceRefresh = false } = {}) {
 }
 
 export async function invalidateTeachersCache() {
-  liveTeachers = null;
-  inflight = null;
-  broadcast();
+  // Deliberately doesn't clear liveTeachers or broadcast before
+  // refetching — that used to reset the UI to the bare seed list for
+  // a moment (a visible flash back to "the old list") every time a
+  // teacher was added, edited, deactivated, or reactivated. The last
+  // good list stays on screen until the refreshed one is actually
+  // ready, and forceRefresh below still guarantees a real refetch.
+  inflight = null; // in case a prior fetch is stuck, force a genuine new one
   return loadTeachers({ forceRefresh: true });
 }
