@@ -30,12 +30,14 @@ export const QUICK_LINK_LOGOS = {
   },
   classroom: {
     label: "Google Classroom",
-    tint: "#4285F4",
+    tint: "#0F9D58",
+    image: "assets/logos/GC-logo.png",
     svg: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 17v-4l6-3 6 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="8.5" r="1.8" fill="currentColor"/></svg>`,
   },
   campus: {
     label: "Digital Campus / Portal",
-    tint: "#6b9a8f",
+    tint: "#d6492c",
+    image: "assets/logos/DC-logo.png",
     svg: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8l10 5 8-4.2V15h2V8L12 3z" fill="currentColor"/><path d="M6 11.5V16c0 1.66 2.69 3 6 3s6-1.34 6-3v-4.5l-6 3-6-3z" fill="currentColor" opacity="0.55"/></svg>`,
   },
   drive: {
@@ -128,6 +130,11 @@ function getVisible() {
 
 function logoMarkup(logoId) {
   const l = QUICK_LINK_LOGOS[logoId] || QUICK_LINK_LOGOS[DEFAULT_QUICK_LINK_LOGO];
+  if (l.image) {
+    return `<span class="quick-link-icon has-image" style="--ql-tint:${escapeAttr(l.tint)}">
+      <img src="${escapeAttr(l.image)}" alt="" loading="lazy">
+    </span>`;
+  }
   return `<span class="quick-link-icon" style="--ql-tint:${escapeAttr(l.tint)}">${l.svg}</span>`;
 }
 
@@ -195,7 +202,7 @@ function renderLogoPicker(selectedId) {
   grid.innerHTML = Object.entries(QUICK_LINK_LOGOS).map(([id, l]) => `
     <button type="button" class="logo-choice${id === selectedId ? " active" : ""}"
       data-logo="${escapeAttr(id)}" title="${escapeAttr(l.label)}" aria-label="${escapeAttr(l.label)}">
-      <span class="quick-link-icon" style="--ql-tint:${escapeAttr(l.tint)}">${l.svg}</span>
+      ${logoMarkup(id)}
       <span class="logo-choice-label">${escapeHtml(l.label)}</span>
     </button>`).join("");
 
