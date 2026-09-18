@@ -59,6 +59,7 @@ export function pinnedAnnouncement() {
 }
 
 let isCurrentMonitor = false;
+const expandedIds = new Set();
 let editingId = null;
 
 function renderListLoading() {
@@ -220,26 +221,50 @@ function render() {
 
   list.innerHTML = "";
   visible.forEach((a) => {
+    const expanded = expandedIds.has(a.id);
     const row = document.createElement("div");
-    row.className = `announcement-row ${a.priority === "important" ? "is-important" : ""}`;
+    row.className = [
+      "announcement-row",
+      a.priority === "important" ? "is-important" : "",
+      expanded ? "is-expanded" : "",
+    ].filter(Boolean).join(" ");
+    row.dataset.id = a.id;
+
     row.innerHTML = `
       <div class="announcement-head">
         ${a.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
         <span class="task-tag announcement">${escapeHtml(a.category || "General")}</span>
         <p class="task-subject">${escapeHtml(a.title)}</p>
+        <span class="announcement-caret" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
       </div>
-      <p class="task-detail">${escapeHtml(a.content)}</p>
-      ${linkChipsHtml(a)}
+      <div class="announcement-detail">
+        <p class="task-detail">${escapeHtml(a.content)}</p>
+        ${linkChipsHtml(a)}
+      </div>
       <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
         <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${escapeHtml(a.id)}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
         <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit announcement">✎</button>
         <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete announcement">✕</button>
       </div>
     `;
+
+    row.addEventListener("click", (e) => {
+      if (e.target.closest(".task-monitor-actions")) return;
+      if (e.target.closest("a")) return;
+      const id = row.dataset.id;
+      if (expandedIds.has(id)) expandedIds.delete(id);
+      else expandedIds.add(id);
+      row.classList.toggle("is-expanded");
+    });
+
     list.appendChild(row);
   });
 
-  list.querySelectorAll('[data-action="delete"]').forEach((btn) => btn.addEventListener("click", () => handleDelete(btn.dataset.id)));
+  list.querySelectorAll('[data-action="delete"]').forEach((btn) =>
+    btn.addEventListener("click", () => handleDelete(btn.dataset.id))
+  );
   list.querySelectorAll('[data-action="pin"]').forEach((btn) => {
     btn.addEventListener("click", () => {
       const a = cache.find((x) => x.id === btn.dataset.id);
@@ -253,7 +278,6 @@ function render() {
     });
   });
 }
-
 function applyMonitorVisibility() {
   document.querySelectorAll("#announcementList .monitor-only, #announcementPanel .monitor-only").forEach((el) => {
     el.hidden = !isCurrentMonitor;

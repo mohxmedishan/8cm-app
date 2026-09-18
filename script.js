@@ -660,18 +660,34 @@ function initSplash() {
 function initChangelog() {
   const container = document.getElementById("changelogEntries");
   if (!container) return;
+
   container.innerHTML = changelog
     .map(
-      (entry) => `
-        <div class="changelog-entry">
-          <p class="changelog-date">${entry.date}</p>
-          <ul>${entry.items.map((item) => `<li>${item}</li>`).join("")}</ul>
+      (entry, i) => `
+        <div class="changelog-entry" data-index="${i}">
+          <button type="button" class="changelog-date" aria-expanded="false">
+            <span class="changelog-date-label">${entry.date}</span>
+            ${entry.version ? `<span class="changelog-version">v${entry.version}</span>` : ""}
+            <span class="changelog-caret" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </button>
+          <div class="changelog-body">
+            <ul>${entry.items.map((item) => `<li>${item}</li>`).join("")}</ul>
+          </div>
         </div>
       `
     )
     .join("");
-}
 
+  container.querySelectorAll(".changelog-entry").forEach((el) => {
+    const btn = el.querySelector(".changelog-date");
+    btn.addEventListener("click", () => {
+      const open = el.classList.toggle("is-expanded");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+  });
+}
 function initTodayDate() {
   const el = document.getElementById("todayDate");
   if (!el) return;
