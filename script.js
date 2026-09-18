@@ -299,6 +299,23 @@ function initStudentDirectory() {
 
   Object.keys(filters).forEach(updateBoxLabel);
 
+  // Deep-link from the homepage hero chart (archives.html?house=winter#students).
+  // Apply the filter after the controls have been initialized, then remove the
+  // query from the address bar so a later refresh does not unexpectedly reapply it.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const incomingHouse = params.get("house");
+    if (incomingHouse && ["winter", "autumn", "spring", "summer"].includes(incomingHouse)) {
+      filters.house = incomingHouse;
+      updateBoxLabel("house");
+      applyFilters();
+      if (history.replaceState) {
+        const url = window.location.pathname + window.location.hash;
+        history.replaceState(null, "", url);
+      }
+    }
+  } catch (_) {}
+
   import("./avatars.js").then((mod) => {
     avatarAPI.getAvatarForUid = mod.getAvatarForUid;
     avatarAPI.avatarMarkup = mod.avatarMarkup;
@@ -349,9 +366,17 @@ function initHouseCards() {
   });
 
   document.querySelectorAll(".bar-row[data-house]").forEach((bar) => {
-    bar.addEventListener("click", () => {
+    const jump = () => {
       const house = bar.dataset.house;
-      window.location.href = `archives.html#students?house=${house}`;
+      if (!house) return;
+      window.location.href = `archives.html?house=${encodeURIComponent(house)}#students`;
+    };
+    bar.addEventListener("click", jump);
+    bar.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        jump();
+      }
     });
   });
 
@@ -400,7 +425,7 @@ function renderHouseCardLists(list) {
       .sort((a, b) => (a.rollNumber || 0) - (b.rollNumber || 0));
 
     const countEl = body.querySelector(".house-count");
-    if (countEl) countEl.textContent = `${members.length} student${members.length === 1 ? "" : "s"}`;
+    if (countEl) countEl.textContent = `${members.length} ${members.length === 1 ? "member" : "members"}`;
 
     let listEl = body.querySelector(".house-student-list");
     if (!listEl) {
@@ -410,7 +435,9 @@ function renderHouseCardLists(list) {
       listEl.className = "house-student-list";
       body.appendChild(listEl);
     }
-    listEl.innerHTML = members.map((s) => `<li>${escapeHouseName(s.name)}</li>`).join("");
+    listEl.innerHTML = members
+      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}">${escapeHouseName(s.name)}</li>`)
+      .join("");
   });
 
   equalizeHouseCardHeights();
@@ -811,6 +838,8 @@ const OPTIONAL_MODULES = [
   ["monitor management", "./monitor-manage.js", "initMonitorManagement"],
   ["gallery", "./gallery.js", "initGallery"],
   ["achievements", "./achievements.js", "initAchievements"],
+  ["archive materials", "./archive-materials.js", "initArchiveMaterials"],
+  ["quick links", "./quick-links.js", "initQuickLinks"],
   ["manage page", "./manage.js", "initManagePage"],
   ["theme", "./theme.js", "initThemeUI"],
 ];
@@ -824,3 +853,4 @@ OPTIONAL_MODULES.forEach(([label, path, initializer]) => {
     if (label !== "theme") showErrorToast(`${label[0].toUpperCase() + label.slice(1)} features are temporarily unavailable.`);
   });
 });
+

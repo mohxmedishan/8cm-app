@@ -63,14 +63,14 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
 <link href="style.css" rel="stylesheet"/>
-<link href="assets/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
-<link href="assets/cm-icon-192.png" rel="apple-touch-icon" sizes="192x192"/>
+<link href="assets/logos/favicon-64.png" rel="icon" sizes="64x64" type="image/png"/>
+<link href="assets/logos/cm-icon-192.png" rel="apple-touch-icon" sizes="192x192"/>
 <link href="manifest.json" rel="manifest"/>
 </head>
 <body>
 <div aria-hidden="true" class="splash" id="splash">
 <div class="splash-content">
-<img alt="" class="splash-logo" src="assets/cm-logo.png"/>
+<img alt="" class="splash-logo" src="assets/logos/cm-logo.png"/>
 <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
 </div>
 </div>
@@ -92,7 +92,7 @@
 <header class="nav" id="nav">
 <div class="nav-inner">
 <a aria-label="8CM home" class="brand" href="index.html#top">
-<img alt="8CM" src="assets/cm-logo.png"/>
+<img alt="8CM" src="assets/logos/cm-logo.png"/>
 </a>
 <nav class="nav-links" id="navLinks">
   <a href="index.html#top" class="nav-link">Home</a>
@@ -137,6 +137,8 @@
   <button class="manage-tab" data-tab="students" type="button">Students</button>
   <button class="manage-tab" data-tab="teachers" type="button">Teachers</button>
   <button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
+  <button class="manage-tab" data-tab="archive" type="button">Archive</button>
+  <button class="manage-tab" data-tab="quicklinks" type="button">Quick links</button>
   <button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
   <button class="manage-tab" data-tab="changelog" type="button">Changelog</button>
   <button class="manage-tab" data-tab="monitors" type="button">Monitors</button>
@@ -345,6 +347,66 @@
 </div>
 </div>
 <!-- ACHIEVEMENTS -->
+<!-- ARCHIVE MATERIALS -->
+<div class="manage-panel" data-panel="archive">
+  <div class="today-panel">
+    <div class="today-panel-head">
+      <div>
+        <h3 class="today-panel-title">Archive materials</h3>
+        <p class="today-note">Edit the class history cards, add new ones, or remove old material.</p>
+      </div>
+      <button class="btn btn-add-task btn-small" id="addArchiveMaterialBtn" hidden>+ Add material</button>
+    </div>
+    <form class="task-form" id="archiveMaterialForm" hidden>
+      <div class="task-form-grid">
+        <label class="field"><span>Kicker</span><input type="text" name="kicker" placeholder="Classroom setup"></label>
+        <label class="field"><span>Order</span><input type="number" name="order" min="0" value="0"></label>
+        <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Thirty desks, paired up." required></label>
+        <label class="field field-wide"><span>Description</span><textarea name="description" rows="3" placeholder="Three pairs to a row, thirty seats total."></textarea></label>
+        <label class="field"><span>Link label (optional)</span><input type="text" name="linkLabel" placeholder="Open"></label>
+        <label class="field"><span>Link URL (optional)</span><input type="url" name="link" placeholder="https://…"></label>
+      </div>
+      <p class="auth-error" id="archiveMaterialFormError" hidden></p>
+      <div class="task-form-actions">
+        <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+        <button type="submit" class="btn btn-add-task btn-small">Add material</button>
+      </div>
+    </form>
+    <div class="task-list" id="archiveMaterialManageList"></div>
+  </div>
+</div>
+
+<!-- QUICK LINKS -->
+<div class="manage-panel" data-panel="quicklinks">
+  <div class="today-panel">
+    <div class="today-panel-head">
+      <div>
+        <h3 class="today-panel-title">Quick links</h3>
+        <p class="today-note">Add useful class shortcuts without uploading logos. Pick one of the built-in icons.</p>
+      </div>
+      <button class="btn btn-add-task btn-small" id="addQuickLinkBtn" hidden>+ Add quick link</button>
+    </div>
+    <form class="task-form" id="quickLinkForm" hidden>
+      <div class="task-form-grid">
+        <label class="field field-wide"><span>Title</span><input type="text" name="title" placeholder="Class Drive" required></label>
+        <label class="field field-wide"><span>Description</span><input type="text" name="description" placeholder="Shared worksheets and slides"></label>
+        <label class="field field-wide"><span>URL</span><input type="url" name="url" placeholder="https://…" required></label>
+        <label class="field"><span>Order</span><input type="number" name="order" min="0" value="0"></label>
+        <div class="field field-wide">
+          <span>Logo</span>
+          <div class="logo-picker-grid" id="quickLinkLogoGrid"></div>
+        </div>
+      </div>
+      <p class="auth-error" id="quickLinkFormError" hidden></p>
+      <div class="task-form-actions">
+        <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+        <button type="submit" class="btn btn-add-task btn-small">Add quick link</button>
+      </div>
+    </form>
+    <div class="task-list" id="quickLinkManageList"></div>
+  </div>
+</div>
+
 <div class="manage-panel" data-panel="achievements">
 <div class="today-panel">
 <div class="today-panel-head">
@@ -595,3 +657,4 @@ real values.
 <script src="script.js" type="module"></script>
 </body>
 </html>
+

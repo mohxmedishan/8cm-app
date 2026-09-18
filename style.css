@@ -570,42 +570,102 @@ h1, h2, h3 {
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+
+.house-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 80% at 50% 0%,
+    color-mix(in srgb, var(--house-color, var(--accent)) 14%, transparent),
+    transparent 65%);
+  opacity: 0.6;
+  pointer-events: none;
+  transition: opacity 0.3s var(--ease);
+}
+.house-card:hover::before { opacity: 1; }
 
 .house-card:hover,
 .house-card:focus-visible {
   transform: translateY(-3px);
-  border-color: var(--accent);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  border-color: var(--house-color, var(--accent));
+  box-shadow: 0 14px 32px -14px color-mix(in srgb, var(--house-color, #000) 40%, transparent);
   outline: none;
 }
 
-.house-bar { height: 4px; }
-.house-card[data-house="winter"] .house-bar { background: var(--house-winter); }
-.house-card[data-house="autumn"] .house-bar { background: var(--house-autumn); }
-.house-card[data-house="spring"] .house-bar { background: var(--house-spring); }
-.house-card[data-house="summer"] .house-bar { background: var(--house-summer); }
+.house-bar {
+  height: 5px;
+  background: var(--house-color, var(--accent));
+  box-shadow: 0 0 18px -2px var(--house-color, var(--accent));
+}
+.house-card[data-house="winter"] { --house-color: var(--house-winter); }
+.house-card[data-house="autumn"] { --house-color: var(--house-autumn); }
+.house-card[data-house="spring"] { --house-color: var(--house-spring); }
+.house-card[data-house="summer"] { --house-color: var(--house-summer); }
 
-.house-card-body { padding: 22px 20px; display: flex; flex-direction: column; flex: 1; }
-.house-card-body h3 { font-size: 1.15rem; margin-bottom: 6px; }
-.house-count { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 12px; }
+.house-card-body {
+  padding: 20px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 12px;
+  position: relative;
+}
+.house-card-body h3 {
+  font-size: 1.2rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.house-card-body h3::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--house-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--house-color) 25%, transparent);
+}
+.house-count {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
 
-/* Deliberately no transition/animation here — a name list that
-   fades or slides in on every re-render (a monitor moving a student
-   between houses, a resize) would just be distracting for something
-   this small. */
 .house-student-list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 12px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
+  border-top: 1px dashed var(--border-soft);
 }
 .house-student-list li {
-  color: var(--text-faint);
-  font-size: 0.88rem;
-  line-height: 1.3;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.4;
+  padding: 3px 6px;
+  border-radius: var(--radius-s);
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.house-student-list li::before {
+  content: attr(data-roll);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--house-color);
+  min-width: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.house-student-list li:hover {
+  background: color-mix(in srgb, var(--house-color) 12%, transparent);
 }
 
 /* ============================================
@@ -3950,4 +4010,92 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 
 @media (max-width: 640px) {
   .settings-card { padding: 24px 22px 20px; }
+}
+
+
+
+/* ============================================
+   V15 — Monitor-managed archive + quick links
+   ============================================ */
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.quick-link-card {
+  min-width: 0;
+}
+.quick-link-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--ql-tint, var(--accent)) 15%, transparent);
+  color: var(--ql-tint, var(--accent));
+  flex-shrink: 0;
+}
+.quick-link-icon svg { width: 22px; height: 22px; }
+.logo-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.logo-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.logo-choice:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.logo-choice.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.logo-choice-label {
+  font-size: 0.7rem;
+  text-align: center;
+  line-height: 1.2;
+}
+.logo-choice .quick-link-icon {
+  width: 34px;
+  height: 34px;
+}
+.logo-choice .quick-link-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.manage-logo-thumb {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.archive-card .item-links { margin-top: 12px; }
+.archive-card .task-link-chip { margin-top: 0; }
+
+@media (max-width: 700px) {
+  .quick-links-grid {
+    grid-template-columns: 1fr;
+  }
+  .logo-picker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }

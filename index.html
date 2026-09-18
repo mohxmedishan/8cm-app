@@ -63,15 +63,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
-<link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/logos/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-content">
-    <img src="assets/cm-logo.png" alt="" class="splash-logo">
+    <img src="assets/logos/cm-logo.png" alt="" class="splash-logo">
     <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
   </div>
 </div>
@@ -93,7 +93,7 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="#top" class="brand" aria-label="8CM home"><img src="assets/cm-logo.png" alt="8CM"></a>
+    <a href="#top" class="brand" aria-label="8CM home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links" id="navLinks">
       <a href="#today" class="nav-link">Today</a>
       <a href="#events" class="nav-link">Events</a>
@@ -195,6 +195,11 @@
               <label class="field"><span>Priority</span><select name="priority"><option value="normal" selected>Normal</option><option value="important">Important</option></select></label>
               <label class="field"><span>Date of event (optional)</span><input type="date" name="eventDate"></label>
               <label class="field field-checkbox"><input type="checkbox" name="pinned"><span>Pin to top</span></label>
+              <div class="field field-wide">
+                <span>Links (optional)</span>
+                <div class="links-stack" id="announcementLinksStack"></div>
+                <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+              </div>
             </div>
             <p class="auth-error" id="announcementFormError" hidden></p>
             <div class="task-form-actions">
@@ -227,6 +232,11 @@
           <label class="field"><span>Location</span><input type="text" name="location" placeholder="Main hall"></label>
           <label class="field"><span>Category</span><select name="category"><option>General</option><option>Trip</option><option>Competition</option><option>Exam</option><option>Celebration</option></select></label>
           <label class="field field-wide"><span>Description (optional)</span><input type="text" name="description" placeholder="What to bring, what to expect"></label>
+          <div class="field field-wide">
+            <span>Links (optional)</span>
+            <div class="links-stack" id="eventLinksStack"></div>
+            <p class="links-hint">Paste a URL and press Enter to add another (up to 8). Name it if you'd like — leave the name blank and it's shown as "Link 1", "Link 2", etc.</p>
+          </div>
         </div>
         <p class="auth-error" id="eventFormError" hidden></p>
         <div class="task-form-actions">
@@ -409,3 +419,4 @@
 </figure>
 </div></body>
 </html>
+

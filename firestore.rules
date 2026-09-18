@@ -223,6 +223,16 @@ service cloud.firestore {
       allow write: if isMonitor();
     }
 
+    match /archiveMaterials/{materialId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
+
+    match /quickLinks/{linkId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
+
     match /events/{eventId} {
       allow read: if true;
       allow write: if isMonitor();
@@ -276,3 +286,4 @@ service cloud.firestore {
     }
   }
 }
+
