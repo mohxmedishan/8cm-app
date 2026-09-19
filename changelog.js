@@ -10,6 +10,19 @@
 export const changelog = [
   {
     date: "2026-09-19",
+    version: "17.0.0",
+    items: [
+      "New main menu: Football, Houses, Home and Archives. A highlighted pill slides to whichever one you're on, and it stays in a row at the top on phones.",
+      "Houses now has its own page. The house graph moved there from the home page, and it counts the real class list, so it changes by itself when someone switches house.",
+      "On the Houses page, tap any name to open that student's profile. Tapping a house bar jumps to that house's card.",
+      "Home and Archives each have a small info panel where the old house graph used to be: homework, next event and latest achievement on Home; student, teacher, photo and material counts on Archives.",
+      "Each section has a small menu of its own under the main one: Today, Events and Achievements on Home; Overview and Students on Houses; Timetable, Teachers, Students, Gallery, Quick Links and Materials in Archives.",
+      "Football has a Coming Soon page. Matches, tournaments, rankings and player profiles are planned for later.",
+      "Houses are no longer inside Archives. The Houses links on every other page now go to the new Houses page.",
+    ],
+  },
+  {
+    date: "2026-09-19",
     version: "16.2.1",
     items: [
       "Fixed the Monitors panel showing \"Signed in\" for people who haven't. \"Signed in\" now means their own browser has opened the site as a monitor since they were added. Someone who already had a student account but hasn't visited since being added reads \"Hasn't signed in since being added\", and someone with no account at all reads \"Not yet signed in\".",

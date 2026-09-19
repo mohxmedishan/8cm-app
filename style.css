@@ -4572,3 +4572,317 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
   box-shadow: inset 3px 0 0 var(--house-summer);
 }
 .tt-ann-section[hidden] { display: none; }
+
+/* ============================================
+   V17.0.0 — Beta 17: primary navigation redesign
+   ------------------------------------------------
+   Four equal top-level destinations (Football, Houses, Home,
+   Archives) replace the old Home-centric nav. The list of links
+   itself still lives in each page's #navLinks (same element the
+   burger menu already opens/closes on mobile — untouched) — this
+   section only adds the sliding active-position pill behind
+   whichever .primary-nav-link is current, plus the contextual
+   .hub-nav subnav row underneath, and the new Houses/Football
+   destinations and their directional hero layouts.
+   ============================================ */
+
+/* --- Primary nav: sliding active pill --------------------------- */
+.nav-links.primary-nav {
+  position: relative;
+  gap: 6px;
+}
+
+.primary-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 0.32s var(--ease), width 0.32s var(--ease),
+    height 0.32s var(--ease), opacity 0.2s var(--ease);
+}
+
+.primary-nav-link {
+  position: relative;
+  z-index: 1;
+  padding: 7px 16px;
+  border-radius: 100px;
+}
+.primary-nav-link::after { display: none; }
+.primary-nav-link.is-active {
+  color: var(--text);
+  font-weight: 500;
+}
+.primary-nav-link:hover { color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-nav-indicator { transition: opacity 0.2s var(--ease); }
+}
+
+@media (max-width: 720px) {
+  .nav-links.primary-nav { gap: 2px; }
+  .primary-nav-link { padding: 10px 12px; }
+}
+
+/* --- Contextual subnav ------------------------------------------- */
+/* .hub-nav / .hub-nav-inner / .hub-nav-link already existed (an
+   earlier hub-page design that never shipped) and are reused as-is
+   for the Home, Houses, and Archives subnavs — a thin pill row
+   under the main nav, not a second stacked navbar. */
+.hub-nav-sub {
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 4px 0;
+}
+
+/* --- Directional hero grid, shared by Home / Archives / Houses -- */
+.hero-visual.glance-panel .glance-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-soft);
+}
+.hero-visual.glance-panel .glance-row:first-of-type { border-top: none; padding-top: 0; }
+.glance-label { font-size: 0.86rem; color: var(--text-muted); }
+.glance-value {
+  font-size: 0.92rem;
+  color: var(--text);
+  font-weight: 500;
+  text-align: right;
+  max-width: 220px;
+}
+.glance-value.is-empty { color: var(--text-faint); font-weight: 400; }
+
+/* Houses hero — mirrored: graph on the left, title/description and
+   the Dashboard control on the right (Archives keeps the opposite,
+   left-oriented arrangement it already had). */
+.hero.hero-mirrored .hero-grid { grid-template-columns: 0.85fr 1.15fr; }
+.hero-text.hero-text-right { text-align: right; }
+.hero-text.hero-text-right .hero-actions { justify-content: flex-end; }
+.hero-text.hero-text-right .back-to-dashboard { justify-content: flex-end; width: 100%; }
+
+.page-hero .hero-grid { align-items: start; padding-top: 8px; }
+.page-hero .hero-visual { margin-top: 4px; }
+
+@media (max-width: 860px) {
+  .hero.hero-mirrored .hero-grid { grid-template-columns: 1fr; }
+  .hero-text.hero-text-right,
+  .hero-text.hero-text-right .hero-actions,
+  .hero-text.hero-text-right .back-to-dashboard { text-align: left; justify-content: flex-start; }
+}
+
+/* --- House cards: clicking a student opens their profile --------- */
+.house-student-list li[data-student-id] {
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.house-student-list li[data-student-id]:hover { transform: translateX(2px); }
+.house-student-list li[data-student-id]:active { transform: translateX(2px) scale(0.98); }
+.house-student-list li[data-student-id]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Football — Coming Soon --------------------------------------- */
+.coming-soon {
+  padding: 40px 0 96px;
+}
+.coming-soon-card {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  padding: 48px 32px;
+}
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  padding: 5px 14px;
+  margin-bottom: 18px;
+}
+.coming-soon-card h1 {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  margin-bottom: 10px;
+}
+.coming-soon-card p { color: var(--text-muted); margin: 0 auto 28px; max-width: 46ch; }
+.coming-soon-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.coming-soon-list li {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 100px;
+  padding: 6px 14px;
+}
+
+/* ============================================
+   V17.0.0 (continued) — nav polish, live Houses chart,
+   Football page. Added after wiring the pages up.
+   ============================================ */
+
+/* --- Sticky offsets follow the real header height ---------------- */
+/* main-nav.js writes the header's rendered height to --nav-h, so the
+   subnav (and anchor jumps) clear it whether the header is one row
+   (desktop) or two (phone: logo row + the four destinations). */
+.hub-nav { top: var(--nav-h, 62px); }
+.hub-section,
+.today,
+.events-page,
+.achievements { scroll-margin-top: calc(var(--nav-h, 62px) + 56px); }
+@media (max-width: 720px) {
+  .hub-nav { top: var(--nav-h, 62px); }
+}
+
+/* --- Subnav: a quiet contextual row, not a second navbar --------- */
+/* Primary nav = filled pill. Subnav = small text links with an
+   underline marker, no pill, no top border, so the two read as
+   "where I am" over "what's in here". */
+.hub-nav {
+  margin-bottom: 0;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  border-top: none;
+  border-bottom: 1px solid var(--border-soft);
+}
+html[data-theme="light"] .hub-nav {
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+  border-color: var(--border-soft);
+}
+.hub-nav-inner {
+  justify-content: center;
+  gap: 2px;
+  padding-top: 2px;
+  padding-bottom: 0;
+}
+.hub-nav-link {
+  padding: 11px 14px 9px;
+  border-radius: 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+}
+.hub-nav-link:hover { background: none; color: var(--text); }
+.hub-nav-link.is-active,
+.hub-nav-link:target {
+  background: none;
+  color: var(--accent-strong);
+  border-bottom-color: var(--accent);
+}
+@media (max-width: 720px) {
+  .hub-nav-inner { justify-content: flex-start; }
+  .hub-nav-link { padding: 12px 12px 10px; }
+}
+
+/* --- Phone: the four destinations live in a row under the logo ---- */
+/* No burger drawer for the primary nav — there are only four items,
+   so hiding them behind a tap would bury the main navigation. */
+@media (max-width: 720px) {
+  .nav-inner {
+    grid-template-columns: auto 1fr;
+    row-gap: 10px;
+    padding-bottom: 10px;
+  }
+  .nav-right { grid-column: 2; grid-row: 1; }
+  .nav-links.primary-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: relative;
+    top: auto; left: auto; right: auto;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 0;
+    background: none;
+    border: none;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .nav-links.primary-nav .primary-nav-link {
+    flex: 1 1 0;
+    width: auto;
+    padding: 9px 4px;
+    text-align: center;
+    font-size: 0.86rem;
+  }
+  .nav-inner:has(.primary-nav) .burger { display: none; }
+}
+
+/* --- Houses hero: right-aligned block keeps its width cap on the right */
+.hero-text.hero-text-right .section-head { margin-left: auto; }
+@media (max-width: 860px) {
+  .hero-text.hero-text-right .section-head { margin-left: 0; }
+}
+
+/* --- Houses: live chart + house cards ----------------------------- */
+.house-card { cursor: default; }
+.house-card.is-pinged { animation: house-ping 1.1s var(--ease); }
+@keyframes house-ping {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--house-color) 55%, transparent); }
+  60%  { box-shadow: 0 0 0 10px transparent; border-color: var(--house-color); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill { transition: none; }
+  .house-card.is-pinged { animation: none; }
+  .house-student-list li[data-student-id],
+  .house-student-list li[data-student-id]:hover,
+  .house-student-list li[data-student-id]:active { transform: none; transition: none; }
+}
+
+/* --- Football: pitch motif behind the Coming Soon card ------------ */
+.coming-soon-card { position: relative; overflow: hidden; }
+.coming-soon-card > *:not(.coming-soon-pitch) { position: relative; }
+.coming-soon-pitch {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(120%, 720px);
+  transform: translate(-50%, -50%);
+  fill: none;
+  stroke: var(--border-soft);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.coming-soon-pitch * { vector-effect: non-scaling-stroke; }
+.coming-soon-back { margin-top: 28px; }
+.hero-text.hero-text-right .section-sub,
+.coming-soon-card p { text-wrap: pretty; }
+
+/* Archives / Houses heroes reuse .hero's grid but not its big padding —
+   .hero's phone breakpoint was re-adding side padding on top of
+   .section-inner's, which indented the header text. */
+.page-hero.hero { padding: 28px 0 0; }
+@media (max-width: 600px) {
+  .coming-soon-pitch { display: none; }
+  .coming-soon-card { padding: 40px 20px; }
+}

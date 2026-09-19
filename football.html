@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football — 8CM</title>
+<meta name="description" content="Football is coming to 8CM: matches, tournaments, rankings and player profiles.">
+<meta name="theme-color" content="#16171a">
+<link rel="canonical" href="https://8cm.vercel.app/football.html">
+<meta property="og:url" content="https://8cm.vercel.app/football.html">
+<meta property="og:site_name" content="8CM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="8CM.">
+<script>
+(function () {
+  try {
+    var m = localStorage.getItem('8cm-theme-mode');
+    var mode = (m === 'light' || m === 'dark') ? m : 'dark';
+    document.documentElement.setAttribute('data-theme', mode);
+    var resolved = localStorage.getItem('8cm-theme-accent-resolved-' + mode);
+    var raw = localStorage.getItem('8cm-theme-accent');
+    var accent = resolved || raw;
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  // Warm the cache for the background-music module and whichever
+  // track is currently selected, before any other script on this
+  // page runs. bgm.js already resumes playback the instant the page
+  // is ready (see its v14.3 notes) rather than waiting for a click,
+  // but on a plain multi-page site the browser still has to re-fetch
+  // the module and the audio file fresh on every navigation unless
+  // something has already asked for them. Doing that here, as early
+  // as possible, is what actually shrinks the audible gap — it can't
+  // be eliminated outright (the previous page's <audio> element is
+  // genuinely torn down on navigation), but the new page can have
+  // both ready to go the moment it's ready to play instead of
+  // starting the fetches from scratch.
+  try {
+    var modLink = document.createElement('link');
+    modLink.rel = 'modulepreload';
+    modLink.href = 'bgm.js';
+    document.head.appendChild(modLink);
+
+    if (localStorage.getItem('8cm:bgm:playing') === '1') {
+      var file = localStorage.getItem('8cm:bgm:track');
+      if (file) {
+        var audioLink = document.createElement('link');
+        audioLink.rel = 'preload';
+        audioLink.as = 'audio';
+        audioLink.href = 'assets/audio/' + file;
+        document.head.appendChild(audioLink);
+      }
+    }
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/logos/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
+<link rel="manifest" href="manifest.json">
+</head>
+<body data-page="football">
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-content">
+    <img src="assets/logos/cm-logo.png" alt="" class="splash-logo">
+    <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
+  </div>
+</div>
+<script>
+(function(){
+  function hideSplash(){
+    var s=document.getElementById("splash");
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
+<div class="grain"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html#top" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
+    <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
+      <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+      <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
+      <a href="index.html#top" class="nav-link primary-nav-link" data-page="home">Home</a>
+      <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
+      </button>
+      <div class="nav-auth" id="authSlot"></div>
+      <button class="burger" id="burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+
+<main id="top">
+  <section class="coming-soon">
+    <div class="section-inner">
+      <div class="coming-soon-card">
+        <svg class="coming-soon-pitch" viewBox="0 0 200 120" aria-hidden="true" focusable="false"><rect x="2" y="2" width="196" height="116" rx="4"/><line x1="100" y1="2" x2="100" y2="118"/><circle cx="100" cy="60" r="16"/><rect x="2" y="34" width="26" height="52"/><rect x="172" y="34" width="26" height="52"/></svg>
+        <span class="coming-soon-badge">Coming soon</span>
+        <h1>Football</h1>
+        <p>The 8CM football hub is on its way. Fixtures, results and who's playing well will all live here once it kicks off.</p>
+        <ul class="coming-soon-list" aria-label="Planned football features">
+          <li>Matches</li>
+          <li>Match history</li>
+          <li>Tournaments</li>
+          <li>Rankings</li>
+          <li>Teams</li>
+          <li>Player stats</li>
+          <li>Player profiles</li>
+          <li>Results</li>
+        </ul>
+        <a href="index.html#top" class="btn btn-ghost coming-soon-back">Back to Home</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="section-inner footer-inner">
+    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+  </div>
+</footer>
+
+<div class="modal-overlay" id="authOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="authClose" aria-label="Close">✕</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-mode="signin" type="button">Sign in</button>
+      <button class="auth-tab" data-mode="signup" type="button">Create account</button>
+    </div>
+    <p class="config-banner" id="configBanner" hidden>⚠️ This site isn't connected to a real Firebase project yet.</p>
+    <button class="btn-google" id="googleSignInBtn" type="button">
+      <svg class="google-icon" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      <span>Continue with Google</span>
+    </button>
+    <div class="auth-divider"><span>or</span></div>
+    <form id="authForm" class="auth-form" novalidate>
+      <label class="field"><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
+      <label class="field" data-field="password"><span>Password</span><div class="password-wrap"><input type="password" name="password" autocomplete="current-password"><button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
+      <label class="field" data-field="confirmPassword" hidden><span>Confirm password</span><div class="password-wrap"><input type="password" name="confirmPassword" autocomplete="new-password"><button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
+      <p class="auth-error" id="authError" hidden></p>
+      <p class="auth-note" id="authResetNote" hidden></p>
+      <button type="submit" class="btn btn-primary" id="authSubmitBtn"><span class="btn-label">Sign in</span></button>
+      <button type="button" class="link-btn" id="forgotPasswordBtn">Forgot password?</button>
+    </form>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-status" id="loadingStatus">Signing in…</p></div>
+</div>
+
+<div class="modal-overlay" id="claimOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="claimClose" aria-label="Close" hidden>✕</button>
+    <h3 id="claimModalTitle">Which one are you?</h3>
+    <p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account.</p>
+    <button type="button" class="link-btn claim-wrong-account" id="claimWrongAccountBtn">Not you? Sign out</button>
+    <label class="field"><span>Your name</span><select id="claimSelect"></select></label>
+    <p class="auth-error" id="claimError" hidden></p>
+    <div class="modal-actions">
+      <button type="button" class="link-btn" id="claimCancelBtn" hidden>Cancel</button>
+      <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsOverlay" hidden>
+<div class="modal-card settings-card">
+<button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
+<div class="settings-columns">
+<div class="settings-col settings-col-appearance">
+<h3>Appearance</h3>
+<p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div aria-label="Color mode" class="theme-mode-row" role="tablist">
+<button class="theme-mode-btn" data-mode="dark" role="tab" type="button">Dark</button>
+<button class="theme-mode-btn" data-mode="light" role="tab" type="button">Light</button>
+</div>
+<div class="theme-swatches" id="themeSwatches"></div>
+<label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
+<button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
+</div>
+<div class="settings-col settings-col-sound">
+<div class="theme-audio-block"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="avatarPickerOverlay" hidden>
+  <div class="modal-card avatar-picker-card">
+    <button class="modal-close" id="avatarPickerClose" aria-label="Close">✕</button>
+    <h3>Choose your avatar</h3>
+    <p class="modal-sub">Your avatar is tied to your account, not to the student you've claimed. Switching students keeps your avatar.</p>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
+  </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
+

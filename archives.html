@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Class Archives — 8CM</title>
-<meta name="description" content="Timetable, teachers, students, gallery, houses, and archive materials for 8CM.">
+<meta name="description" content="Timetable, teachers, students, gallery, and archive materials for 8CM.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/archives.html">
 <meta property="og:url" content="https://8cm.vercel.app/archives.html">
@@ -67,7 +67,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
 </head>
-<body>
+<body data-page="archives">
 
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-content">
@@ -93,15 +93,12 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="index.html#top" class="brand" aria-label="Back to dashboard"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
-    <nav class="nav-links" id="navLinks">
-      <a href="#timetable" class="nav-link">Timetable</a>
-      <a href="#teachers" class="nav-link">Teachers</a>
-      <a href="#students" class="nav-link">Students</a>
-      <a href="#gallery" class="nav-link">Gallery</a>
-      <a href="#houses" class="nav-link">Houses</a>
-      <a href="#quick-links" class="nav-link">Quick Links</a>
-      <a href="#archive-materials" class="nav-link">Materials</a>
+    <a href="index.html#top" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
+    <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
+      <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+      <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
+      <a href="index.html#top" class="nav-link primary-nav-link" data-page="home">Home</a>
+      <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
     </nav>
     <div class="nav-right">
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
@@ -113,13 +110,33 @@
   </div>
 </header>
 
+<nav class="hub-nav" aria-label="Archives sections">
+  <div class="section-inner hub-nav-inner">
+    <a href="#timetable" class="hub-nav-link">Timetable</a>
+    <a href="#teachers" class="hub-nav-link">Teachers</a>
+    <a href="#students" class="hub-nav-link">Students</a>
+    <a href="#gallery" class="hub-nav-link">Gallery</a>
+    <a href="#quick-links" class="hub-nav-link">Quick Links</a>
+    <a href="#archive-materials" class="hub-nav-link">Materials</a>
+  </div>
+</nav>
+
 <main id="top">
-  <section class="page-hero">
-    <div class="section-inner">
-      <a href="index.html#top" class="back-to-dashboard">← Dashboard</a>
-      <div class="section-head" style="margin-top:12px;margin-bottom:20px">
-        <h1 class="hub-title">Class Archives</h1>
-        <p class="section-sub">Timetable, teachers, students, houses, and everything else that lives off the front page.</p>
+  <section class="page-hero hero">
+    <div class="section-inner hero-grid">
+      <div class="hero-text">
+        <a href="index.html#top" class="back-to-dashboard">← Dashboard</a>
+        <div class="section-head" style="margin-top:12px;margin-bottom:20px">
+          <h1 class="hub-title">Class Archives</h1>
+          <p class="section-sub">Timetable, teachers, students, and everything else that lives off the front page.</p>
+        </div>
+      </div>
+      <div class="hero-visual glance-panel" id="archivesGlance">
+        <p class="hero-visual-label">Archive snapshot</p>
+        <div class="glance-row"><span class="glance-label">Students</span><span class="glance-value" id="glanceStudents">—</span></div>
+        <div class="glance-row"><span class="glance-label">Teachers</span><span class="glance-value" id="glanceTeachers">—</span></div>
+        <div class="glance-row"><span class="glance-label">Gallery</span><span class="glance-value" id="glanceGallery">—</span></div>
+        <div class="glance-row"><span class="glance-label">Archive materials</span><span class="glance-value" id="glanceMaterials">—</span></div>
       </div>
     </div>
   </section>
@@ -283,26 +300,6 @@
       <div class="section-head"><h2>Gallery</h2></div>
       <div class="gallery-grid" id="galleryGrid"></div>
       <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
-    </div>
-  </section>
-
-  <!-- ============ HOUSES ============ -->
-  <section class="hub-section houses" id="houses">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>The four houses</h2>
-        <p class="section-sub">Every student in 8CM belongs to one.</p>
-      </div>
-      <div class="house-grid">
-        <!-- house-count and the student list below it are filled in by
-             renderHouseCardLists() in script.js, from the real student
-             roster — never hardcoded, so a monitor moving someone
-             between houses updates this automatically. -->
-        <article class="house-card" data-house="winter" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="autumn" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="spring" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="summer" tabindex="0" role="button"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
-      </div>
     </div>
   </section>
 

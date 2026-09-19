@@ -67,7 +67,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
 </head>
-<body>
+<body data-page="home">
 
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-content">
@@ -94,11 +94,11 @@
 <header class="nav" id="nav">
   <div class="nav-inner">
     <a href="#top" class="brand" aria-label="8CM home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
-    <nav class="nav-links" id="navLinks">
-      <a href="#today" class="nav-link">Today</a>
-      <a href="#events" class="nav-link">Events</a>
-      <a href="#achievements" class="nav-link">Achievements</a>
-      <a href="archives.html" class="nav-link">Archives</a>
+    <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
+      <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+      <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
+      <a href="index.html#top" class="nav-link primary-nav-link" data-page="home">Home</a>
+      <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
     </nav>
     <div class="nav-right">
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
@@ -110,6 +110,14 @@
   </div>
 </header>
 
+<nav class="hub-nav" aria-label="Home sections">
+  <div class="section-inner hub-nav-inner">
+    <a href="#today" class="hub-nav-link">Today</a>
+    <a href="#events" class="hub-nav-link">Events</a>
+    <a href="#achievements" class="hub-nav-link">Achievements</a>
+  </div>
+</nav>
+
 <main id="top">
 
   <section class="hero">
@@ -120,18 +128,15 @@
         <p class="hero-sub">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
         <div class="hero-actions">
           <a href="archives.html#students" class="btn btn-primary">Meet the class</a>
-          <a href="archives.html#houses" class="btn btn-ghost">See the houses</a>
+          <a href="houses.html" class="btn btn-ghost">See the houses</a>
           <a href="archives.html#timetable" class="btn btn-ghost">See the timetable</a>
         </div>
       </div>
-      <div class="hero-visual">
-        <p class="hero-visual-label">Houses, by headcount</p>
-        <div class="bar-chart" id="heroChart">
-          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="11" data-max="11"></div></div><span class="bar-count">11</span></div>
-          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
-          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="8" data-max="11"></div></div><span class="bar-count">8</span></div>
-          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="3" data-max="11"></div></div><span class="bar-count">3</span></div>
-        </div>
+      <div class="hero-visual glance-panel" id="homeGlance">
+        <p class="hero-visual-label">At a glance</p>
+        <div class="glance-row"><span class="glance-label">Homework</span><span class="glance-value" id="glanceHomework">—</span></div>
+        <div class="glance-row"><span class="glance-label">Next event</span><span class="glance-value" id="glanceEvent">—</span></div>
+        <div class="glance-row"><span class="glance-label">Latest achievement</span><span class="glance-value" id="glanceAchievement">—</span></div>
       </div>
     </div>
   </section>

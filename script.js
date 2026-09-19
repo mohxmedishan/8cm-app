@@ -5,6 +5,7 @@ import { onStudents } from "./students.js";
 import { changelog } from "./changelog.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav, playHover } from "./sound.js";
 import { onAchievements } from "./achievements.js";
+import { initMainNav } from "./main-nav.js";
 let achievementsCache = [];
 onAchievements((list) => (achievementsCache = list));
 
@@ -303,7 +304,7 @@ function initStudentDirectory() {
 
   Object.keys(filters).forEach(updateBoxLabel);
 
-  // Deep-link from the homepage hero chart (archives.html?house=winter#students).
+  // Deep-link from the Houses chart (archives.html?house=winter#students).
   // Apply the filter after the controls have been initialized, then remove the
   // query from the address bar so a later refresh does not unexpectedly reapply it.
   try {
@@ -335,44 +336,35 @@ function initStudentDirectory() {
 }
 
 // ============================================
-// House card → students list, with the house filter pre-applied
+// Houses page — live headcount chart + house rosters
+// ------------------------------------------------
+// Everything here is driven by the real student roster (onStudents),
+// never by numbers typed into the HTML, so a monitor moving someone
+// between houses updates the chart, the counts and the name lists
+// together. Clicking a name opens that student's profile.
 // ============================================
+const HOUSE_KEYS = ["winter", "autumn", "spring", "summer"];
+
 function initHouseCards() {
   const cards = document.querySelectorAll(".house-card[data-house]");
-  if (!cards.length) return;
+  const bars = document.querySelectorAll(".bar-row[data-house]");
+  if (!cards.length && !bars.length) return;
 
-  cards.forEach((card) => {
-    const jump = () => {
-      const house = card.dataset.house;
-      if (!house) return;
-
-      const clearBtn = document.getElementById("filterClear");
-      if (clearBtn && !clearBtn.hidden) clearBtn.click();
-
-      const box = document.querySelector(`#filterRow .filter-box[data-filter-key="house"]`);
-      if (box) {
-        box.click();
-        const option = document.querySelector(`#filterDropdownHost .filter-option[data-value="${house}"]`);
-        if (option) option.click();
-      }
-
-      const target = document.getElementById("students");
-      if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-
-    card.addEventListener("click", jump);
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        jump();
-      }
-    });
-  });
-
-  document.querySelectorAll(".bar-row[data-house]").forEach((bar) => {
+  // A chart row jumps to that house's card when the card is on the
+  // same page (the Houses page); anywhere else it opens the filtered
+  // student directory in Archives.
+  bars.forEach((bar) => {
     const jump = () => {
       const house = bar.dataset.house;
       if (!house) return;
+      const card = document.querySelector(`.house-card[data-house="${house}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.classList.remove("is-pinged");
+        void card.offsetWidth; // restart the animation on repeat clicks
+        card.classList.add("is-pinged");
+        return;
+      }
       window.location.href = `archives.html?house=${encodeURIComponent(house)}#students`;
     };
     bar.addEventListener("click", jump);
@@ -384,13 +376,15 @@ function initHouseCards() {
     });
   });
 
-  // Fill each card's count + student list from the real roster (see
-  // renderHouseCardLists below) and keep it that way — onStudents()
-  // fires again whenever a monitor edits/moves a student, so this
-  // never goes stale the way the old hand-typed counts/descriptions did.
+  // onStudents() fires immediately with the seed roster, then again
+  // once Firestore answers and whenever a monitor edits/moves a
+  // student — so the chart and cards never go stale.
   import("./students.js")
     .then((m) => {
-      m.onStudents((list) => renderHouseCardLists(list));
+      m.onStudents((list) => {
+        renderHouseChart(list);
+        renderHouseCardLists(list);
+      });
       m.loadStudents().catch(() => {});
     })
     .catch((err) => console.error("[8CM] Failed to load house rosters:", err));
@@ -408,12 +402,37 @@ const escapeHouseName = (v) =>
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[c]);
 
-// Replaces each house card's hardcoded count/description with the
-// real count and a plain vertical list of names for that house, then
-// re-measures so every card matches the tallest one (see
-// equalizeHouseCardHeights). Click-to-filter is untouched — the
-// listener above is bound to the whole .house-card element, so a
-// click anywhere inside, name list included, still bubbles up to it.
+// Live headcount bars. The widest bar is whichever house is biggest
+// right now, so the chart always uses its full width.
+function renderHouseChart(list) {
+  const rows = document.querySelectorAll(".bar-row[data-house]");
+  if (!rows.length) return;
+
+  const counts = {};
+  HOUSE_KEYS.forEach((h) => { counts[h] = 0; });
+  list.forEach((s) => { if (s.house in counts) counts[s.house] += 1; });
+  const max = Math.max(1, ...Object.values(counts));
+
+  rows.forEach((row) => {
+    const house = row.dataset.house;
+    const count = counts[house] || 0;
+    const fill = row.querySelector(".bar-fill");
+    const countEl = row.querySelector(".bar-count");
+    if (countEl) countEl.textContent = String(count);
+    if (fill) {
+      fill.dataset.value = String(count);
+      fill.dataset.max = String(max);
+      fill.style.width = `${(count / max) * 100}%`;
+    }
+    row.setAttribute("aria-label", `${houseLabelFor(house)} house, ${count} ${count === 1 ? "student" : "students"}`);
+  });
+}
+
+const houseLabelFor = (h) => h.charAt(0).toUpperCase() + h.slice(1);
+
+// Fills each house card with its real count and a name list. Each
+// name is a button-like row: click (or Enter/Space) opens that
+// student's profile in the same profile modal the directory uses.
 function renderHouseCardLists(list) {
   const cards = document.querySelectorAll(".house-card[data-house]");
   if (!cards.length) return;
@@ -437,10 +456,25 @@ function renderHouseCardLists(list) {
       if (oldDesc) oldDesc.remove();
       listEl = document.createElement("ul");
       listEl.className = "house-student-list";
+      // Bound once: only listEl's innerHTML changes on later renders,
+      // so these delegated handlers survive every re-render.
+      const open = (li) => {
+        if (!li) return;
+        playOpen();
+        window.__cmOpenProfile?.(li.dataset.studentId);
+      };
+      listEl.addEventListener("click", (e) => open(e.target.closest("li[data-student-id]")));
+      listEl.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const li = e.target.closest("li[data-student-id]");
+        if (!li) return;
+        e.preventDefault();
+        open(li);
+      });
       body.appendChild(listEl);
     }
     listEl.innerHTML = members
-      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}">${escapeHouseName(s.name)}</li>`)
+      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}" data-student-id="${escapeHouseName(s.id)}" tabindex="0" role="button" aria-label="View profile for ${escapeHouseName(s.name)}">${escapeHouseName(s.name)}</li>`)
       .join("");
   });
 
@@ -596,22 +630,8 @@ function initNav() {
 }
 
 // ============================================
-// Hero chart, stats count-up, splash, changelog, date line — unchanged
+// Stats count-up, splash, changelog, date line — unchanged
 // ============================================
-function initHeroChart() {
-  window.addEventListener("DOMContentLoaded", () => {
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        document.querySelectorAll(".bar-fill").forEach((bar) => {
-          const value = parseFloat(bar.dataset.value);
-          const max = parseFloat(bar.dataset.max);
-          bar.style.width = `${(value / max) * 100}%`;
-        });
-      }, 300);
-    });
-  });
-}
-
 function initStatCountUp() {
   const statNumbers = document.querySelectorAll(".stat-number[data-count]");
   if (statNumbers.length === 0) return;
@@ -777,11 +797,11 @@ import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
 
 initSplash();
 initNav();
+initMainNav();  // Beta 17: sliding active pill + subnav scrollspy
 initAnchorRescue();
 initStudentDirectory();
 initHouseCards();
 initGalleryLightbox();
-initHeroChart();
 initChangelog();  // no-ops on pages without #changelogEntries
 initTodayDate();
 initHoverSfx();
@@ -814,6 +834,8 @@ const OPTIONAL_MODULES = [
   ["archive materials", "./archive-materials.js", "initArchiveMaterials"],
   ["quick links", "./quick-links.js", "initQuickLinks"],
   ["manage page", "./manage.js", "initManagePage"],
+  ["home glance", "./glance-panels.js", "initHomeGlance"],
+  ["archives glance", "./glance-panels.js", "initArchivesGlance"],
   ["theme", "./theme.js", "initThemeUI"],
 ];
 
