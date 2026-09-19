@@ -150,22 +150,8 @@
 <div class="today-panel" id="homeworkPanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Homework</h3>
-<div class="panel-head-actions">
-<button class="btn-arrange-pencil monitor-only" id="arrangeHomeworkBtn" type="button"
-        aria-label="Arrange homework order" aria-pressed="false" hidden>
-<svg viewBox="0 0 24 24" aria-hidden="true">
-<path d="M4 20h4L20 8l-4-4L4 16z" fill="none" stroke="currentColor"
-      stroke-width="1.7" stroke-linejoin="round"/>
-<path d="M14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.7"/>
-<circle cx="7.5" cy="16.5" r="1" fill="currentColor"/>
-</svg>
-</button>
-<button class="btn btn-add-task btn-small monitor-only" id="addHomeworkBtn" hidden>+ Add homework</button>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addHomeworkBtn">+ Add homework</button>
 </div>
-</div>
-<p class="order-status" id="homeworkOrderStatus" hidden></p>
-</div>
-<p class="order-status" id="homeworkOrderStatus" hidden></p>
 <div class="filter-pills" id="homeworkFilters">
 <button class="pill active" data-filter="all">All</button>
 <button class="pill" data-filter="pending">Pending</button>
@@ -177,7 +163,11 @@
 <div class="task-form-grid">
 <label class="field"><span>Subject</span><select name="subject" required=""></select></label>
 <label class="field"><span>Priority</span>
-<select name="priority"><option value="important">Important</option><option selected="" value="normal">Normal</option></select>
+<select name="priority">
+<option value="low">Low</option>
+<option selected="" value="medium">Medium</option>
+<option value="high">High</option>
+</select>
 </label>
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Exercise 4.3" required="" type="text"/></label>
 <label class="field field-wide"><span>Description (optional)</span><input name="description" placeholder="Questions 1–10" type="text"/></label>
@@ -202,22 +192,8 @@
 <div class="today-panel" id="noticePanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Announcements</h3>
-<div class="panel-head-actions">
-<button class="btn-arrange-pencil monitor-only" id="arrangeNoticeBtn" type="button"
-        aria-label="Arrange announcements order" aria-pressed="false" hidden>
-<svg viewBox="0 0 24 24" aria-hidden="true">
-<path d="M4 20h4L20 8l-4-4L4 16z" fill="none" stroke="currentColor"
-      stroke-width="1.7" stroke-linejoin="round"/>
-<path d="M14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.7"/>
-<circle cx="7.5" cy="16.5" r="1" fill="currentColor"/>
-</svg>
-</button>
-<button class="btn btn-add-task btn-small monitor-only" id="addNoticeBtn" hidden>+ Post announcement</button>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addNoticeBtn">+ Post announcement</button>
 </div>
-</div>
-<p class="order-status" id="noticeOrderStatus" hidden></p>
-</div>
-<p class="order-status" id="noticeOrderStatus" hidden></p>
 <form class="task-form" hidden="" id="noticeForm">
 <div class="task-form-grid">
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Sports day moved to Thursday" required="" type="text"/></label>
@@ -260,22 +236,8 @@
 <div class="today-panel" id="resourcePanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Resources</h3>
-<div class="panel-head-actions">
-<button class="btn-arrange-pencil monitor-only" id="arrangeResourceBtn" type="button"
-        aria-label="Arrange resources order" aria-pressed="false" hidden>
-<svg viewBox="0 0 24 24" aria-hidden="true">
-<path d="M4 20h4L20 8l-4-4L4 16z" fill="none" stroke="currentColor"
-      stroke-width="1.7" stroke-linejoin="round"/>
-<path d="M14 6l4 4" fill="none" stroke="currentColor" stroke-width="1.7"/>
-<circle cx="7.5" cy="16.5" r="1" fill="currentColor"/>
-</svg>
-</button>
-<button class="btn btn-add-task btn-small monitor-only" id="addResourceBtn" hidden>+ Add resource</button>
+<button class="btn btn-add-task btn-small monitor-only" hidden="" id="addResourceBtn">+ Add resource</button>
 </div>
-</div>
-<p class="order-status" id="resourceOrderStatus" hidden></p>
-</div>
-<p class="order-status" id="resourceOrderStatus" hidden></p>
 <form class="task-form" hidden="" id="resourceForm">
 <div class="task-form-grid">
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Math practice sheet" required="" type="text"/></label>

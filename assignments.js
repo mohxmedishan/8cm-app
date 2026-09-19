@@ -25,7 +25,6 @@ import {
   where,
   orderBy,
   serverTimestamp,
-  writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { describeWriteError } from "./error-utils.js";
@@ -34,10 +33,8 @@ import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
-import { createArranger } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
-let arranger = null;
 const escapeHtml = (v) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -111,34 +108,12 @@ export function getUpcomingForMe(limit = 3) {
 // ------------------------------------------------
 // Live data
 // ------------------------------------------------
-function normalizePriority(p) {
-  return (p === "high" || p === "important") ? "important" : "normal";
-}
-
-function priorityLabel(p) {
-  return normalizePriority(p) === "important" ? "Important" : "Normal";
-}
-
-function sortHomework(items) {
-  return items.sort((a, b) => {
-    const pa = normalizePriority(a.priority);
-    const pb = normalizePriority(b.priority);
-    if (pa !== pb) return pa === "important" ? -1 : 1;
-    const aHas = typeof a.order === "number";
-    const bHas = typeof b.order === "number";
-    if (aHas !== bHas) return aHas ? 1 : -1;
-    if (aHas && bHas && a.order !== b.order) return a.order - b.order;
-    return (a.dueDate || "").localeCompare(b.dueDate || "");
-  });
-}
-
 function startAssignmentsListener() {
   const q = query(collection(db, "assignments"), orderBy("dueDate", "asc"));
   return onSnapshot(
     q,
     (snap) => {
       assignmentsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      sortHomework(assignmentsCache);
       renderList();
       notify();
     },
@@ -242,7 +217,7 @@ function openForm(assignment) {
   form.title.value = (assignment && assignment.title) || "";
   form.description.value = (assignment && assignment.description) || "";
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
-  form.priority.value = normalizePriority((assignment && assignment.priority) || "normal");
+  form.priority.value = (assignment && assignment.priority) || "medium";
   const linkStack = $("homeworkLinksStack");
   setLinkStack(linkStack, assignment);
   setFormError(null);
@@ -353,91 +328,60 @@ function matchesFilter(assignment) {
   return true;
 }
 
-function buildHomeworkRow(a) {
-  const bucket = dueBucket(a);
-  const row = document.createElement("div");
-  row.className = "task-row hw-row";
-  row.dataset.id = a.id;
-  row.innerHTML = `
-    <span class="task-tag homework hw-priority-${escapeHtml(normalizePriority(a.priority))}">${escapeHtml(a.subject)}</span>
-    <div class="task-body">
-      <p class="task-subject">${escapeHtml(a.title)}</p>
-      <p class="task-detail">${escapeHtml(a.description || "")}</p>
-      <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
-      ${linkChipsHtml(a)}
-    </div>
-    <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
-    <div class="hw-actions">
-      <button class="hw-complete-btn ${bucket === "completed" ? "is-done" : ""}" data-action="toggle" data-id="${escapeHtml(a.id)}" ${currentUid ? "" : "disabled"} title="${currentUid ? "" : "Sign in to track your own homework"}">
-        ${bucket === "completed" ? "✓ Done" : "Mark done"}
-      </button>
-      <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-        <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit homework">✎</button>
-        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete homework">✕</button>
-      </div>
-    </div>
-  `;
-  return row;
-}
+function renderList() {
+  const list = $("homeworkList");
+  if (!list) return;
 
-function wireHomeworkRow(row) {
-  row.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
+  const visible = assignmentsCache.filter(matchesFilter);
+
+  if (visible.length === 0) {
+    list.innerHTML = `<p class="task-empty">Nothing here${activeFilter === "all" ? " yet." : " for this filter."}</p>`;
+    return;
+  }
+
+  list.innerHTML = "";
+  visible.forEach((a) => {
+    const bucket = dueBucket(a);
+    const row = document.createElement("div");
+    row.className = "task-row hw-row";
+    row.innerHTML = `
+      <span class="task-tag homework hw-priority-${escapeHtml(a.priority || "medium")}">${escapeHtml(a.subject)}</span>
+      <div class="task-body">
+        <p class="task-subject">${escapeHtml(a.title)}</p>
+        <p class="task-detail">${escapeHtml(a.description || "")}</p>
+        <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
+        ${linkChipsHtml(a)}
+      </div>
+      <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
+      <div class="hw-actions">
+        <button class="hw-complete-btn ${bucket === "completed" ? "is-done" : ""}" data-action="toggle" data-id="${escapeHtml(a.id)}" ${currentUid ? "" : "disabled"} title="${currentUid ? "" : "Sign in to track your own homework"}">
+          ${bucket === "completed" ? "✓ Done" : "Mark done"}
+        </button>
+        <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
+          <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit homework">✎</button>
+          <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete homework">✕</button>
+        </div>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('[data-action="toggle"]').forEach((btn) => {
     btn.addEventListener("click", () => {
       if (btn.disabled) return;
       const assignment = assignmentsCache.find((a) => a.id === btn.dataset.id);
       if (assignment) toggleComplete(currentUid, assignment);
     });
   });
-  row.querySelectorAll('[data-action="delete"]').forEach((btn) =>
-    btn.addEventListener("click", () => handleDelete(btn.dataset.id))
-  );
-  row.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+  list.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+    btn.addEventListener("click", () => handleDelete(btn.dataset.id));
+  });
+  list.querySelectorAll('[data-action="edit"]').forEach((btn) => {
     btn.addEventListener("click", () => {
       const assignment = assignmentsCache.find((a) => a.id === btn.dataset.id);
       if (assignment) openForm(assignment);
     });
   });
-}
-
-function renderList() {
-  const list = $("homeworkList");
-  if (!list) return;
-
-  const wasArranging = !!(arranger && arranger.isActive());
-  const preservedOrder = wasArranging
-    ? Array.from(list.querySelectorAll(":scope > [data-id]")).map((r) => r.dataset.id)
-    : null;
-
-  const visible = assignmentsCache.filter(matchesFilter);
-
-  if (visible.length === 0) {
-    list.innerHTML = `<p class="task-empty">Nothing here${activeFilter === "all" ? " yet." : " for this filter."}</p>`;
-    updateArrangeBtn();
-    return;
-  }
-
-  list.innerHTML = "";
-
-  let finalOrder;
-  if (wasArranging) {
-    const preserved = new Set(preservedOrder);
-    const newItems = visible.filter((a) => !preserved.has(a.id));
-    const carried = preservedOrder
-      .map((id) => visible.find((a) => a.id === id))
-      .filter(Boolean);
-    finalOrder = [...newItems, ...carried];
-  } else {
-    finalOrder = visible;
-  }
-
-  finalOrder.forEach((a) => {
-    const row = buildHomeworkRow(a);
-    wireHomeworkRow(row);
-    list.appendChild(row);
-  });
-
-  if (wasArranging) arranger.reattach();
-  updateArrangeBtn();
 }
 
 function applyMonitorVisibility() {
@@ -460,62 +404,6 @@ function renderListLoading() {
     </div>`;
 }
 
-
-function updateArrangeBtn() {
-  const btn = $("arrangeHomeworkBtn");
-  if (!btn) return;
-  const enough = assignmentsCache.length > 1;
-  btn.hidden = !isCurrentMonitor || !enough;
-  if (!enough && arranger && arranger.isActive()) arranger.forceExit();
-}
-
-async function saveHomeworkOrder(orderedIds) {
-  const items = orderedIds.map((id) => assignmentsCache.find((a) => a.id === id)).filter(Boolean);
-  if (!items.length) return;
-
-  let demoteFrom = items.length;
-  for (let i = 0; i < items.length; i++) {
-    if (normalizePriority(items[i].priority) === "normal") { demoteFrom = i; break; }
-  }
-
-  const batch = writeBatch(db);
-  let wrote = 0;
-  items.forEach((item, i) => {
-    const priority = i >= demoteFrom ? "normal" : "important";
-    const patch = {};
-    if (item.order !== i) patch.order = i;
-    if (normalizePriority(item.priority) !== priority) patch.priority = priority;
-    if (Object.keys(patch).length === 0) return;
-    batch.update(doc(db, "assignments", item.id), patch);
-    wrote++;
-  });
-  if (wrote === 0) return;
-  await batch.commit();
-  await logAction("reordered", {
-    resourceType: "assignment",
-    summary: `Reordered homework (${items.length} items)`,
-  }).catch(() => {});
-}
-
-function initArranger() {
-  if (!$("arrangeHomeworkBtn")) return;
-  arranger = createArranger({
-    listId: "homeworkList",
-    pencilBtnId: "arrangeHomeworkBtn",
-    statusId: "homeworkOrderStatus",
-    onSave: saveHomeworkOrder,
-    onEnter: () => {
-      activeFilter = "all";
-      document.querySelectorAll("#homeworkFilters .pill").forEach((p) => {
-        p.classList.toggle("active", p.dataset.filter === "all");
-      });
-      renderList();
-    },
-    onExit: () => renderList(),
-    disableSelectors: ["#homeworkFilters .pill"],
-  });
-}
-
 export function initAssignments() {
   const hasHomeworkPanel = !!$("homeworkList");
   const needsLiveData = hasHomeworkPanel || !!document.querySelector(".tt-grid");
@@ -531,15 +419,12 @@ export function initAssignments() {
     startStatusListener(currentUid);
     applyMonitorVisibility();
     renderList(); // no-op if #homeworkList isn't on this page
-    updateArrangeBtn();
   });
 
   if (!hasHomeworkPanel) return; // timetable page only needs the data, not the panel below
 
   const addBtn = $("addHomeworkBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));
-  initArranger();
-  updateArrangeBtn();
 
   const form = $("homeworkForm");
   if (form) {

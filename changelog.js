@@ -9,22 +9,6 @@
 // ============================================
 export const changelog = [
   {
-    date: "2026-09-19",
-    version: "16.1",
-    items: [
-      "Homework, Announcements, and Resources can be arranged by monitors. A pencil button next to each Add button toggles arrange mode — drag the two-dash handle on any row (mouse, finger, or arrow keys), then press the pencil again to save. Order is stored in Firestore and shows for everyone.",
-      "Dragged rows lift on the Y axis and gently scale up while every other row slides out of the way. Arrange mode is live: a new item added while arranging appears at the top of its group immediately.",
-      "Long lists (more than 8 items) scroll inside their panel instead of stretching the page. Arrange mode unclips the panel so nothing gets cut off while dragging.",
-      "Homework priorities are now just Important or Normal. Existing High counts as Important; Low and Medium count as Normal. Important always sits above Normal.",
-      "Dragging an Important item below a Normal one demotes it on save. Dragging a Normal item to the top keeps it Normal and demotes the Important items beneath it. Dragging a Normal item back down restores them — the demotion only applies when you save.",
-      "Pinned Announcements and Resources stay in their own block above everything else. You can reorder within the block, but you can't drag an item out of it.",
-      "Toggling arrange mode on and off without moving anything writes nothing and shows no toast. A save failure keeps you in arrange mode with the new order intact so you can retry.",
-      "The pencil button only appears when a section has more than one item.",
-      "Fixed the Announcements Pin button — it was writing to the legacy `announcements` collection instead of the live `notices` one, so it silently failed.",
-    ],
-  },
-
-  {
     date: "2026-09-18",
     version: "16.0",
     items: [
