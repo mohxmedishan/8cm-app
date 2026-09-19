@@ -4423,13 +4423,12 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
   color: var(--text-muted);
   cursor: pointer;
   transition: border-color 0.2s var(--ease), color 0.2s var(--ease),
-              background 0.2s var(--ease), transform 0.15s var(--ease);
+              background 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 .btn-arrange-pencil svg { width: 16px; height: 16px; }
 .btn-arrange-pencil:hover {
   border-color: var(--accent);
   color: var(--accent-strong);
-  transform: translateY(-1px);
 }
 .btn-arrange-pencil.is-arranging {
   background: var(--accent-soft);
@@ -4448,52 +4447,60 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 }
 .order-status.is-error { color: var(--danger); }
 
-.arrange-handle {
+.task-list.arrange-mode > [data-id] {
+  position: relative;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.task-list.arrange-mode > .task-row { padding-left: 40px; }
+.task-list.arrange-mode > .announcement-row { padding-left: 40px; }
+
+.task-list.arrange-mode > [data-id] > .arrange-handle {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 26px;
   padding: 0;
-  margin-right: 6px;
   background: none;
   border: none;
   cursor: grab;
   color: var(--text-faint);
-  flex-shrink: 0;
   touch-action: none;
-  align-self: center;
 }
-.arrange-handle span {
+.task-list.arrange-mode > [data-id] > .arrange-handle span {
   display: block;
   width: 14px;
   height: 2px;
   background: currentColor;
   border-radius: 1px;
-  transition: background 0.15s var(--ease);
 }
-.arrange-handle:hover,
-.arrange-handle:focus-visible { color: var(--accent-strong); }
-.arrange-handle:active { cursor: grabbing; }
-.arrange-handle:focus-visible {
+.task-list.arrange-mode > [data-id] > .arrange-handle:hover,
+.task-list.arrange-mode > [data-id] > .arrange-handle:focus-visible {
+  color: var(--accent-strong);
+}
+.task-list.arrange-mode > [data-id] > .arrange-handle:active { cursor: grabbing; }
+.task-list.arrange-mode > [data-id] > .arrange-handle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 3px;
 }
 
-.task-list.arrange-mode [data-id] {
-  cursor: default;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.task-list.arrange-mode [data-id].is-dragging {
-  opacity: 0.55;
+.task-list.arrange-mode > [data-id].is-dragging {
+  opacity: 0.6;
   background: var(--bg-elevated-2);
-  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.4);
 }
+
 .task-list.arrange-mode .task-monitor-actions { display: none !important; }
-.task-list.arrange-mode .announcement-row .announcement-detail { display: none !important; }
+.task-list.arrange-mode .announcement-detail { display: none !important; }
 
 .task-tag.homework.hw-priority-important {
   border-color: var(--danger);
@@ -4507,7 +4514,9 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 }
 
 @media (max-width: 720px) {
-  .arrange-handle { width: 30px; height: 30px; margin-right: 8px; }
-  .arrange-handle span { width: 16px; height: 2.5px; }
+  .task-list.arrange-mode > [data-id] > .arrange-handle { width: 30px; height: 34px; }
+  .task-list.arrange-mode > [data-id] > .arrange-handle span { width: 16px; height: 2.5px; }
+  .task-list.arrange-mode > .task-row,
+  .task-list.arrange-mode > .announcement-row { padding-left: 48px; }
   .btn-arrange-pencil { width: 36px; height: 36px; }
 }

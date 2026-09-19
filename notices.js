@@ -19,12 +19,12 @@ import {
   writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import { createArranger } from "./arrange.js";
 import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
+import { createArranger } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -220,12 +220,59 @@ async function handleSubmit(e) {
   }
 }
 
+function buildNoticeRow(a) {
+  const expanded = expandedIds.has(a.id);
+  const row = document.createElement("div");
+  row.className = [
+    "announcement-row",
+    a.priority === "important" ? "is-important" : "",
+    expanded ? "is-expanded" : "",
+  ].filter(Boolean).join(" ");
+  row.dataset.id = a.id;
+  row.dataset.block = a.pinned ? "pinned" : "regular";
+
+  row.innerHTML = `
+    <div class="announcement-head">
+      ${a.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
+      <span class="task-tag announcement">${escapeHtml(a.category || "General")}</span>
+      <p class="task-subject">${escapeHtml(a.title)}</p>
+      <span class="announcement-caret" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+    </div>
+    <div class="announcement-detail">
+      <p class="task-detail">${escapeHtml(a.content)}</p>
+      ${linkChipsHtml(a)}
+    </div>
+    <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
+      <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${escapeHtml(a.id)}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
+      <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit announcement">✎</button>
+      <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete announcement">✕</button>
+    </div>
+  `;
+
+  row.addEventListener("click", (e) => {
+    if (row.parentElement.classList.contains("arrange-mode")) return;
+    if (e.target.closest(".task-monitor-actions")) return;
+    if (e.target.closest("a")) return;
+    const id = row.dataset.id;
+    if (expandedIds.has(id)) expandedIds.delete(id); else expandedIds.add(id);
+    row.classList.toggle("is-expanded");
+  });
+
+  return row;
+}
+
 function render() {
-  if (arranger && arranger.isActive()) return;
   const list = $("noticeList");
   if (!list) return;
 
+  const wasArranging = !!(arranger && arranger.isActive());
+  const preservedOrder = wasArranging
+    ? Array.from(list.querySelectorAll(":scope > [data-id]")).map((r) => r.dataset.id)
+    : null;
   const visible = activeNotices();
+
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">No announcements right now.</p>`;
     updateArrangeBtn();
@@ -233,49 +280,23 @@ function render() {
   }
 
   list.innerHTML = "";
-  visible.forEach((a) => {
-    const expanded = expandedIds.has(a.id);
-    const row = document.createElement("div");
-    row.className = [
-      "announcement-row",
-      a.priority === "important" ? "is-important" : "",
-      expanded ? "is-expanded" : "",
-    ].filter(Boolean).join(" ");
-    row.dataset.id = a.id;
-    row.dataset.block = a.pinned ? "pinned" : "regular";
+  let finalOrder;
+  if (wasArranging) {
+    const preserved = new Set(preservedOrder);
+    const newPinned = visible.filter((a) => a.pinned && !preserved.has(a.id));
+    const newRegular = visible.filter((a) => !a.pinned && !preserved.has(a.id));
+    const carriedPinned = preservedOrder
+      .map((id) => visible.find((a) => a.id === id))
+      .filter((a) => a && a.pinned);
+    const carriedRegular = preservedOrder
+      .map((id) => visible.find((a) => a.id === id))
+      .filter((a) => a && !a.pinned);
+    finalOrder = [...newPinned, ...carriedPinned, ...newRegular, ...carriedRegular];
+  } else {
+    finalOrder = visible;
+  }
 
-    row.innerHTML = `
-      <div class="announcement-head">
-        ${a.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
-        <span class="task-tag announcement">${escapeHtml(a.category || "General")}</span>
-        <p class="task-subject">${escapeHtml(a.title)}</p>
-        <span class="announcement-caret" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </span>
-      </div>
-      <div class="announcement-detail">
-        <p class="task-detail">${escapeHtml(a.content)}</p>
-        ${linkChipsHtml(a)}
-      </div>
-      <div class="task-monitor-actions monitor-only" ${isCurrentMonitor ? "" : "hidden"}>
-        <button class="task-icon-btn task-icon-btn-text" data-action="pin" data-id="${escapeHtml(a.id)}" aria-label="Toggle pin">${a.pinned ? "Unpin" : "Pin"}</button>
-        <button class="task-icon-btn" data-action="edit" data-id="${escapeHtml(a.id)}" aria-label="Edit announcement">✎</button>
-        <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(a.id)}" aria-label="Delete announcement">✕</button>
-      </div>
-    `;
-
-    row.addEventListener("click", (e) => {
-      if (list.classList.contains("arrange-mode")) return;
-      if (e.target.closest(".task-monitor-actions")) return;
-      if (e.target.closest("a")) return;
-      const id = row.dataset.id;
-      if (expandedIds.has(id)) expandedIds.delete(id);
-      else expandedIds.add(id);
-      row.classList.toggle("is-expanded");
-    });
-
-    list.appendChild(row);
-  });
+  finalOrder.forEach((a) => list.appendChild(buildNoticeRow(a)));
 
   list.querySelectorAll('[data-action="delete"]').forEach((btn) =>
     btn.addEventListener("click", () => handleDelete(btn.dataset.id))
@@ -292,18 +313,19 @@ function render() {
       if (a) openForm(a);
     });
   });
+
+  if (wasArranging) arranger.reattach();
   updateArrangeBtn();
 }
-
 
 let arranger = null;
 
 function updateArrangeBtn() {
   const btn = $("arrangeNoticeBtn");
   if (!btn) return;
-  const hasItems = cache.length > 0;
-  btn.hidden = !isCurrentMonitor || !hasItems;
-  if (!hasItems && arranger && arranger.isActive()) arranger.forceExit();
+  const enough = cache.length > 1;
+  btn.hidden = !isCurrentMonitor || !enough;
+  if (!enough && arranger && arranger.isActive()) arranger.forceExit();
 }
 
 async function saveNoticesOrder(orderedIds) {
@@ -312,29 +334,29 @@ async function saveNoticesOrder(orderedIds) {
 
   let demoteFrom = items.length;
   for (let i = 0; i < items.length; i++) {
-    if (!items[i].pinned && items[i].priority !== "important") {
-      demoteFrom = i;
-      break;
-    }
+    if (!items[i].pinned && items[i].priority !== "important") { demoteFrom = i; break; }
   }
 
   const batch = writeBatch(db);
+  let wrote = 0;
   items.forEach((item, i) => {
-    const patch = { order: i };
+    const patch = {};
+    if (item.order !== i) patch.order = i;
     if (!item.pinned) {
       const target = i >= demoteFrom ? "normal" : "important";
-      if ((item.priority === "important" ? "important" : "normal") !== target) {
-        patch.priority = target;
-      }
+      const currentP = item.priority === "important" ? "important" : "normal";
+      if (currentP !== target) patch.priority = target;
     }
+    if (Object.keys(patch).length === 0) return;
     batch.update(doc(db, COLLECTION, item.id), patch);
+    wrote++;
   });
+  if (wrote === 0) return;
   await batch.commit();
-
   await logAction("reordered", {
     resourceType: "notice",
     summary: `Reordered announcements (${items.length} items)`,
-  });
+  }).catch(() => {});
 }
 
 function initArranger() {
@@ -344,8 +366,8 @@ function initArranger() {
     pencilBtnId: "arrangeNoticeBtn",
     statusId: "noticeOrderStatus",
     onSave: saveNoticesOrder,
-    onEnter: () => { render(); },
-    onExit: () => { render(); },
+    onEnter: () => render(),
+    onExit: () => render(),
   });
 }
 
@@ -366,14 +388,15 @@ export function initNotices() {
 
   subscribeAuth(({ monitor }) => {
     isCurrentMonitor = monitor;
-    updateArrangeBtn();
     applyMonitorVisibility();
     render();
+    updateArrangeBtn();
   });
 
   if (!hasPanel) return; // timetable page only needs the data, not the panel below
 
   initArranger();
+  updateArrangeBtn();
 
   const addBtn = $("addNoticeBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));
