@@ -9,6 +9,16 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-19",
+    version: "16.1",
+    items: [
+      "Monitors can rearrange Homework, Announcements and Resources. A pencil button appears next to the Add button once a section has something in it; turn it on, drag the two-dash handle on any row (finger or mouse), then turn the pencil off to save. The new order is what everyone sees.",
+      "Homework priority is now just Important or Normal (old High counts as Important, old Low/Medium as Normal). Important always sits above normal, in Announcements too: drag an important item below a normal one and it becomes normal; drag a normal one to the top and it stays normal while the important items under it become normal. Pinned items stay in their own block at the top.",
+      "Fixed the Pin / Unpin button on Announcements, which was pointing at the wrong collection and never actually pinned anything.",
+    ],
+  },
+
+  {
     date: "2026-09-18",
     version: "16.0",
     items: [

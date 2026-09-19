@@ -23,6 +23,7 @@ import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
+import { createArranger } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -33,7 +34,26 @@ const escapeHtml = (v) =>
 const COLLECTION = "notices";
 
 let cache = [];
+let isCurrentMonitor = false;
 const listeners = new Set();
+
+// Drag-to-reorder for monitors (see arrange.js). Order everyone sees:
+// pinned first, then important above normal, then the saved manual
+// order, then newest first for anything never arranged.
+const arranger = createArranger({
+  label: "announcements",
+  collection: COLLECTION,
+  panelId: "noticePanel",
+  listId: "noticeList",
+  buttonId: "arrangeNoticeBtn",
+  tiered: true,
+  isPinned: (n) => !!n.pinned,
+  legacyCompare: (a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0),
+  getItems: () => cache,
+  isMonitor: () => isCurrentMonitor,
+  rerender: () => render(),
+});
+
 function notify() {
   listeners.forEach((cb) => cb(activeNotices()));
 }
@@ -50,20 +70,13 @@ function todayStr() {
 }
 
 export function activeNotices() {
-  return [...cache].sort((a, b) => {
-    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-    if ((a.priority === "important") !== (b.priority === "important")) {
-      return a.priority === "important" ? -1 : 1;
-    }
-    return (b.createdAtMs || 0) - (a.createdAtMs || 0);
-  });
+  return arranger.sortStored(cache);
 }
 
 export function pinnedNotice() {
   return activeNotices().find((a) => a.pinned) || activeNotices()[0] || null;
 }
 
-let isCurrentMonitor = false;
 const expandedIds = new Set();
 let editingId = null;
 
@@ -119,7 +132,7 @@ async function handleDelete(id) {
 
 async function togglePin(a) {
   try {
-    await updateDoc(doc(db, "announcements", a.id), { pinned: !a.pinned });
+    await updateDoc(doc(db, COLLECTION, a.id), { pinned: !a.pinned });
   } catch (err) {
     console.error("Pin toggle failed:", err);
     playError();
@@ -218,25 +231,30 @@ function render() {
   const list = $("noticeList");
   if (!list) return;
 
-  const visible = activeNotices();
+  const visible = arranger.sortItems(cache);
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">No announcements right now.</p>`;
+    arranger.refresh();
     return;
   }
 
+  const arranging = arranger.isActive();
+  const priorities = arranger.priorities(visible);
+
   list.innerHTML = "";
   visible.forEach((a) => {
-    const expanded = expandedIds.has(a.id);
+    const expanded = !arranging && expandedIds.has(a.id);
     const row = document.createElement("div");
     row.className = [
       "announcement-row",
-      a.priority === "important" ? "is-important" : "",
+      priorities.get(a.id) === "important" ? "is-important" : "",
       expanded ? "is-expanded" : "",
     ].filter(Boolean).join(" ");
     row.dataset.id = a.id;
 
     row.innerHTML = `
       <div class="announcement-head">
+        ${arranger.handleHtml()}
         ${a.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
         <span class="task-tag announcement">${escapeHtml(a.category || "General")}</span>
         <p class="task-subject">${escapeHtml(a.title)}</p>
@@ -256,6 +274,7 @@ function render() {
     `;
 
     row.addEventListener("click", (e) => {
+      if (arranger.isActive()) return;
       if (e.target.closest(".task-monitor-actions")) return;
       if (e.target.closest("a")) return;
       const id = row.dataset.id;
@@ -282,6 +301,8 @@ function render() {
       if (a) openForm(a);
     });
   });
+
+  arranger.refresh();
 }
 function applyMonitorVisibility() {
   document.querySelectorAll("#noticeList .monitor-only, #noticePanel .monitor-only").forEach((el) => {
@@ -305,6 +326,8 @@ export function initNotices() {
   });
 
   if (!hasPanel) return; // timetable page only needs the data, not the panel below
+
+  arranger.init();
 
   const addBtn = $("addNoticeBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));

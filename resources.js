@@ -23,6 +23,7 @@ import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
+import { createArranger } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -38,6 +39,22 @@ const expandedIds = new Set();
 let isCurrentMonitor = false;
 let editingId = null;
 
+// Drag-to-reorder for monitors (see arrange.js). Order everyone sees:
+// pinned first, then the saved manual order, then newest first for
+// anything never arranged.
+const arranger = createArranger({
+  label: "resources",
+  collection: COLLECTION,
+  panelId: "resourcePanel",
+  listId: "resourceList",
+  buttonId: "arrangeResourceBtn",
+  isPinned: (r) => !!r.pinned,
+  legacyCompare: (a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0),
+  getItems: () => cache,
+  isMonitor: () => isCurrentMonitor,
+  rerender: () => render(),
+});
+
 function notify() { listeners.forEach((cb) => cb(activeResources())); }
 
 export function onResources(cb) {
@@ -47,10 +64,7 @@ export function onResources(cb) {
 }
 
 export function activeResources() {
-  return [...cache].sort((a, b) => {
-    if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-    return (b.createdAtMs || 0) - (a.createdAtMs || 0);
-  });
+  return arranger.sortStored(cache);
 }
 
 export function pinnedResource() {
@@ -178,20 +192,24 @@ function render() {
   const list = $("resourceList");
   if (!list) return;
 
-  const visible = activeResources();
+  const visible = arranger.sortItems(cache);
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">No resources yet.</p>`;
+    arranger.refresh();
     return;
   }
 
+  const arranging = arranger.isActive();
+
   list.innerHTML = "";
   visible.forEach((r) => {
-    const expanded = expandedIds.has(r.id);
+    const expanded = !arranging && expandedIds.has(r.id);
     const row = document.createElement("div");
     row.className = ["announcement-row", "resource-row", expanded ? "is-expanded" : ""].filter(Boolean).join(" ");
     row.dataset.id = r.id;
     row.innerHTML = `
       <div class="announcement-head">
+        ${arranger.handleHtml()}
         ${r.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
         <p class="task-subject">${escapeHtml(r.title)}</p>
         <span class="announcement-caret" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
@@ -206,6 +224,7 @@ function render() {
         <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(r.id)}" aria-label="Delete resource">✕</button>
       </div>`;
     row.addEventListener("click", (e) => {
+      if (arranger.isActive()) return;
       if (e.target.closest(".task-monitor-actions")) return;
       if (e.target.closest("a")) return;
       const id = row.dataset.id;
@@ -218,6 +237,8 @@ function render() {
   list.querySelectorAll('[data-action="delete"]').forEach((b) => b.addEventListener("click", () => handleDelete(b.dataset.id)));
   list.querySelectorAll('[data-action="pin"]').forEach((b) => b.addEventListener("click", () => { const r = cache.find((x) => x.id === b.dataset.id); if (r) togglePin(r); }));
   list.querySelectorAll('[data-action="edit"]').forEach((b) => b.addEventListener("click", () => { const r = cache.find((x) => x.id === b.dataset.id); if (r) openForm(r); }));
+
+  arranger.refresh();
 }
 
 function applyMonitorVisibility() {
@@ -229,6 +250,7 @@ export function initResources() {
   renderListLoading();
   startListener();
   subscribeAuth(({ monitor }) => { isCurrentMonitor = monitor; applyMonitorVisibility(); render(); });
+  arranger.init();
   const addBtn = $("addResourceBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));
   const form = $("resourceForm");

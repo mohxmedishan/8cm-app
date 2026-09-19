@@ -33,6 +33,7 @@ import { logAction } from "./audit.js";
 import { allSubjects } from "./timetable-data.js";
 import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
+import { createArranger, normalizePriority } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (v) =>
@@ -46,6 +47,29 @@ const escapeHtml = (v) =>
 let assignmentsCache = [];
 let statusByAssignmentId = new Map(); // this student's own completion status only
 const listeners = new Set();
+
+// Drag-to-reorder for monitors (see arrange.js). Order everyone sees:
+// important above normal, then the saved manual order, then soonest
+// due date for anything never arranged. Homework priority is just
+// Important / Normal now; old low/medium/high values still read fine
+// (high = important, everything else = normal).
+const arranger = createArranger({
+  label: "homework",
+  collection: "assignments",
+  panelId: "homeworkPanel",
+  listId: "homeworkList",
+  buttonId: "arrangeHomeworkBtn",
+  tiered: true,
+  legacyCompare: (a, b) => String(a.dueDate || "").localeCompare(String(b.dueDate || "")),
+  getItems: () => assignmentsCache,
+  isMonitor: () => isCurrentMonitor,
+  // Arranging works on the whole list, so drop any active filter first.
+  onEnter: () => {
+    activeFilter = "all";
+    document.querySelectorAll("#homeworkFilters .pill").forEach((p) => p.classList.toggle("active", p.dataset.filter === "all"));
+  },
+  rerender: () => renderList(),
+});
 
 function notify() {
   listeners.forEach((cb) => cb(assignmentsCache, statusByAssignmentId));
@@ -217,7 +241,7 @@ function openForm(assignment) {
   form.title.value = (assignment && assignment.title) || "";
   form.description.value = (assignment && assignment.description) || "";
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
-  form.priority.value = (assignment && assignment.priority) || "medium";
+  form.priority.value = normalizePriority(assignment && assignment.priority);
   const linkStack = $("homeworkLinksStack");
   setLinkStack(linkStack, assignment);
   setFormError(null);
@@ -306,7 +330,7 @@ async function handleSubmit(e) {
 // Rendering
 // ------------------------------------------------
 function priorityLabel(p) {
-  return p === "high" ? "High priority" : p === "low" ? "Low priority" : "Medium priority";
+  return p === "important" ? "Important" : "Normal";
 }
 
 function dueLabel(assignment) {
@@ -332,24 +356,30 @@ function renderList() {
   const list = $("homeworkList");
   if (!list) return;
 
-  const visible = assignmentsCache.filter(matchesFilter);
+  const ordered = arranger.sortItems(assignmentsCache);
+  const priorities = arranger.priorities(ordered);
+  const visible = ordered.filter(matchesFilter);
 
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">Nothing here${activeFilter === "all" ? " yet." : " for this filter."}</p>`;
+    arranger.refresh();
     return;
   }
 
   list.innerHTML = "";
   visible.forEach((a) => {
     const bucket = dueBucket(a);
+    const priority = priorities.get(a.id) || "normal";
     const row = document.createElement("div");
-    row.className = "task-row hw-row";
+    row.className = `task-row hw-row${arranger.isActive() ? " is-arrange" : ""}`;
+    row.dataset.id = a.id;
     row.innerHTML = `
-      <span class="task-tag homework hw-priority-${escapeHtml(a.priority || "medium")}">${escapeHtml(a.subject)}</span>
+      ${arranger.handleHtml()}
+      <span class="task-tag homework hw-priority-${priority}">${escapeHtml(a.subject)}</span>
       <div class="task-body">
         <p class="task-subject">${escapeHtml(a.title)}</p>
         <p class="task-detail">${escapeHtml(a.description || "")}</p>
-        <span class="hw-meta-pill">${priorityLabel(a.priority)}</span>
+        <span class="hw-meta-pill">${priorityLabel(priority)}</span>
         ${linkChipsHtml(a)}
       </div>
       <span class="task-due hw-due-${bucket}">${dueLabel(a)}</span>
@@ -382,6 +412,8 @@ function renderList() {
       if (assignment) openForm(assignment);
     });
   });
+
+  arranger.refresh();
 }
 
 function applyMonitorVisibility() {
@@ -422,6 +454,8 @@ export function initAssignments() {
   });
 
   if (!hasHomeworkPanel) return; // timetable page only needs the data, not the panel below
+
+  arranger.init();
 
   const addBtn = $("addHomeworkBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));

@@ -150,7 +150,10 @@
 <div class="today-panel" id="homeworkPanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Homework</h3>
+<div class="panel-head-actions">
+<button type="button" class="arrange-toggle" id="arrangeHomeworkBtn" hidden aria-pressed="false" aria-label="Rearrange homework" title="Rearrange homework"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
 <button class="btn btn-add-task btn-small monitor-only" hidden="" id="addHomeworkBtn">+ Add homework</button>
+</div>
 </div>
 <div class="filter-pills" id="homeworkFilters">
 <button class="pill active" data-filter="all">All</button>
@@ -164,9 +167,8 @@
 <label class="field"><span>Subject</span><select name="subject" required=""></select></label>
 <label class="field"><span>Priority</span>
 <select name="priority">
-<option value="low">Low</option>
-<option selected="" value="medium">Medium</option>
-<option value="high">High</option>
+<option selected="" value="normal">Normal</option>
+<option value="important">Important</option>
 </select>
 </label>
 <label class="field field-wide"><span>Title</span><input name="title" placeholder="Exercise 4.3" required="" type="text"/></label>
@@ -192,7 +194,10 @@
 <div class="today-panel" id="noticePanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Announcements</h3>
+<div class="panel-head-actions">
+<button type="button" class="arrange-toggle" id="arrangeNoticeBtn" hidden aria-pressed="false" aria-label="Rearrange announcements" title="Rearrange announcements"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
 <button class="btn btn-add-task btn-small monitor-only" hidden="" id="addNoticeBtn">+ Post announcement</button>
+</div>
 </div>
 <form class="task-form" hidden="" id="noticeForm">
 <div class="task-form-grid">
@@ -236,7 +241,10 @@
 <div class="today-panel" id="resourcePanel">
 <div class="today-panel-head">
 <h3 class="today-panel-title">Resources</h3>
+<div class="panel-head-actions">
+<button type="button" class="arrange-toggle" id="arrangeResourceBtn" hidden aria-pressed="false" aria-label="Rearrange resources" title="Rearrange resources"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
 <button class="btn btn-add-task btn-small monitor-only" hidden="" id="addResourceBtn">+ Add resource</button>
+</div>
 </div>
 <form class="task-form" hidden="" id="resourceForm">
 <div class="task-form-grid">
