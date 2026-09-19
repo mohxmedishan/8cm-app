@@ -15,9 +15,10 @@
 // ============================================
 import {
   collection, addDoc, updateDoc, deleteDoc, doc,
-  onSnapshot, query, orderBy, serverTimestamp,
+  onSnapshot, query, orderBy, serverTimestamp, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { createArranger } from "./arrange.js";
 import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
@@ -49,6 +50,10 @@ export function onResources(cb) {
 export function activeResources() {
   return [...cache].sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+    const aHas = typeof a.order === "number";
+    const bHas = typeof b.order === "number";
+    if (aHas !== bHas) return aHas ? 1 : -1;
+    if (aHas && bHas && a.order !== b.order) return a.order - b.order;
     return (b.createdAtMs || 0) - (a.createdAtMs || 0);
   });
 }
@@ -175,12 +180,14 @@ async function handleSubmit(e) {
 }
 
 function render() {
+  if (arranger && arranger.isActive()) return;
   const list = $("resourceList");
   if (!list) return;
 
   const visible = activeResources();
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">No resources yet.</p>`;
+    updateArrangeBtn();
     return;
   }
 
@@ -190,6 +197,7 @@ function render() {
     const row = document.createElement("div");
     row.className = ["announcement-row", "resource-row", expanded ? "is-expanded" : ""].filter(Boolean).join(" ");
     row.dataset.id = r.id;
+    row.dataset.block = r.pinned ? "pinned" : "regular";
     row.innerHTML = `
       <div class="announcement-head">
         ${r.pinned ? `<span class="pin-badge" title="Pinned">📌</span>` : ""}
@@ -206,6 +214,7 @@ function render() {
         <button class="task-icon-btn task-icon-btn-danger" data-action="delete" data-id="${escapeHtml(r.id)}" aria-label="Delete resource">✕</button>
       </div>`;
     row.addEventListener("click", (e) => {
+      if (list.classList.contains("arrange-mode")) return;
       if (e.target.closest(".task-monitor-actions")) return;
       if (e.target.closest("a")) return;
       const id = row.dataset.id;
@@ -218,6 +227,42 @@ function render() {
   list.querySelectorAll('[data-action="delete"]').forEach((b) => b.addEventListener("click", () => handleDelete(b.dataset.id)));
   list.querySelectorAll('[data-action="pin"]').forEach((b) => b.addEventListener("click", () => { const r = cache.find((x) => x.id === b.dataset.id); if (r) togglePin(r); }));
   list.querySelectorAll('[data-action="edit"]').forEach((b) => b.addEventListener("click", () => { const r = cache.find((x) => x.id === b.dataset.id); if (r) openForm(r); }));
+  updateArrangeBtn();
+}
+
+
+let arranger = null;
+
+function updateArrangeBtn() {
+  const btn = $("arrangeResourceBtn");
+  if (!btn) return;
+  const hasItems = cache.length > 0;
+  btn.hidden = !isCurrentMonitor || !hasItems;
+  if (!hasItems && arranger && arranger.isActive()) arranger.forceExit();
+}
+
+async function saveResourcesOrder(orderedIds) {
+  const items = orderedIds.map((id) => cache.find((r) => r.id === id)).filter(Boolean);
+  if (!items.length) return;
+  const batch = writeBatch(db);
+  items.forEach((item, i) => batch.update(doc(db, COLLECTION, item.id), { order: i }));
+  await batch.commit();
+  await logAction("reordered", {
+    resourceType: "resource",
+    summary: `Reordered resources (${items.length} items)`,
+  });
+}
+
+function initArranger() {
+  if (!$("arrangeResourceBtn")) return;
+  arranger = createArranger({
+    listId: "resourceList",
+    pencilBtnId: "arrangeResourceBtn",
+    statusId: "resourceOrderStatus",
+    onSave: saveResourcesOrder,
+    onEnter: () => { render(); },
+    onExit: () => { render(); },
+  });
 }
 
 function applyMonitorVisibility() {
@@ -228,7 +273,8 @@ export function initResources() {
   if (!$("resourceList")) return;
   renderListLoading();
   startListener();
-  subscribeAuth(({ monitor }) => { isCurrentMonitor = monitor; applyMonitorVisibility(); render(); });
+  subscribeAuth(({ monitor }) => { isCurrentMonitor = monitor; updateArrangeBtn(); applyMonitorVisibility(); render(); });
+  initArranger();
   const addBtn = $("addResourceBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));
   const form = $("resourceForm");

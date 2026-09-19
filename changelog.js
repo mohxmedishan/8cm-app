@@ -9,6 +9,19 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-19",
+    version: "16.1",
+    items: [
+      "Homework, Announcements, and Resources can be rearranged. Monitors get a pencil button next to each section's Add button — press it, drag the two-dash handle beside any item with a mouse, a finger, or the arrow keys, then press the pencil again to save. Order is written to Firestore and shows for everyone.",
+      "Homework priorities are now just Important or Normal. Anything saved as High counts as Important; Low and Medium count as Normal, so nothing already stored breaks. Important always sorts above Normal.",
+      "Dragging an Important item below a Normal one demotes it (everything from the first Normal item down becomes Normal on save). Dragging a Normal item to the top keeps it Normal and demotes the Important items beneath it. Dragging a Normal item back down restores them — the demotion only applies when you save.",
+      "Pinned Announcements and Resources stay in their own block above everything else. You can reorder them within the block, but you can't drag them out of it.",
+      "While arranging, the Pin/Edit/Delete buttons are hidden so you don't hit them by accident. The section's filter pills are disabled too — arranging always acts on the full list.",
+      "Fixed the Announcements Pin button — it was writing to the legacy `announcements` collection instead of the live `notices` one, so it silently failed. Pin now works and pinned items sort above everything else as intended.",
+      "Fixed: a save failure during arrange mode leaves you in arrange mode with your new order intact so you can retry. A toggle with no drags writes nothing.",
+    ],
+  },
+  {
     date: "2026-09-18",
     version: "16.0",
     items: [

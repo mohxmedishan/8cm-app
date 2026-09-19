@@ -16,8 +16,10 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { createArranger } from "./arrange.js";
 import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
@@ -52,9 +54,13 @@ function todayStr() {
 export function activeNotices() {
   return [...cache].sort((a, b) => {
     if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
-    if ((a.priority === "important") !== (b.priority === "important")) {
-      return a.priority === "important" ? -1 : 1;
-    }
+    const pa = a.priority === "important" ? 0 : 1;
+    const pb = b.priority === "important" ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    const aHas = typeof a.order === "number";
+    const bHas = typeof b.order === "number";
+    if (aHas !== bHas) return aHas ? 1 : -1;
+    if (aHas && bHas && a.order !== b.order) return a.order - b.order;
     return (b.createdAtMs || 0) - (a.createdAtMs || 0);
   });
 }
@@ -119,7 +125,7 @@ async function handleDelete(id) {
 
 async function togglePin(a) {
   try {
-    await updateDoc(doc(db, "announcements", a.id), { pinned: !a.pinned });
+    await updateDoc(doc(db, COLLECTION, a.id), { pinned: !a.pinned });
   } catch (err) {
     console.error("Pin toggle failed:", err);
     playError();
@@ -215,12 +221,14 @@ async function handleSubmit(e) {
 }
 
 function render() {
+  if (arranger && arranger.isActive()) return;
   const list = $("noticeList");
   if (!list) return;
 
   const visible = activeNotices();
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">No announcements right now.</p>`;
+    updateArrangeBtn();
     return;
   }
 
@@ -234,6 +242,7 @@ function render() {
       expanded ? "is-expanded" : "",
     ].filter(Boolean).join(" ");
     row.dataset.id = a.id;
+    row.dataset.block = a.pinned ? "pinned" : "regular";
 
     row.innerHTML = `
       <div class="announcement-head">
@@ -256,6 +265,7 @@ function render() {
     `;
 
     row.addEventListener("click", (e) => {
+      if (list.classList.contains("arrange-mode")) return;
       if (e.target.closest(".task-monitor-actions")) return;
       if (e.target.closest("a")) return;
       const id = row.dataset.id;
@@ -282,7 +292,63 @@ function render() {
       if (a) openForm(a);
     });
   });
+  updateArrangeBtn();
 }
+
+
+let arranger = null;
+
+function updateArrangeBtn() {
+  const btn = $("arrangeNoticeBtn");
+  if (!btn) return;
+  const hasItems = cache.length > 0;
+  btn.hidden = !isCurrentMonitor || !hasItems;
+  if (!hasItems && arranger && arranger.isActive()) arranger.forceExit();
+}
+
+async function saveNoticesOrder(orderedIds) {
+  const items = orderedIds.map((id) => cache.find((a) => a.id === id)).filter(Boolean);
+  if (!items.length) return;
+
+  let demoteFrom = items.length;
+  for (let i = 0; i < items.length; i++) {
+    if (!items[i].pinned && items[i].priority !== "important") {
+      demoteFrom = i;
+      break;
+    }
+  }
+
+  const batch = writeBatch(db);
+  items.forEach((item, i) => {
+    const patch = { order: i };
+    if (!item.pinned) {
+      const target = i >= demoteFrom ? "normal" : "important";
+      if ((item.priority === "important" ? "important" : "normal") !== target) {
+        patch.priority = target;
+      }
+    }
+    batch.update(doc(db, COLLECTION, item.id), patch);
+  });
+  await batch.commit();
+
+  await logAction("reordered", {
+    resourceType: "notice",
+    summary: `Reordered announcements (${items.length} items)`,
+  });
+}
+
+function initArranger() {
+  if (!$("arrangeNoticeBtn")) return;
+  arranger = createArranger({
+    listId: "noticeList",
+    pencilBtnId: "arrangeNoticeBtn",
+    statusId: "noticeOrderStatus",
+    onSave: saveNoticesOrder,
+    onEnter: () => { render(); },
+    onExit: () => { render(); },
+  });
+}
+
 function applyMonitorVisibility() {
   document.querySelectorAll("#noticeList .monitor-only, #noticePanel .monitor-only").forEach((el) => {
     el.hidden = !isCurrentMonitor;
@@ -300,11 +366,14 @@ export function initNotices() {
 
   subscribeAuth(({ monitor }) => {
     isCurrentMonitor = monitor;
+    updateArrangeBtn();
     applyMonitorVisibility();
     render();
   });
 
   if (!hasPanel) return; // timetable page only needs the data, not the panel below
+
+  initArranger();
 
   const addBtn = $("addNoticeBtn");
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));

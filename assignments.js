@@ -25,8 +25,10 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { createArranger } from "./arrange.js";
 import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
 import { logAction } from "./audit.js";
@@ -58,6 +60,24 @@ export function onAssignments(callback) {
   listeners.add(callback);
   callback(assignmentsCache, statusByAssignmentId);
   return () => listeners.delete(callback);
+}
+
+function normalizePriority(p) {
+  if (p === "high" || p === "important") return "important";
+  return "normal";
+}
+
+function sortHomework(items) {
+  return items.sort((a, b) => {
+    const pa = normalizePriority(a.priority);
+    const pb = normalizePriority(b.priority);
+    if (pa !== pb) return pa === "important" ? -1 : 1;
+    const aHas = typeof a.order === "number";
+    const bHas = typeof b.order === "number";
+    if (aHas !== bHas) return aHas ? 1 : -1;
+    if (aHas && bHas && a.order !== b.order) return a.order - b.order;
+    return (a.dueDate || "").localeCompare(b.dueDate || "");
+  });
 }
 
 function todayStr() {
@@ -114,6 +134,7 @@ function startAssignmentsListener() {
     q,
     (snap) => {
       assignmentsCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      sortHomework(assignmentsCache);
       renderList();
       notify();
     },
@@ -217,7 +238,7 @@ function openForm(assignment) {
   form.title.value = (assignment && assignment.title) || "";
   form.description.value = (assignment && assignment.description) || "";
   form.dueDate.value = (assignment && assignment.dueDate) || todayStr();
-  form.priority.value = (assignment && assignment.priority) || "medium";
+  form.priority.value = normalizePriority((assignment && assignment.priority) || "normal");
   const linkStack = $("homeworkLinksStack");
   setLinkStack(linkStack, assignment);
   setFormError(null);
@@ -306,7 +327,7 @@ async function handleSubmit(e) {
 // Rendering
 // ------------------------------------------------
 function priorityLabel(p) {
-  return p === "high" ? "High priority" : p === "low" ? "Low priority" : "Medium priority";
+  return normalizePriority(p) === "important" ? "Important" : "Normal";
 }
 
 function dueLabel(assignment) {
@@ -329,6 +350,7 @@ function matchesFilter(assignment) {
 }
 
 function renderList() {
+  if (arranger && arranger.isActive()) return;
   const list = $("homeworkList");
   if (!list) return;
 
@@ -336,6 +358,7 @@ function renderList() {
 
   if (visible.length === 0) {
     list.innerHTML = `<p class="task-empty">Nothing here${activeFilter === "all" ? " yet." : " for this filter."}</p>`;
+    updateArrangeBtn();
     return;
   }
 
@@ -344,8 +367,9 @@ function renderList() {
     const bucket = dueBucket(a);
     const row = document.createElement("div");
     row.className = "task-row hw-row";
+    row.dataset.id = a.id;
     row.innerHTML = `
-      <span class="task-tag homework hw-priority-${escapeHtml(a.priority || "medium")}">${escapeHtml(a.subject)}</span>
+      <span class="task-tag homework hw-priority-${escapeHtml(normalizePriority(a.priority))}">${escapeHtml(a.subject)}</span>
       <div class="task-body">
         <p class="task-subject">${escapeHtml(a.title)}</p>
         <p class="task-detail">${escapeHtml(a.description || "")}</p>
@@ -381,6 +405,66 @@ function renderList() {
       const assignment = assignmentsCache.find((a) => a.id === btn.dataset.id);
       if (assignment) openForm(assignment);
     });
+  });
+  updateArrangeBtn();
+}
+
+
+let arranger = null;
+
+function updateArrangeBtn() {
+  const btn = $("arrangeHomeworkBtn");
+  if (!btn) return;
+  const hasItems = assignmentsCache.length > 0;
+  btn.hidden = !isCurrentMonitor || !hasItems;
+  if (!hasItems && arranger && arranger.isActive()) arranger.forceExit();
+}
+
+async function saveHomeworkOrder(orderedIds) {
+  const items = orderedIds.map((id) => assignmentsCache.find((a) => a.id === id)).filter(Boolean);
+  if (!items.length) return;
+
+  let demoteFrom = items.length;
+  for (let i = 0; i < items.length; i++) {
+    if (normalizePriority(items[i].priority) === "normal") {
+      demoteFrom = i;
+      break;
+    }
+  }
+
+  const batch = writeBatch(db);
+  items.forEach((item, i) => {
+    const priority = i >= demoteFrom ? "normal" : "important";
+    if (normalizePriority(item.priority) === priority && item.order === i) return;
+    batch.update(doc(db, "assignments", item.id), { priority, order: i });
+  });
+  await batch.commit();
+
+  await logAction("reordered", {
+    resourceType: "assignment",
+    summary: `Reordered homework (${items.length} items)`,
+  });
+}
+
+function initArranger() {
+  if (!$("arrangeHomeworkBtn")) return;
+  arranger = createArranger({
+    listId: "homeworkList",
+    pencilBtnId: "arrangeHomeworkBtn",
+    statusId: "homeworkOrderStatus",
+    onSave: saveHomeworkOrder,
+    onEnter: () => {
+      activeFilter = "all";
+      document.querySelectorAll("#homeworkFilters .pill").forEach((p) => {
+        p.classList.toggle("active", p.dataset.filter === "all");
+        p.disabled = true;
+      });
+      renderList();
+    },
+    onExit: () => {
+      document.querySelectorAll("#homeworkFilters .pill").forEach((p) => { p.disabled = false; });
+      renderList();
+    },
   });
 }
 
@@ -418,12 +502,14 @@ export function initAssignments() {
     isCurrentMonitor = monitor;
     startStatusListener(currentUid);
     applyMonitorVisibility();
+    updateArrangeBtn();
     renderList(); // no-op if #homeworkList isn't on this page
   });
 
   if (!hasHomeworkPanel) return; // timetable page only needs the data, not the panel below
 
   const addBtn = $("addHomeworkBtn");
+  initArranger();
   if (addBtn) addBtn.addEventListener("click", () => openForm(null));
 
   const form = $("homeworkForm");
