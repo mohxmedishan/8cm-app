@@ -124,6 +124,23 @@ export function isSchoolDay(dayKey) {
   return Object.prototype.hasOwnProperty.call(SCHEDULE, dayKey);
 }
 
+// The real calendar date (YYYY-MM-DD) that a Mon–Fri day key stands for
+// right now. Monday–Friday map onto the current week; on Saturday and
+// Sunday the grid is showing the coming week (there's no weekend row),
+// so they map onto the Monday–Friday that's about to start. Shared by
+// the timetable's homework dots, its day label and its announcements so
+// they can never disagree about which date a row means.
+const WEEKDAY_NUMBER = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };
+export function dateForDayKey(dayKey, now = new Date()) {
+  const dow = WEEKDAY_NUMBER[dayKey];
+  if (dow === undefined) return null;
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today = d.getDay(); // 0 = Sunday … 6 = Saturday
+  const toMonday = today === 0 ? 1 : today === 6 ? 2 : 1 - today;
+  d.setDate(d.getDate() + toMonday + (dow - 1));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // Returns the same period list, but each entry stamped with its
 // absolute start/end (minutes since midnight) and length, so callers
 // don't need to know Mon–Thu vs Friday timing rules themselves.

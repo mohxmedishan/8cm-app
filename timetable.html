@@ -152,6 +152,7 @@
 <div class="legend-item"><span class="legend-swatch" style="background:var(--house-summer)"></span>Creative arts</div>
 <div class="legend-item"><span class="legend-swatch is-break"></span>Break</div>
 <div class="legend-item"><span class="legend-swatch tt-legend-hw"></span>Has homework</div>
+<div class="legend-item" id="ttLegendAnn" hidden><span class="legend-swatch tt-legend-ann"></span>Has announcement — tap the day</div>
 </div>
 <div class="tt-day-nav">
 <button aria-label="Previous day" class="tt-day-nav-btn" id="ttPrevDay" type="button">‹</button>
@@ -264,10 +265,10 @@
 <div class="teacher-card"><span class="teacher-subject">Physical Education</span><span class="teacher-name">Pavan</span></div>
 </div>
 </section>
-<section class="tt-ann-section">
+<section class="tt-ann-section" id="ttAnnSection" hidden>
   <div class="section-head" style="margin-bottom:16px">
-    <h3 class="tt-ann-heading">Announcements</h3>
-    <p class="tt-ann-sub">Anything posted this week. Days with announcements are highlighted in the grid above — tap a day name to read them.</p>
+    <h3 class="tt-ann-heading" id="ttAnnHeading">Announcements</h3>
+    <p class="tt-ann-sub" id="ttAnnSub"></p>
   </div>
   <div id="timetableAnnouncementList"></div>
 </section>

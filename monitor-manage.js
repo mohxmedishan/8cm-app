@@ -8,13 +8,15 @@
 //   · settings/monitors.uids → users/{uid} (people who've signed in
 //     at least once — this is where we get their student name + avatar)
 //
-// "Signed in" for an invited email is worked out from users/ itself
-// (monitors can read every profile), not only from the settings/monitors
-// marker. That marker is written by the invitee's own browser on their
-// next page load and is easy to miss, which used to leave someone who
-// had already signed in stuck on "Not yet signed in" with no Monitor
-// badge. Any invitee found this way is also written back into the
-// marker here, so their badge shows up for everyone.
+// "Signed in" for an invited email means: that person's own browser has
+// loaded the site as a monitor since they were added. Each browser stamps
+// users/{uid}.monitorSeenAt (see auth-ui.js) when it does. Having a
+// profile alone is NOT enough — a classmate who signed up months ago and
+// was only just invited has a profile but hasn't picked up the role yet.
+// The list tells those three cases apart:
+//   · monitorSeenAt set          → "Signed in"
+//   · profile, no monitorSeenAt  → "Hasn't signed in since being added"
+//   · no profile at all          → "Not yet signed in"
 // ============================================
 import {
   subscribeAuth, inviteMonitor, revokeMonitorInvite, listMonitorInvites,
@@ -105,12 +107,12 @@ async function buildMonitorList() {
     console.error("[8CM] Failed to load monitor uid list:", err);
   }
 
-  // 4. Invited emails still showing no uid: look for a matching profile
-  //    directly. Covers people who signed in but never got their uid
-  //    recorded in settings/monitors above.
-  const foundUids = [];
-  const pending = items.filter((m) => !m.uid && !m.builtIn && m.email);
-  if (pending.length) {
+  // 4. Invite rows: find each person's profile (monitors can read every
+  //    users/ doc) to get their student name and whether their browser has
+  //    ever run as a monitor. Matched on email, ignoring capital letters,
+  //    or on the uid already found above.
+  const inviteRows = items.filter((m) => m.inviteId);
+  if (inviteRows.length) {
     try {
       const { db } = await import("./firebase-config.js");
       const { collection, getDocs } = await import(
@@ -118,50 +120,34 @@ async function buildMonitorList() {
       );
       const usersSnap = await getDocs(collection(db, "users"));
       const byEmail2 = new Map();
+      const byUid = new Map();
       usersSnap.forEach((d) => {
         const data = d.data() || {};
+        const profile = { uid: d.id, data };
+        byUid.set(d.id, profile);
         const email = String(data.email || "").trim().toLowerCase();
-        if (email) byEmail2.set(email, { uid: d.id, data });
+        if (email) byEmail2.set(email, profile);
       });
-      pending.forEach((m) => {
-        const hit = byEmail2.get(m.email);
+      inviteRows.forEach((m) => {
+        const hit = (m.uid && byUid.get(m.uid)) || byEmail2.get(m.email);
         if (!hit) return;
-        m.uid = hit.uid;
+        m.profileUid = hit.uid;
         m.studentName = m.studentName || hit.data.claimedStudentName || null;
-        foundUids.push(hit.uid);
+        m.seenAsMonitor = !!hit.data.monitorSeenAt;
       });
     } catch (err) {
       console.error("[8CM] Failed to look up invited monitors' profiles:", err);
     }
   }
 
-  return { items, invitesLoaded, foundUids };
-}
-
-// Writes any uids found by buildMonitorList's profile lookup into
-// settings/monitors.uids (the marker the Monitor badge and every other
-// page read). Best-effort: the list itself is already correct without it.
-async function recordMonitorUids(uids) {
-  if (!uids.length) return;
-  try {
-    const { db } = await import("./firebase-config.js");
-    const { doc, setDoc } = await import(
-      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
-    );
-    const marker = {};
-    uids.forEach((uid) => { marker[uid] = true; });
-    await setDoc(doc(db, "settings", "monitors"), { uids: marker }, { merge: true });
-  } catch (err) {
-    console.error("[8CM] Couldn't record monitor uids:", err);
-  }
+  return { items, invitesLoaded };
 }
 
 async function refresh() {
   await loadAvatars().catch(() => {});
-  const { items, invitesLoaded, foundUids } = await buildMonitorList();
+  const { items, invitesLoaded } = await buildMonitorList();
   monitorItems = items;
   render(invitesLoaded);
-  recordMonitorUids(foundUids);
 }
 
 // ------------------------------------------------
@@ -190,7 +176,8 @@ function render(invitesLoaded = true) {
 
   list.innerHTML = warn + monitorItems
     .map((m) => {
-      const avatarId = m.uid ? getAvatarForUid(m.uid) : null;
+      const avatarUid = m.uid || m.profileUid;
+      const avatarId = avatarUid ? getAvatarForUid(avatarUid) : null;
       const avatarHtml = avatarMarkup(
         avatarId,
         m.studentName || m.email || "?",
@@ -202,7 +189,15 @@ function render(invitesLoaded = true) {
       if (m.studentName && m.email) secondaryParts.push(m.email);
       if (m.builtIn) secondaryParts.push("Built-in");
       if (m.invitedByEmail) secondaryParts.push(`Added by ${m.invitedByEmail}`);
-      if (!m.builtIn) secondaryParts.push(m.uid ? "Signed in" : "Not yet signed in");
+      if (m.inviteId) {
+        secondaryParts.push(
+          m.seenAsMonitor
+            ? "Signed in"
+            : m.profileUid
+              ? "Hasn't signed in since being added"
+              : "Not yet signed in"
+        );
+      }
 
       return `
         <div class="manage-row monitor-row">

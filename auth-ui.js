@@ -560,9 +560,19 @@ export function initAuthUI() {
 
     if (state.user && state.monitor) {
       import("./firebase-config.js").then(async ({ db }) => {
-        const { setDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+        const { setDoc, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
         setDoc(doc(db, "settings", "monitors"), { uids: { [state.user.uid]: true } }, { merge: true })
           .catch((err) => console.error("Monitor marker write failed:", err));
+
+        // "This person's browser has actually run as a monitor." The Monitors
+        // panel reads this to tell "signed in" from "has an account but hasn't
+        // picked up the role yet". Refreshed at most every 6 hours.
+        const seen = state.profile && state.profile.monitorSeenAt;
+        const seenMs = seen && typeof seen.toMillis === "function" ? seen.toMillis() : 0;
+        if (Date.now() - seenMs > 6 * 60 * 60 * 1000) {
+          setDoc(doc(db, "users", state.user.uid), { monitorSeenAt: serverTimestamp() }, { merge: true })
+            .catch((err) => console.error("Monitor seen-at write failed:", err));
+        }
       }).catch((err) => console.error("Monitor marker setup failed:", err));
     }
 

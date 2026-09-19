@@ -10,6 +10,17 @@
 export const changelog = [
   {
     date: "2026-09-19",
+    version: "16.2.1",
+    items: [
+      "Fixed the Monitors panel showing \"Signed in\" for people who haven't. \"Signed in\" now means their own browser has opened the site as a monitor since they were added. Someone who already had a student account but hasn't visited since being added reads \"Hasn't signed in since being added\", and someone with no account at all reads \"Not yet signed in\".",
+      "Timetable: on Saturday and Sunday the day label used to say a bare \"Monday\" and leave a gap before the arrow. It now reads \"Monday · in 2 days\" (or \"Tomorrow\" on Sunday), centred between the arrows. Weekends also now line up with the coming week, so homework dots and announcements land on the right days.",
+      "Timetable announcements: the section no longer lists every announcement. Only announcements with a date appear, days that have one are highlighted (tinted, with a dot), and tapping a highlighted day opens that day's announcements underneath. Tap it again to close.",
+      "Rewrote README.md so anyone (or any AI) picking the project up can find their way around: file map, data model, conventions, and gotchas.",
+    ],
+  },
+
+  {
+    date: "2026-09-19",
     version: "16.2",
     items: [
       "Fixed the Monitors panel saying \"Not yet signed in\" for someone who had already signed in with their invited Gmail. It now checks their profile directly, shows their student name and \"Signed in\", and records them so the Monitor badge appears on their student card.",

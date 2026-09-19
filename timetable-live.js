@@ -14,13 +14,12 @@
 //   · overdue    → nothing
 //   · completed  → nothing
 // ============================================
-import { getLiveStatus, todayKey, isSchoolDay } from "./timetable-data.js";
+import { getLiveStatus, todayKey, isSchoolDay, dateForDayKey } from "./timetable-data.js";
 import { onAssignments, isCompletedByMe } from "./assignments.js";
 
 const $ = (id) => document.getElementById(id);
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri"];
 const DAY_LABEL = { mon: "Monday", tue: "Tuesday", wed: "Wednesday", thu: "Thursday", fri: "Friday" };
-const DAY_DOW = { mon: 1, tue: 2, wed: 3, thu: 4, fri: 5 };
 
 let selectedDay = null;
 let homeworkReady = false;
@@ -41,17 +40,18 @@ function todayYmd() {
   return ymd(new Date());
 }
 
-// The calendar date for a given day key relative to today's real date.
-// If today is Wednesday, dateForDay("tue") is yesterday, dateForDay("fri")
-// is two days out. The grid is a Mon–Fri schedule so this only ever needs
-// to line up those five weekday keys with the current week.
+// The calendar date for a given day key. If today is Wednesday,
+// dateForDay("tue") is yesterday and dateForDay("fri") is two days out;
+// on a weekend the grid means the coming week. See dateForDayKey().
 function dateForDay(day) {
-  const targetDow = DAY_DOW[day];
-  if (targetDow === undefined) return null;
-  const t = new Date();
-  const diff = targetDow - t.getDay();
-  t.setDate(t.getDate() + diff);
-  return ymd(t);
+  return dateForDayKey(day);
+}
+
+// Whole calendar days from `fromYmd` to `toYmd` (both YYYY-MM-DD).
+function daysBetween(fromYmd, toYmd) {
+  const [fy, fm, fd] = fromYmd.split("-").map(Number);
+  const [ty, tm, td] = toYmd.split("-").map(Number);
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / 86400000);
 }
 
 // ------------------------------------------------
@@ -79,12 +79,12 @@ function minutesToClock(totalMinutes) {
 // Day label
 // ------------------------------------------------
 function relativeDayLabel(day) {
-  const today = todayKey();
-  const tIdx = DAY_ORDER.indexOf(today);
-  const sIdx = DAY_ORDER.indexOf(day);
   const name = DAY_LABEL[day];
-  if (tIdx === -1 || sIdx === -1) return name;
-  const diff = sIdx - tIdx;
+  const date = dateForDay(day);
+  if (!date) return name;
+  // Counted in real calendar days, so on a Saturday Monday reads
+  // "in 2 days" rather than a bare "Monday".
+  const diff = daysBetween(todayYmd(), date);
   if (diff === 0) return `${name} · Today`;
   if (diff === 1) return `${name} · Tomorrow`;
   if (diff === -1) return `${name} · Yesterday`;

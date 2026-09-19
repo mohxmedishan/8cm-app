@@ -2902,8 +2902,10 @@ a.tt-detail-hw:hover {
   transform: translateX(2px);
 }
 
-/* Tint the timetable day-nav label when it's not "today" */
-.tt-selected-day { min-width: 160px; }
+/* Fixed-ish width so the arrows don't hop as the label changes length,
+   with the text centred so a short label ("Monday · Tomorrow") sits
+   between the arrows instead of leaving a gap on one side. */
+.tt-selected-day { min-width: 12.5em; text-align: center; }
 
 
 /* ============================================
@@ -4545,3 +4547,28 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
   }
   .hw-row.is-arrange .arrange-handle { grid-area: handle; }
 }
+
+/* ============================================
+   V16.2.1 — Timetable: click a highlighted day to read its announcements
+   ============================================ */
+.tt-day-label.tt-day-has-announcement::after {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--house-summer);
+  vertical-align: middle;
+}
+.tt-day-label.tt-day-has-announcement:hover { background: rgba(217, 164, 65, 0.24); }
+.tt-day-label.tt-day-has-announcement:focus-visible { outline: 2px solid var(--house-summer); outline-offset: -2px; }
+.tt-day-label.tt-day-open {
+  background: rgba(217, 164, 65, 0.3);
+  box-shadow: inset 3px 0 0 var(--house-summer), 0 0 0 1px var(--house-summer);
+}
+.tt-legend-ann {
+  background: rgba(217, 164, 65, 0.3);
+  box-shadow: inset 3px 0 0 var(--house-summer);
+}
+.tt-ann-section[hidden] { display: none; }
