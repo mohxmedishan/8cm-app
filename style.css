@@ -4410,11 +4410,27 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
 .btn-arrange-pencil.is-arranging { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 20%,transparent); }
 .order-status { display:block; font-size:.72rem; letter-spacing:.02em; color:var(--accent-strong); padding:6px 20px 0; margin:0; }
 .order-status.is-error { color:var(--danger); }
-.task-list { max-height:560px; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
-.task-list::-webkit-scrollbar { width:8px; }
-.task-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-.task-list::-webkit-scrollbar-track { background:transparent; }
-.task-list.arrange-mode,.task-list.is-dragging-active { max-height:none; overflow:visible; }
+#homeworkList,
+#noticeList,
+#resourceList {
+  max-height:560px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  scrollbar-width:thin;
+  scrollbar-color:var(--border) transparent;
+}
+#homeworkList::-webkit-scrollbar,
+#noticeList::-webkit-scrollbar,
+#resourceList::-webkit-scrollbar { width:8px; }
+#homeworkList::-webkit-scrollbar-thumb,
+#noticeList::-webkit-scrollbar-thumb,
+#resourceList::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+#homeworkList::-webkit-scrollbar-track,
+#noticeList::-webkit-scrollbar-track,
+#resourceList::-webkit-scrollbar-track { background:transparent; }
+#homeworkList.arrange-mode,#homeworkList.is-dragging-active,
+#noticeList.arrange-mode,#noticeList.is-dragging-active,
+#resourceList.arrange-mode,#resourceList.is-dragging-active { max-height:none; overflow:visible; }
 .today-panel.is-arranging,.today-panel.is-dragging-active { overflow:visible; }
 .task-list.arrange-mode > [data-id] { position:relative; cursor:default; user-select:none; -webkit-user-select:none; transition:transform .26s cubic-bezier(.22,1,.36,1); }
 .task-list.arrange-mode > .task-row,.task-list.arrange-mode > .announcement-row { padding-left:42px; }

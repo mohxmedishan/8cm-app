@@ -37,6 +37,7 @@ import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
 import { createArranger } from "./arrange.js";
 
 const $ = (id) => document.getElementById(id);
+let arranger = null;
 const escapeHtml = (v) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -459,7 +460,6 @@ function renderListLoading() {
     </div>`;
 }
 
-let arranger = null;
 
 function updateArrangeBtn() {
   const btn = $("arrangeHomeworkBtn");
