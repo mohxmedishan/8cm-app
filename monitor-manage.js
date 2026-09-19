@@ -7,6 +7,14 @@
 //   · monitorInvites/{email} (added in this panel)
 //   · settings/monitors.uids → users/{uid} (people who've signed in
 //     at least once — this is where we get their student name + avatar)
+//
+// "Signed in" for an invited email is worked out from users/ itself
+// (monitors can read every profile), not only from the settings/monitors
+// marker. That marker is written by the invitee's own browser on their
+// next page load and is easy to miss, which used to leave someone who
+// had already signed in stuck on "Not yet signed in" with no Monitor
+// badge. Any invitee found this way is also written back into the
+// marker here, so their badge shows up for everyone.
 // ============================================
 import {
   subscribeAuth, inviteMonitor, revokeMonitorInvite, listMonitorInvites,
@@ -97,14 +105,63 @@ async function buildMonitorList() {
     console.error("[8CM] Failed to load monitor uid list:", err);
   }
 
-  return { items, invitesLoaded };
+  // 4. Invited emails still showing no uid: look for a matching profile
+  //    directly. Covers people who signed in but never got their uid
+  //    recorded in settings/monitors above.
+  const foundUids = [];
+  const pending = items.filter((m) => !m.uid && !m.builtIn && m.email);
+  if (pending.length) {
+    try {
+      const { db } = await import("./firebase-config.js");
+      const { collection, getDocs } = await import(
+        "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+      );
+      const usersSnap = await getDocs(collection(db, "users"));
+      const byEmail2 = new Map();
+      usersSnap.forEach((d) => {
+        const data = d.data() || {};
+        const email = String(data.email || "").trim().toLowerCase();
+        if (email) byEmail2.set(email, { uid: d.id, data });
+      });
+      pending.forEach((m) => {
+        const hit = byEmail2.get(m.email);
+        if (!hit) return;
+        m.uid = hit.uid;
+        m.studentName = m.studentName || hit.data.claimedStudentName || null;
+        foundUids.push(hit.uid);
+      });
+    } catch (err) {
+      console.error("[8CM] Failed to look up invited monitors' profiles:", err);
+    }
+  }
+
+  return { items, invitesLoaded, foundUids };
+}
+
+// Writes any uids found by buildMonitorList's profile lookup into
+// settings/monitors.uids (the marker the Monitor badge and every other
+// page read). Best-effort: the list itself is already correct without it.
+async function recordMonitorUids(uids) {
+  if (!uids.length) return;
+  try {
+    const { db } = await import("./firebase-config.js");
+    const { doc, setDoc } = await import(
+      "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+    );
+    const marker = {};
+    uids.forEach((uid) => { marker[uid] = true; });
+    await setDoc(doc(db, "settings", "monitors"), { uids: marker }, { merge: true });
+  } catch (err) {
+    console.error("[8CM] Couldn't record monitor uids:", err);
+  }
 }
 
 async function refresh() {
   await loadAvatars().catch(() => {});
-  const { items, invitesLoaded } = await buildMonitorList();
+  const { items, invitesLoaded, foundUids } = await buildMonitorList();
   monitorItems = items;
   render(invitesLoaded);
+  recordMonitorUids(foundUids);
 }
 
 // ------------------------------------------------
@@ -145,7 +202,7 @@ function render(invitesLoaded = true) {
       if (m.studentName && m.email) secondaryParts.push(m.email);
       if (m.builtIn) secondaryParts.push("Built-in");
       if (m.invitedByEmail) secondaryParts.push(`Added by ${m.invitedByEmail}`);
-      if (!m.uid && !m.builtIn) secondaryParts.push("Not yet signed in");
+      if (!m.builtIn) secondaryParts.push(m.uid ? "Signed in" : "Not yet signed in");
 
       return `
         <div class="manage-row monitor-row">
@@ -158,7 +215,7 @@ function render(invitesLoaded = true) {
           </div>
           <div class="task-monitor-actions">
             ${
-              !m.builtIn && !m.uid && m.inviteId
+              !m.builtIn && m.inviteId
                 ? `<button class="task-icon-btn task-icon-btn-danger" data-action="revoke" data-email="${escapeHtml(
                     m.email
                   )}" aria-label="Revoke monitor access">✕</button>`
@@ -223,6 +280,19 @@ async function handleRevoke(email) {
   if (!confirm(`Remove ${email} as a monitor? They'll lose access immediately.`)) return;
   try {
     await revokeMonitorInvite(email);
+    // If they had already signed in, also drop their Monitor badge marker.
+    const revoked = (monitorItems || []).find((m) => m.email === email);
+    if (revoked && revoked.uid && !revoked.builtIn) {
+      try {
+        const { db } = await import("./firebase-config.js");
+        const { doc, updateDoc, deleteField } = await import(
+          "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+        );
+        await updateDoc(doc(db, "settings", "monitors"), { [`uids.${revoked.uid}`]: deleteField() });
+      } catch (err) {
+        console.error("[8CM] Couldn't clear monitor badge marker:", err);
+      }
+    }
     await logAction("deleted", {
       resourceType: "monitor",
       resourceId: email,

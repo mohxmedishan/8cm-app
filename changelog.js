@@ -10,6 +10,16 @@
 export const changelog = [
   {
     date: "2026-09-19",
+    version: "16.2",
+    items: [
+      "Fixed the Monitors panel saying \"Not yet signed in\" for someone who had already signed in with their invited Gmail. It now checks their profile directly, shows their student name and \"Signed in\", and records them so the Monitor badge appears on their student card.",
+      "You can now remove a monitor you invited even after they've signed in (before, the remove button vanished once they had); removing them also clears their badge.",
+      "Tightened a Firestore rules helper so a missing \"monitor\" field on a profile can never break the monitor check for invited monitors.",
+    ],
+  },
+
+  {
+    date: "2026-09-19",
     version: "16.1",
     items: [
       "Monitors can rearrange Homework, Announcements and Resources. A pencil button appears next to the Add button once a section has something in it; turn it on, drag the two-dash handle on any row (finger or mouse), then turn the pencil off to save. The new order is what everyone sees.",
