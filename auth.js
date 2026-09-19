@@ -8,6 +8,7 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -200,8 +201,21 @@ export function getFriendlyAuthError(error) {
 // ------------------------------------------------
 // Sign in / up / out
 // ------------------------------------------------
-export function signInGoogle() {
-  return signInWithPopup(auth, googleProvider);
+export async function signInGoogle() {
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    // Some browsers/extensions close or sever Firebase's popup window
+    // even though the user did not intentionally cancel sign-in.
+    // Fall back to a full-page redirect so the same account can still
+    // authenticate instead of trapping the student on the error.
+    if (error?.code === "auth/popup-closed-by-user" || error?.code === "auth/popup-blocked") {
+      console.warn("Google popup sign-in failed; falling back to redirect.", error);
+      await signInWithRedirect(auth, googleProvider);
+      return new Promise(() => {});
+    }
+    throw error;
+  }
 }
 
 export function signUpEmail(email, password) {
