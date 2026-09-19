@@ -7,6 +7,20 @@ function getRowIds(list) {
   return Array.from(list.querySelectorAll(":scope > [data-id]")).map((r) => r.dataset.id);
 }
 
+// Read an element's natural (untransformed) top. Temporarily clears the
+// transform, forces layout, then restores — so it works even while a drag transform is applied.
+function measureNaturalTop(el) {
+  const savedTf = el.style.transform;
+  const savedVar = el.style.getPropertyValue("--drag-dy");
+  el.style.transform = "";
+  el.style.setProperty("--drag-dy", "0px");
+  void el.offsetWidth;
+  const top = el.getBoundingClientRect().top;
+  el.style.transform = savedTf;
+  el.style.setProperty("--drag-dy", savedVar);
+  return top;
+}
+
 export function createArranger({
   listId,
   pencilBtnId,
@@ -20,6 +34,8 @@ export function createArranger({
   const pencilBtn = $(pencilBtnId);
   if (!list || !pencilBtn) return null;
 
+  const panel = list.closest(".today-panel");
+
   let active = false;
   let originalOrder = [];
   let disabledEls = [];
@@ -32,7 +48,7 @@ export function createArranger({
     el.textContent = msg;
     el.hidden = false;
     el.classList.toggle("is-error", isError);
-    setStatus._t = setTimeout(() => { el.hidden = true; el.textContent = ""; }, 2600);
+    setStatus._t = setTimeout(() => { el.hidden = true; el.textContent = ""; }, 2400);
   }
 
   function makeHandle() {
@@ -64,6 +80,7 @@ export function createArranger({
   function wireHandle(handle, row) {
     handle.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
       startDrag(e, row);
     });
     handle.addEventListener("keydown", (e) => {
@@ -82,40 +99,70 @@ export function createArranger({
   function startDrag(e, row) {
     const pointerId = e.pointerId;
     const startY = e.clientY;
-    let dragged = false;
-    let moved = false;
+    const startRect = row.getBoundingClientRect();
+    const grabOffsetY = startY - startRect.top;
+    let naturalTop = startRect.top;
+    let dragging = false;
 
     const onMove = (ev) => {
       if (ev.pointerId !== pointerId) return;
-      if (!moved && Math.abs(ev.clientY - startY) < 4) return;
-      moved = true;
-      if (!dragged) {
-        dragged = true;
+      if (!dragging && Math.abs(ev.clientY - startY) < 4) return;
+
+      if (!dragging) {
+        dragging = true;
         row.classList.add("is-dragging");
-        try { ev.preventDefault(); } catch {}
+        list.classList.add("is-dragging-active");
+        if (panel) panel.classList.add("is-dragging-active");
       }
-      const y = ev.clientY;
-      const rows = Array.from(list.querySelectorAll(":scope > [data-id]"));
-      for (const r of rows) {
-        if (r === row) continue;
-        if (!sameBlock(row, r)) continue;
-        const rect = r.getBoundingClientRect();
-        if (y < rect.top || y > rect.bottom) continue;
-        const before = y < rect.top + rect.height / 2;
-        if (before) {
-          if (r.previousElementSibling === row) return;
-          list.insertBefore(row, r);
-        } else {
-          if (r.nextElementSibling === row) return;
-          list.insertBefore(row, r.nextSibling);
-        }
+
+      const dy = (ev.clientY - grabOffsetY) - naturalTop;
+      row.style.setProperty("--drag-dy", `${dy}px`);
+
+      const siblings = Array.from(list.querySelectorAll(":scope > [data-id]"))
+        .filter((r) => r !== row && sameBlock(row, r));
+
+      for (const sib of siblings) {
+        const rect = sib.getBoundingClientRect();
+        if (ev.clientY < rect.top || ev.clientY > rect.bottom) continue;
+
+        const insertBefore = ev.clientY < rect.top + rect.height / 2;
+        if (insertBefore && sib.nextElementSibling === row) return;
+        if (!insertBefore && sib.previousElementSibling === row) return;
+
+        const allRows = Array.from(list.querySelectorAll(":scope > [data-id]"));
+        const beforeTops = new Map(allRows.map((r) => [r, r.getBoundingClientRect().top]));
+
+        if (insertBefore) list.insertBefore(row, sib);
+        else list.insertBefore(row, sib.nextSibling);
+
+        allRows.forEach((r) => {
+          if (r === row) return;
+          const before = beforeTops.get(r);
+          const after = r.getBoundingClientRect().top;
+          const delta = before - after;
+          if (Math.abs(delta) < 0.5) return;
+          r.style.transition = "none";
+          r.style.transform = `translateY(${delta}px)`;
+          void r.offsetWidth;
+          r.style.transition = "transform 0.26s cubic-bezier(0.22, 1, 0.36, 1)";
+          r.style.transform = "";
+        });
+
+        naturalTop = measureNaturalTop(row);
+        const newDy = (ev.clientY - grabOffsetY) - naturalTop;
+        row.style.setProperty("--drag-dy", `${newDy}px`);
         return;
       }
     };
 
     const onUp = (ev) => {
       if (ev.pointerId !== pointerId) return;
-      row.classList.remove("is-dragging");
+      if (dragging) {
+        row.classList.remove("is-dragging");
+        row.style.removeProperty("--drag-dy");
+      }
+      list.classList.remove("is-dragging-active");
+      if (panel) panel.classList.remove("is-dragging-active");
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
       document.removeEventListener("pointercancel", onUp);
@@ -131,6 +178,7 @@ export function createArranger({
     pencilBtn.classList.add("is-arranging");
     pencilBtn.setAttribute("aria-pressed", "true");
     list.classList.add("arrange-mode");
+    if (panel) panel.classList.add("is-arranging");
 
     disabledEls = [];
     disableSelectors.forEach((sel) => {
@@ -141,7 +189,6 @@ export function createArranger({
     });
 
     if (onEnter) onEnter();
-
     originalOrder = getRowIds(list);
     attachHandles();
   }
@@ -150,7 +197,8 @@ export function createArranger({
     active = false;
     pencilBtn.classList.remove("is-arranging");
     pencilBtn.setAttribute("aria-pressed", "false");
-    list.classList.remove("arrange-mode");
+    list.classList.remove("arrange-mode", "is-dragging-active");
+    if (panel) panel.classList.remove("is-arranging", "is-dragging-active");
     disabledEls.forEach((el) => { el.disabled = false; });
     disabledEls = [];
     detachHandles();
