@@ -1,5 +1,5 @@
 // ============================================
-// 8CM — Background music (v14.3)
+// 8CM — Background music (v17.1)
 // ================================================================
 // HARDCODED TRACKS + a fixed, manually-set start offset per track.
 // Vercel does not expose directory listings, so tracks are explicit.
@@ -34,6 +34,19 @@
 //
 // Also: the Track selector, Loop toggle, and Play/Pause are now three
 // separate rows instead of Track+Loop being squeezed into one row.
+//
+// v17.1 — fades. Page changes used to cut the music dead, leave a gap,
+// then start it again at full volume. Now:
+//   • fadeOutBgm(ms)  — main-nav.js calls it while the page fades out
+//   • fadeInBgm()     — called if a navigation is cancelled / the page is
+//                       restored from the back-forward cache
+//   • every start (page load, unlock tap, Play button) fades IN
+//   • the resume position is nudged forward by the time that passed
+//     since it was saved, so the dip sounds like a dip and not a rewind
+// Volume is `currentVolume` (the slider) × `fadeLevel` (0–1, animated).
+// iOS Safari ignores HTMLMediaElement.volume entirely, so on browsers
+// where it can't be set the level goes through a Web Audio GainNode
+// instead (the slider then works on iOS too).
 // ================================================================
 
 const BGM_CONFIG = {
@@ -72,6 +85,93 @@ let loopEnabled = BGM_CONFIG.loop;
 let playRequestId = 0; // guards against overlapping play attempts (see attemptPlay)
 let resumeSeconds = 0; // where to seek to on the *next* buildAudio() call
 let positionTimer = null;
+
+// ---- v17.1 fade / gain plumbing ----
+const FADE_IN_MS = 550;
+const MAX_RESUME_GAP_S = 10; // don't "catch up" across a long absence
+let fadeLevel = 1;           // 0–1, multiplied with currentVolume
+let fadeToken = 0;           // bumping this cancels an in-flight fade
+let audioCtx = null;
+let gainNode = null;
+let elementVolumeOk = null;  // null = not tested yet
+
+function detectElementVolume() {
+  if (elementVolumeOk !== null) return elementVolumeOk;
+  try {
+    const t = new Audio();
+    t.volume = 0.5;
+    elementVolumeOk = t.volume === 0.5;
+  } catch {
+    elementVolumeOk = true;
+  }
+  return elementVolumeOk;
+}
+
+function applyLevel() {
+  const v = Math.max(0, Math.min(1, currentVolume * fadeLevel));
+  if (gainNode) gainNode.gain.value = v;
+  else if (audio) { try { audio.volume = v; } catch {} }
+}
+
+// Route a fresh <audio> through a GainNode — only when the element's own
+// volume is read-only (iOS). Returns false if Web Audio isn't usable, in
+// which case playback still works, just without fades.
+function attachGain(a) {
+  gainNode = null;
+  if (detectElementVolume()) return false;
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return false;
+    if (!audioCtx) audioCtx = new Ctx();
+    const src = audioCtx.createMediaElementSource(a);
+    gainNode = audioCtx.createGain();
+    src.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    return true;
+  } catch {
+    gainNode = null;
+    return false;
+  }
+}
+
+async function ensureContextRunning() {
+  if (!audioCtx || audioCtx.state === "running") return;
+  try {
+    await Promise.race([audioCtx.resume(), new Promise((r) => setTimeout(r, 350))]);
+  } catch {}
+}
+
+function fadeTo(target, ms) {
+  const token = ++fadeToken;
+  const from = fadeLevel;
+  if (!audio || ms <= 0 || from === target) {
+    fadeLevel = target;
+    applyLevel();
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const t0 = performance.now();
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      if (token === fadeToken) { fadeLevel = target; applyLevel(); }
+      resolve();
+    };
+    const step = (now) => {
+      if (done) return;
+      if (token !== fadeToken) { finish(); return; }
+      const t = Math.min(1, (now - t0) / ms);
+      const eased = t * t * (3 - 2 * t); // smoothstep
+      fadeLevel = from + (target - from) * eased;
+      applyLevel();
+      if (t < 1) requestAnimationFrame(step); else finish();
+    };
+    requestAnimationFrame(step);
+    // requestAnimationFrame stops in a hidden tab — never leave a promise dangling.
+    setTimeout(finish, ms + 80);
+  });
+}
 
 function readPrefs() {
   try {
@@ -168,14 +268,14 @@ function buildAudio() {
   a.src = BGM_CONFIG.audioDir + track.file;
   a.loop = loopEnabled;
   a.preload = "auto";
-  a.volume = currentVolume;
   a.addEventListener("ended", handleTrackEnded);
   if (seekTarget > 0) {
     let seeked = false;
     const applySeek = () => {
       if (seeked || !a.duration || !isFinite(a.duration)) return;
       try {
-        a.currentTime = Math.min(seekTarget, Math.max(0, a.duration - 1));
+        const wrapped = a.loop ? seekTarget % a.duration : seekTarget;
+        a.currentTime = Math.min(wrapped, Math.max(0, a.duration - 1));
         seeked = true;
       } catch {}
     };
@@ -193,6 +293,8 @@ function buildAudio() {
 // paused the first one.
 function destroyAudio() {
   stopPositionTimer();
+  fadeToken++; // cancel any fade still running on the old element
+  if (gainNode) { try { gainNode.disconnect(); } catch {} gainNode = null; }
   if (!audio) return;
   try { audio.pause(); } catch {}
   try { audio.removeAttribute("src"); audio.load(); } catch {}
@@ -210,7 +312,11 @@ async function attemptPlay() {
   const a = buildAudio();
   if (!a) return false;
   audio = a;
+  attachGain(a);
+  fadeLevel = 0; // every start fades in from silence
+  applyLevel();
   try {
+    if (gainNode) await ensureContextRunning();
     await a.play();
     if (myRequest !== playRequestId) {
       // A newer request started while this one was awaiting play() —
@@ -219,11 +325,19 @@ async function attemptPlay() {
       try { a.pause(); } catch {}
       return false;
     }
+    // A suspended AudioContext would "play" in silence and never arm the
+    // unlock listener — treat it as blocked so the next tap unlocks it.
+    if (gainNode && audioCtx.state !== "running") throw new Error("audio context suspended");
     unlocked = true;
     startPositionTimer();
+    fadeTo(1, FADE_IN_MS);
     return true;
   } catch {
-    if (myRequest === playRequestId && audio === a) audio = null;
+    if (myRequest === playRequestId && audio === a) {
+      try { a.pause(); } catch {}
+      if (gainNode) { try { gainNode.disconnect(); } catch {} gainNode = null; }
+      audio = null;
+    }
     return false;
   }
 }
@@ -243,6 +357,28 @@ function armUnlock() {
 }
 
 export function isBgmPlaying() { return wantsPlaying && audio && !audio.paused; }
+
+// Called by main-nav.js the moment a page change starts. Resolves when the
+// music is silent (or straight away if nothing is playing). Deliberately
+// does NOT pause: if the navigation is cancelled, fadeInBgm() just brings
+// the level back and nobody heard a restart.
+export function fadeOutBgm(ms = 240) {
+  if (!audio || audio.paused) return Promise.resolve();
+  writeSavedPosition();
+  return fadeTo(0, ms).then(writeSavedPosition);
+}
+
+// Counterpart to fadeOutBgm(): navigation cancelled, or the page came
+// back from the back-forward cache (browsers pause media when a page is
+// frozen, so it may need a nudge to play again).
+export function fadeInBgm(ms = 450) {
+  if (!wantsPlaying) return Promise.resolve();
+  if (audio && !audio.paused) return fadeTo(1, ms);
+  if (audio && audio.paused) {
+    return audio.play().then(() => fadeTo(1, ms)).catch(() => { armUnlock(); });
+  }
+  return attemptPlay().then((ok) => { if (!ok) armUnlock(); });
+}
 
 export async function playBgm() {
   if (!BGM_CONFIG.tracks.length) return false;
@@ -266,7 +402,7 @@ export function toggleBgm() { if (wantsPlaying) pauseBgm(); else playBgm(); }
 
 export function setBgmVolume(v) {
   currentVolume = Math.max(0, Math.min(1, v));
-  if (audio) audio.volume = currentVolume;
+  applyLevel();
   writePrefs();
   reflectUI();
 }
@@ -394,7 +530,11 @@ export async function initBgm() {
     const saved = readSavedPosition();
     const track = BGM_CONFIG.tracks[currentTrackIndex];
     if (saved && track && saved.file === track.file && saved.time > 0) {
-      resumeSeconds = saved.time;
+      // Catch up by the time spent in transit so the music carries on where
+      // it *would* be, rather than rewinding to where the last page left it.
+      const gap = saved.savedAt ? (Date.now() - saved.savedAt) / 1000 : 0;
+      const catchUp = gap > 0 && gap <= MAX_RESUME_GAP_S ? gap : 0;
+      resumeSeconds = saved.time + catchUp;
     }
   }
 

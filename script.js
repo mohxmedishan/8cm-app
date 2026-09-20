@@ -489,6 +489,11 @@ function equalizeHouseCardHeights() {
   const cards = document.querySelectorAll(".house-card[data-house]");
   if (!cards.length) return;
   cards.forEach((card) => { card.style.minHeight = ""; });
+  // One column (phones): every card is its own row, so stretching them to
+  // the tallest just leaves dead space at the bottom of the short ones.
+  const grid = cards[0].parentElement;
+  const cols = grid ? getComputedStyle(grid).gridTemplateColumns.split(" ").length : 2;
+  if (cols < 2) return;
   let max = 0;
   cards.forEach((card) => { max = Math.max(max, card.getBoundingClientRect().height); });
   cards.forEach((card) => { card.style.minHeight = `${max}px`; });
@@ -720,7 +725,7 @@ function initTodayDate() {
 // V13 — Hover SFX
 // ============================================
 function initHoverSfx() {
-  const SELECTOR = ".student-card, .teacher-card, .house-card, .resource-card, .quick-link-card, .pill, .filter-box, .hub-nav-link";
+  const SELECTOR = ".student-card, .teacher-card, .house-card, .resource-card, .quick-link-card, .pill, .filter-box, .hub-nav-link, .glance-tile, .glance-strip";
   let lastEl = null;
   document.addEventListener("pointerover", (e) => {
     const el = e.target.closest?.(SELECTOR);
@@ -765,12 +770,26 @@ function initVersionBadge() {
 // puts you where you actually asked to go.
 // ============================================
 function initAnchorRescue() {
+  // Stop re-jumping the moment the person takes over: a late jump while
+  // they're already scrolling around reads as the page fighting them.
+  let touched = false;
+  ["wheel", "touchstart", "keydown", "pointerdown"].forEach((type) =>
+    window.addEventListener(type, () => { touched = true; }, { passive: true, once: true })
+  );
+
   function jump() {
+    if (touched) return;
     const hash = location.hash;
     if (!hash || hash.length < 2) return;
-    const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+    const id = decodeURIComponent(hash.slice(1));
+    // "#top" means the top of the PAGE (the browser would otherwise stop
+    // at <main>, which starts underneath the sticky header).
+    if (id === "top") { window.scrollTo({ top: 0, behavior: "instant" }); return; }
+    const el = document.getElementById(id);
     if (!el) return;
-    el.scrollIntoView({ behavior: "auto", block: "start" });
+    // "instant": html has scroll-behavior:smooth, and a visible glide on
+    // a correction jump looks like the page wandering.
+    el.scrollIntoView({ behavior: "instant", block: "start" });
   }
   if (document.readyState === "complete") setTimeout(jump, 60);
   else window.addEventListener("load", () => setTimeout(jump, 60), { once: true });
@@ -797,7 +816,7 @@ import("./bgm.js").then((m) => m.initBgm()).catch((err) => {
 
 initSplash();
 initNav();
-initMainNav();  // Beta 17: sliding active pill + subnav scrollspy
+initMainNav();  // V17.1: sticky metrics, active pill, page fades, subnav scrollspy
 initAnchorRescue();
 initStudentDirectory();
 initHouseCards();

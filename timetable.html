@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>Timetable — 8CM</title>
 <meta content="8CM's weekly timetable, Monday to Friday, as a compact grid." name="description"/>
 <meta content="#16171a" name="theme-color"/>
@@ -78,8 +78,16 @@
 </div>
 <script>
 (function(){
+  // The splash is a first-open moment, not a per-page tax: it shows once
+  // per browser tab session. Every later page change skips it so the
+  // site reads as one continuous app (see main-nav.js for the fades).
+  var s=document.getElementById("splash");
+  if(!s)return;
+  try{
+    if(sessionStorage.getItem("8cm:splash-seen")==="1"){s.remove();return;}
+    sessionStorage.setItem("8cm:splash-seen","1");
+  }catch(e){}
   function hideSplash(){
-    var s=document.getElementById("splash");
     if(!s||s.dataset.failsafeHidden==="1")return;
     s.dataset.failsafeHidden="1";
     s.classList.add("hide");
@@ -93,7 +101,7 @@
 <div class="grain"></div>
 <header class="nav" id="nav">
 <div class="nav-inner">
-<a aria-label="8CM home" class="brand" href="index.html#top">
+<a aria-label="8CM home" class="brand" href="index.html">
 <img alt="8CM" src="assets/cm-logo.png"/>
 </a>
 <nav class="nav-links" id="navLinks">
@@ -139,7 +147,7 @@
 <main>
 <section class="timetable" id="timetable">
 <div class="section-inner">
-<a class="back-to-dashboard" href="index.html#top">← Dashboard</a>
+<a class="back-to-dashboard" href="index.html">← Dashboard</a>
 <div class="section-head">
 <h2>The weekly timetable</h2>
 <p class="section-sub">Monday to Thursday runs 8:00 to 2:35 in 40-minute periods. Friday runs 8:00 to 11:10 in 35-minute periods — its own start times are listed as a smaller second line wherever they land on a different minute. Scroll sideways on a small screen, or tap a period for its full name.</p>

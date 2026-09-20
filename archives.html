@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Class Archives — 8CM</title>
 <meta name="description" content="Timetable, teachers, students, gallery, and archive materials for 8CM.">
 <meta name="theme-color" content="#16171a">
@@ -77,8 +77,16 @@
 </div>
 <script>
 (function(){
+  // The splash is a first-open moment, not a per-page tax: it shows once
+  // per browser tab session. Every later page change skips it so the
+  // site reads as one continuous app (see main-nav.js for the fades).
+  var s=document.getElementById("splash");
+  if(!s)return;
+  try{
+    if(sessionStorage.getItem("8cm:splash-seen")==="1"){s.remove();return;}
+    sessionStorage.setItem("8cm:splash-seen","1");
+  }catch(e){}
   function hideSplash(){
-    var s=document.getElementById("splash");
     if(!s||s.dataset.failsafeHidden==="1")return;
     s.dataset.failsafeHidden="1";
     s.classList.add("hide");
@@ -93,11 +101,11 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="index.html#top" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
+    <a href="index.html" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
       <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
       <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
-      <a href="index.html#top" class="nav-link primary-nav-link" data-page="home">Home</a>
+      <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
       <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
     </nav>
     <div class="nav-right">
@@ -112,6 +120,7 @@
 
 <nav class="hub-nav" aria-label="Archives sections">
   <div class="section-inner hub-nav-inner">
+    <a href="#top" class="hub-nav-link">Archives</a>
     <a href="#timetable" class="hub-nav-link">Timetable</a>
     <a href="#teachers" class="hub-nav-link">Teachers</a>
     <a href="#students" class="hub-nav-link">Students</a>
@@ -121,23 +130,56 @@
   </div>
 </nav>
 
-<main id="top">
+<main id="main">
   <section class="page-hero hero">
     <div class="section-inner hero-grid">
       <div class="hero-text">
-        <a href="index.html#top" class="back-to-dashboard">← Dashboard</a>
-        <div class="section-head" style="margin-top:12px;margin-bottom:20px">
+        <a href="index.html" class="back-to-dashboard">← Dashboard</a>
+        <div class="section-head">
           <h1 class="hub-title">Class Archives</h1>
           <p class="section-sub">Timetable, teachers, students, and everything else that lives off the front page.</p>
         </div>
+        <div class="hero-actions">
+          <a href="#timetable" class="btn btn-primary">Open the timetable</a>
+          <a href="#students" class="btn btn-ghost">Find a student</a>
+        </div>
       </div>
-      <div class="hero-visual glance-panel" id="archivesGlance">
-        <p class="hero-visual-label">Archive snapshot</p>
-        <div class="glance-row"><span class="glance-label">Students</span><span class="glance-value" id="glanceStudents">—</span></div>
-        <div class="glance-row"><span class="glance-label">Teachers</span><span class="glance-value" id="glanceTeachers">—</span></div>
-        <div class="glance-row"><span class="glance-label">Gallery</span><span class="glance-value" id="glanceGallery">—</span></div>
-        <div class="glance-row"><span class="glance-label">Archive materials</span><span class="glance-value" id="glanceMaterials">—</span></div>
-      </div>
+
+      <!-- Archive snapshot: four live counts, each a shortcut to its
+           section. Filled in by glance-panels.js (counts animate up).
+           See DESIGN.md → "Glance panel". -->
+      <aside class="hero-visual glance-panel glance-archives" id="archivesGlance" aria-label="Archive snapshot">
+        <div class="glance-head">
+          <p class="glance-kicker"><span class="glance-live" aria-hidden="true"></span>Archive snapshot</p>
+          <p class="glance-date">Tap to jump</p>
+        </div>
+        <div class="glance-tiles glance-tiles-2x2">
+          <a href="#students" class="glance-tile" style="--tone: var(--accent)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8M17.5 14.2A5 5 0 0 1 20.5 19"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceStudents">–</span>
+            <span class="glance-tile-label">Students</span>
+            <span class="glance-tile-note">in the class</span>
+          </a>
+          <a href="#teachers" class="glance-tile" style="--tone: var(--house-winter)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l9-3.5 9 3.5-9 3.5-9-3.5z"/><path d="M7 9v5c0 1.4 2.2 2.8 5 2.8s5-1.4 5-2.8V9"/><path d="M21 7v6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceTeachers">–</span>
+            <span class="glance-tile-label">Teachers</span>
+            <span class="glance-tile-note">teaching 8CM</span>
+          </a>
+          <a href="#gallery" class="glance-tile" style="--tone: var(--house-summer)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10.5" r="1.7"/><path d="M4 17l4.5-4.2 3.5 3 3-2.6L20 16.5"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceGallery">–</span>
+            <span class="glance-tile-label">Photos</span>
+            <span class="glance-tile-note">in the gallery</span>
+          </a>
+          <a href="#archive-materials" class="glance-tile" style="--tone: var(--house-autumn)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8z"/><path d="M3.5 4.5h17V8h-17zM10 12.5h4"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceMaterials">–</span>
+            <span class="glance-tile-label">Materials</span>
+            <span class="glance-tile-note">filed away</span>
+          </a>
+        </div>
+      </aside>
     </div>
   </section>
 

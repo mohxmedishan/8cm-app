@@ -9,6 +9,19 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-20",
+    version: "17.1.0",
+    items: [
+      "Changing pages now feels like one app: the page fades out, the next one fades in, and the top menu stays where it is. The background music fades out and back in with it instead of cutting off.",
+      "The loading splash only shows the first time you open the site in a tab, not on every page.",
+      "Tapping the page you're already on (Home, Archives, the logo) no longer reloads it. It scrolls you back to the top. Home now really lands at the top instead of hiding the start of the page under the menu.",
+      "New hero panels. Home shows a Monday to Friday strip with homework and events marked, a homework count, a countdown to the next event and the latest achievement. Archives shows live student, teacher, photo and material counts that jump to their sections.",
+      "The small menu on Houses now starts with Houses (the top of the page) followed by Students. Home and Archives got a matching first tab.",
+      "Phones: the logo row scrolls away so only the four main tabs and the small menu stay stuck, hero buttons are shorter, Houses shows its title before the graph, and student cards no longer stick out past the edge.",
+      "Design rules are now written down in DESIGN.md so new pages match.",
+    ],
+  },
+  {
     date: "2026-09-19",
     version: "17.0.0",
     items: [

@@ -1,7 +1,7 @@
 {
   "name": "8CM.",
   "short_name": "8CM.",
-  "start_url": "./index.html#top",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#16171a",
   "theme_color": "#16171a",

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Houses — 8CM</title>
 <meta name="description" content="The four houses of 8CM — Winter, Autumn, Spring and Summer — and everyone in them.">
 <meta name="theme-color" content="#16171a">
@@ -77,8 +77,16 @@
 </div>
 <script>
 (function(){
+  // The splash is a first-open moment, not a per-page tax: it shows once
+  // per browser tab session. Every later page change skips it so the
+  // site reads as one continuous app (see main-nav.js for the fades).
+  var s=document.getElementById("splash");
+  if(!s)return;
+  try{
+    if(sessionStorage.getItem("8cm:splash-seen")==="1"){s.remove();return;}
+    sessionStorage.setItem("8cm:splash-seen","1");
+  }catch(e){}
   function hideSplash(){
-    var s=document.getElementById("splash");
     if(!s||s.dataset.failsafeHidden==="1")return;
     s.dataset.failsafeHidden="1";
     s.classList.add("hide");
@@ -93,11 +101,11 @@
 
 <header class="nav" id="nav">
   <div class="nav-inner">
-    <a href="index.html#top" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
+    <a href="index.html" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
       <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
       <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
-      <a href="index.html#top" class="nav-link primary-nav-link" data-page="home">Home</a>
+      <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
       <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
     </nav>
     <div class="nav-right">
@@ -112,17 +120,17 @@
 
 <nav class="hub-nav" aria-label="Houses sections">
   <div class="section-inner hub-nav-inner">
-    <a href="#overview" class="hub-nav-link">Overview</a>
+    <a href="#top" class="hub-nav-link">Houses</a>
     <a href="#house-students" class="hub-nav-link">Students</a>
   </div>
 </nav>
 
-<main id="top">
+<main id="main">
   <!-- Mirrored hero: the headcount graph sits on the left, the title,
        description and Dashboard link on the right (the opposite of
        Archives, whose text sits left). DOM order is visual-then-text;
        .hero-mirrored flips the column widths. -->
-  <section class="page-hero hero hero-mirrored" id="overview">
+  <section class="page-hero hero hero-mirrored">
     <div class="section-inner hero-grid">
       <div class="hero-visual">
         <p class="hero-visual-label">Houses, by headcount</p>
@@ -137,8 +145,8 @@
         </div>
       </div>
       <div class="hero-text hero-text-right">
-        <a href="index.html#top" class="back-to-dashboard">Dashboard →</a>
-        <div class="section-head" style="margin-top:12px;margin-bottom:20px">
+        <a href="index.html" class="back-to-dashboard">Dashboard →</a>
+        <div class="section-head">
           <h1 class="hub-title">The four houses</h1>
           <p class="section-sub">Winter, Autumn, Spring and Summer. Every student in 8CM belongs to one.</p>
         </div>

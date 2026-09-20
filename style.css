@@ -4886,3 +4886,477 @@ html[data-theme="light"] .hub-nav {
   .coming-soon-pitch { display: none; }
   .coming-soon-card { padding: 40px 20px; }
 }
+
+/* ============================================
+   V17.1.0 — UI overhaul
+   ------------------------------------------------
+   Navigation transitions, one hero language for Home / Archives /
+   Houses, and a proper phone layout. Everything here is scoped so
+   the older sections above keep working; where it overrides an older
+   rule it says so. Design rules and tokens are written down in
+   DESIGN.md — read that before adding UI.
+   ============================================ */
+
+/* --- Baseline: typography + touch ------------------------------- */
+h1, h2, h3 { text-wrap: balance; }
+p, .section-sub, .hero-sub { text-wrap: pretty; }
+
+a, button, [role="button"], input, select, summary, label { touch-action: manipulation; }
+a, button, .pill, .glance-tile, .glance-strip { -webkit-tap-highlight-color: transparent; }
+.primary-nav-link, .hub-nav-link, .brand, .glance-tile, .glance-strip { user-select: none; -webkit-user-select: none; }
+
+.primary-nav-link:focus-visible,
+.hub-nav-link:focus-visible,
+.brand:focus-visible,
+.glance-tile:focus-visible,
+.glance-strip:focus-visible,
+.back-to-dashboard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-m);
+}
+
+/* Phones with a notch / home indicator (and iOS home-screen apps). */
+.section-inner,
+.nav-inner {
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+@media (max-width: 420px) {
+  .section-inner,
+  .nav-inner {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+}
+.nav { padding-top: env(safe-area-inset-top, 0px); }
+body::before {
+  /* Solid strip behind the iOS status bar so scrolling content never
+     shows through it. Zero height everywhere else. */
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: var(--bg);
+  z-index: 99;
+  pointer-events: none;
+}
+.footer { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0px); }
+
+/* --- Page transitions --------------------------------------------- */
+/* Leaving: main-nav.js puts .is-leaving on <html> and the content
+   fades out (the music fades with it). The header is deliberately NOT
+   in this list — it stays put, so the navbar reads as one persistent
+   bar while the page changes underneath it.
+   Arriving: content eases in. `backwards` (not `forwards`) so nothing
+   is left applied afterwards — a lingering transform would trap
+   position:fixed descendants. */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes page-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+main, .footer { animation: page-enter 0.5s var(--ease) backwards; }
+.hub-nav { animation: page-fade 0.4s ease-out backwards; }
+
+html.is-leaving main,
+html.is-leaving .footer,
+html.is-leaving .hub-nav {
+  opacity: 0;
+  transition: opacity 0.24s ease-in;
+}
+html.is-leaving body { pointer-events: none; }
+
+/* --- Header ---------------------------------------------------------- */
+/* Same-page taps used to look dead. Give the pill a press state. */
+.primary-nav-link { transition: color 0.2s var(--ease), transform 0.15s var(--ease); }
+.primary-nav-link:active { transform: scale(0.96); }
+
+/* Phone: the logo row scrolls away, the four destinations stay stuck.
+   main-nav.js measures --nav-row1 / --nav-h. Scoped with :has() so the
+   older pages (burger menu) are untouched. */
+@media (max-width: 720px) {
+  .nav:has(.primary-nav) {
+    top: calc(env(safe-area-inset-top, 0px) - var(--nav-row1, 0px));
+  }
+  .nav-inner { padding-top: 12px; padding-bottom: 6px; row-gap: 8px; }
+  .nav-links.primary-nav .primary-nav-link { padding: 10px 4px; font-size: 0.88rem; }
+  .brand img { height: 28px; }
+}
+
+/* --- Subnav ---------------------------------------------------------- */
+.hub-nav-inner { position: relative; } /* offsetLeft for scroll-into-view */
+.hub-nav-link { min-height: 40px; display: inline-flex; align-items: center; }
+@media (max-width: 720px) {
+  .hub-nav-inner {
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+    scroll-padding-inline: 16px;
+  }
+  .hub-nav-link { padding: 0 12px; font-size: 0.82rem; }
+}
+
+/* Anchors clear the real sticky chrome (header + subnav), on every
+   breakpoint. Replaces the fixed 120px / 90px offsets above. */
+.hub-section,
+#today, #events, #achievements, #timetable,
+#teachers, #students, #gallery, #houses, #house-students,
+#quick-links, #archive-materials {
+  scroll-margin-top: calc(var(--nav-h, 62px) + var(--sub-h, 42px) + 12px);
+}
+
+/* --- Hero: shared skeleton --------------------------------------------- */
+/* Home / Archives / Houses all use  .hero > .section-inner.hero-grid
+   so the hero text lines up with the logo, the subnav and every section
+   below it (Home used to sit 24px to the left of everything). */
+.hero { padding: 64px 0 88px; }
+.page-hero.hero { padding: 36px 0 56px; }
+.hero .hero-grid { align-items: center; }
+.page-hero .hero-grid { align-items: center; padding-top: 0; }
+.page-hero .hero-visual { margin-top: 0; }
+.page-hero .hero-text .section-head { margin: 10px 0 26px; max-width: 520px; }
+.page-hero .hero-text .hero-actions { margin-top: 0; }
+.hero-text.hero-text-right .section-head { margin-left: auto; }
+.hero-title { text-wrap: balance; }
+
+.back-to-dashboard { transition: color 0.2s var(--ease), transform 0.2s var(--ease); }
+.back-to-dashboard:hover { transform: translateX(-2px); }
+.hero-text-right .back-to-dashboard:hover { transform: translateX(2px); }
+
+@media (max-width: 860px) {
+  .hero { padding: 40px 0 56px; }
+  .page-hero.hero { padding: 24px 0 40px; }
+  .hero-grid { gap: 28px; }
+  /* Houses' visual is first in the DOM (it's on the left on desktop).
+     On a phone every hero reads title first, panel second. */
+  .hero.hero-mirrored .hero-text { order: -1; }
+  .page-hero .hero-text .section-head { margin-bottom: 20px; }
+}
+
+/* Hero buttons on a phone: the main action full width, the rest sharing
+   a row — three stacked full-width buttons pushed everything else off
+   the first screen. */
+@media (max-width: 720px) {
+  .hero-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hero-actions .btn { padding: 13px 12px; font-size: 0.92rem; }
+  .hero-actions .btn:first-child:nth-last-child(n + 3) { grid-column: 1 / -1; }
+  .hero-title { font-size: clamp(1.85rem, 8vw, 2.6rem); }
+  .hero-kicker { margin-bottom: 14px; }
+  .br-wide { display: none; } /* phones keep the three-line headline */
+}
+
+/* --- Glance panel (Home "This week", Archives "Archive snapshot") -------- */
+.glance-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 60%),
+    var(--bg-elevated);
+  box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.55);
+  animation: fadeUp 0.7s var(--ease) 0.2s backwards;
+}
+
+.glance-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.glance-kicker {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.glance-date { margin: 0; font-size: 0.78rem; color: var(--text-faint); }
+.glance-live {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: glance-pulse 2.4s ease-out infinite;
+}
+@keyframes glance-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+/* Week strip */
+.glance-week {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.glance-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 9px 0 7px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-m);
+  background: var(--bg-elevated-2);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), opacity 0.2s var(--ease);
+}
+.glance-day-name {
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.glance-day-num {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text);
+}
+.glance-day-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 7px;
+  margin-top: 2px;
+}
+.glance-dot { width: 5px; height: 5px; border-radius: 50%; display: block; }
+.glance-dot-hw { background: var(--accent); }
+.glance-dot-ev { background: var(--house-summer); }
+.glance-day.is-today {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.glance-day.is-today .glance-day-name { color: var(--accent-strong); }
+.glance-day.is-past { opacity: 0.5; }
+
+/* Tiles */
+.glance-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.glance-tile,
+.glance-strip {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background:
+    radial-gradient(110% 90% at 0% 0%, color-mix(in srgb, var(--tone, var(--accent)) 15%, transparent), transparent 62%),
+    var(--bg-elevated-2);
+  color: var(--text);
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.glance-tile {
+  display: flex;
+  flex-direction: column;
+  min-height: 136px;
+  padding: 12px 14px 13px;
+}
+.glance-tile:hover,
+.glance-strip:hover {
+  transform: translateY(-2px);
+  border-color: var(--tone, var(--accent));
+  box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--tone, var(--accent)) 60%, transparent);
+}
+.glance-tile:active,
+.glance-strip:active { transform: scale(0.985); }
+
+.glance-tile-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: auto;
+  padding-bottom: 10px;
+}
+.glance-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  color: var(--tone, var(--accent));
+  background: color-mix(in srgb, var(--tone, var(--accent)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone, var(--accent)) 30%, transparent);
+}
+.glance-icon svg,
+.glance-arrow {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.glance-icon svg { width: 18px; height: 18px; }
+.glance-arrow {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: transform 0.2s var(--ease), color 0.2s var(--ease);
+}
+.glance-tile:hover .glance-arrow,
+.glance-strip:hover .glance-arrow { color: var(--tone, var(--accent)); transform: translate(2px, -2px); }
+
+.glance-num {
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.glance-num.is-word { font-size: 1.55rem; line-height: 1.1; padding: 0.3rem 0 0.18rem; letter-spacing: -0.01em; }
+.glance-num.is-empty { color: var(--text-faint); }
+.glance-tile-label {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+.glance-tile-note {
+  margin-top: 2px;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--text-faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(2 * 1.35em); /* both tiles reserve two lines so the numbers line up */
+}
+.glance-tile-note.is-empty { color: var(--text-faint); }
+.glance-tile[data-state="warn"] .glance-tile-note { color: var(--house-summer); }
+.glance-tile[data-state="alert"] .glance-tile-note { color: var(--danger); }
+
+/* Archives: notes are one line, so the 2x2 grid doesn't reserve two. */
+.glance-tiles-2x2 .glance-tile { min-height: 122px; }
+.glance-tiles-2x2 .glance-tile-note { min-height: 0; }
+
+/* Wide strip (latest achievement) */
+.glance-strip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+}
+.glance-strip-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.glance-strip .glance-tile-label { margin: 0; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); }
+.glance-strip-title {
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.glance-strip-title.is-empty { color: var(--text-faint); font-weight: 400; }
+
+/* Loading skeleton (glance-panels.js adds/removes .is-loading) */
+@keyframes glance-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.glance-tile.is-loading .glance-num,
+.glance-tile.is-loading .glance-tile-note,
+.glance-strip.is-loading .glance-strip-title {
+  color: transparent;
+  border-radius: 5px;
+  background: linear-gradient(100deg, var(--border-soft) 30%, color-mix(in srgb, var(--border) 70%, transparent) 50%, var(--border-soft) 70%) 0 0 / 200% 100%;
+  animation: glance-shimmer 1.4s linear infinite;
+}
+.glance-tile.is-loading .glance-num { width: 52px; }
+.glance-tile.is-loading .glance-tile-note { width: 78%; }
+.glance-strip.is-loading .glance-strip-title { width: 60%; }
+
+html[data-theme="light"] .glance-panel { box-shadow: 0 14px 32px -24px rgba(0, 0, 0, 0.25); }
+html[data-theme="light"] .glance-day { background: var(--bg); }
+
+@media (max-width: 720px) {
+  .glance-panel { padding: 14px; gap: 12px; }
+  .glance-tiles { gap: 8px; }
+  .glance-week { gap: 5px; }
+  .glance-tile { min-height: 124px; padding: 11px 12px 12px; }
+  .glance-num { font-size: 2.05rem; }
+  .glance-num.is-word { font-size: 1.4rem; }
+  .glance-arrow { color: color-mix(in srgb, var(--tone, var(--accent)) 70%, var(--text-faint)); }
+}
+@media (max-width: 360px) {
+  .glance-num { font-size: 1.85rem; }
+  .glance-tile-label { font-size: 0.76rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glance-live { animation: none; }
+  .glance-tile.is-loading .glance-num,
+  .glance-tile.is-loading .glance-tile-note,
+  .glance-strip.is-loading .glance-strip-title { animation: none; }
+  main, .footer, .hub-nav { animation: none; }
+}
+
+/* --- Houses: chart card matches the glance panel ----------------------- */
+.hero-visual { transition: border-color 0.2s var(--ease); }
+.hero.hero-mirrored .hero-visual { padding: 22px 22px 24px; }
+.hero.hero-mirrored .hero-visual-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+@media (max-width: 720px) {
+  .hero.hero-mirrored .hero-visual { padding: 18px 16px 20px; }
+  .bar-row { grid-template-columns: 58px 1fr 22px; gap: 10px; margin-bottom: 14px; }
+}
+
+/* --- Sections / cards: phone rhythm -------------------------------------- */
+/* One vertical rhythm for every section on a phone (48px), one gutter
+   (16px), one radius. Filters no longer leave a lonely half-width box. */
+@media (max-width: 720px) {
+  .filter-row > .filter-box:last-of-type:nth-child(odd) { grid-column: 1 / -1; }
+  .footer-inner { padding-top: 28px; padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+  /* The version watermark used to sit on top of card text. */
+  .version-badge {
+    bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    right: 8px;
+    opacity: 0.55;
+    padding: 3px 8px;
+  }
+}
+.events-tools .today-note { font-style: normal; }
+
+/* --- Phone fixes found in the V17.1 audit -------------------------------- */
+/* Student cards: `1fr 1fr` lets a long unbreakable name (e.g.
+   "Karappamveettil") stretch its column past the page gutter, so the
+   right-hand card stuck out past every other element. minmax(0,1fr) lets
+   the columns shrink and the name wraps instead. */
+@media (max-width: 720px) {
+  .student-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .student-name, .teacher-name, .glance-strip-title { overflow-wrap: anywhere; }
+  .student-card .student-meta { flex-wrap: wrap; }
+}
+@media (min-width: 560px) and (max-width: 720px) {
+  .student-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* The sticky subnav tucks 1px under the header so a fractional --nav-h
+   can never leave a hairline gap for page content to show through. */
+.hub-nav { top: calc(var(--nav-h, 62px) - 1px); }
+@media (max-width: 720px) {
+  .hub-nav { top: calc(var(--nav-h, 62px) - 1px); }
+}
+html[data-theme="light"] .glance-tile[data-state="warn"] .glance-tile-note { color: #92600a; }
