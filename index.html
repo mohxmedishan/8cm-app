@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>8CM.</title>
 <meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba.">
@@ -103,10 +104,17 @@
   <div class="nav-inner">
     <a href="index.html" class="brand" aria-label="8CM home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
-      <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
-      <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
-      <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
-      <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+      <!-- The five destinations sit on one track that slides so the current
+           page is always in the centre slot (see DESIGN.md → Main navigation).
+           Which slot is decided by body[data-page] in CSS, so the very first
+           paint of every page is already in the right place. -->
+      <div class="primary-nav-track">
+        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+        <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
+        <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
+        <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+        <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
+      </div>
     </nav>
     <div class="nav-right">
       <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
@@ -151,12 +159,12 @@
           <p class="glance-kicker"><span class="glance-live" aria-hidden="true"></span><span id="glanceKicker">This week</span></p>
           <p class="glance-date" id="glanceDate"></p>
         </div>
-        <ol class="glance-week" id="glanceWeek" aria-label="School days">
-          <li class="glance-day" data-day="mon"><span class="glance-day-name">Mon</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></li>
-          <li class="glance-day" data-day="tue"><span class="glance-day-name">Tue</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></li>
-          <li class="glance-day" data-day="wed"><span class="glance-day-name">Wed</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></li>
-          <li class="glance-day" data-day="thu"><span class="glance-day-name">Thu</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></li>
-          <li class="glance-day" data-day="fri"><span class="glance-day-name">Fri</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></li>
+        <ol class="glance-week" id="glanceWeek" aria-label="School days — tap a day with dots to jump to what's on it">
+          <li class="glance-day-wrap" data-day="mon"><button type="button" class="glance-day" disabled><span class="glance-day-name">Mon</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></button></li>
+          <li class="glance-day-wrap" data-day="tue"><button type="button" class="glance-day" disabled><span class="glance-day-name">Tue</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></button></li>
+          <li class="glance-day-wrap" data-day="wed"><button type="button" class="glance-day" disabled><span class="glance-day-name">Wed</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></button></li>
+          <li class="glance-day-wrap" data-day="thu"><button type="button" class="glance-day" disabled><span class="glance-day-name">Thu</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></button></li>
+          <li class="glance-day-wrap" data-day="fri"><button type="button" class="glance-day" disabled><span class="glance-day-name">Fri</span><span class="glance-day-num">–</span><span class="glance-day-dots" aria-hidden="true"></span></button></li>
         </ol>
         <div class="glance-tiles">
           <a href="#today" class="glance-tile" id="glanceHomeworkTile" style="--tone: var(--accent)">

@@ -10,6 +10,18 @@
 export const changelog = [
   {
     date: "2026-09-20",
+    version: "17.2.0",
+    items: [
+      "New main menu movement: the highlighted pill now stays in the middle and the whole row slides to bring the page you pick into the centre. The buttons at the edges fade out. It starts in the right place on every page, so the menu no longer jumps, blinks or drifts sideways while a page loads.",
+      "New Rankings page (coming soon), to the right of Archives.",
+      "Home: tap a day in the This week strip to jump straight to what's on it. One item takes you there and highlights it; a day with several shows a short list to pick from. Dated announcements now get a dot too.",
+      "The house graph now waits for the live class list instead of briefly showing old numbers, and shows a loading bar in the meantime.",
+      "Smaller, tidier sub menu (Home, Houses, Archives) with less space around it.",
+      "Page changes are calmer: the page stays hidden for a moment until fonts and layout have settled, then fades in, so you don't see it readjust. A page that is shorter than the screen no longer shifts the layout by the width of a scrollbar.",
+    ],
+  },
+  {
+    date: "2026-09-20",
     version: "17.1.0",
     items: [
       "Changing pages now feels like one app: the page fades out, the next one fades in, and the top menu stays where it is. The background music fades out and back in with it instead of cutting off.",

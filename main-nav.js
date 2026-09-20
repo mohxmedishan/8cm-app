@@ -10,8 +10,15 @@
 //     is "stuck"), --nav-row1 (the part of a phone header that
 //     scrolls away) and --sub-h (the subnav). CSS uses them so
 //     anchor jumps and the sticky subnav always clear the real chrome.
-//  2. ACTIVE PILL     The highlighted pill behind the current primary
-//     destination (Football / Houses / Home / Archives).
+//  2. PRIMARY NAV     Five destinations (Football, Houses, Home,
+//     Archives, Rankings) on ONE track. The current page always sits in
+//     the fixed centre slot (the pill never moves); going elsewhere
+//     slides the whole track. Which slot a page starts in is pure CSS
+//     (body[data-page] → --nav-i), so every page's first paint already
+//     has the bar in place: no JS-positioned pill, nothing to pop in.
+//  2b. REVEAL         Content stays hidden (html.is-preparing) until
+//     fonts are ready, then fades in — so late font swaps and first
+//     layout passes are never seen as the page "readjusting".
 //  3. PAGE TRANSITIONS  Every same-site link fades the page content
 //     out (and the background music with it), then navigates. The
 //     next page fades its content in. The header stays put, so the
@@ -31,7 +38,7 @@
 //    scrolling — a dead link is worse than an abrupt one.
 // ============================================
 
-const LEAVE_MS = 240; // fade-out length before the browser navigates
+const LEAVE_MS = 280; // fade-out + nav slide length before the browser navigates
 const SAFETY_MS = 7000; // give up waiting for a navigation that never happens
 
 const html = document.documentElement;
@@ -111,71 +118,59 @@ function initStickyMetrics() {
   }
 }
 
-// ---------- 2. Active pill ----------
-function initPrimaryIndicator() {
+// ---------- 2. Primary nav (sliding track) ----------
+function initPrimaryNav() {
   const nav = document.getElementById("navLinks");
   if (!nav) return null;
+  const track = nav.querySelector(".primary-nav-track");
   const links = Array.from(nav.querySelectorAll(".primary-nav-link"));
-  if (!links.length) return null;
-
-  let indicator = nav.querySelector(".primary-nav-indicator");
-  if (!indicator) {
-    indicator = document.createElement("span");
-    indicator.className = "primary-nav-indicator";
-    indicator.setAttribute("aria-hidden", "true");
-    nav.insertBefore(indicator, nav.firstChild);
-  }
+  if (!track || !links.length) return null;
 
   const currentPage = document.body.dataset.page || "";
-  const activeLink = links.find((a) => a.dataset.page === currentPage) || null;
-
-  // offset* metrics are relative to the nav (its own positioned box),
-  // so they aren't thrown off by scrolling or transforms the way
-  // getBoundingClientRect() differences can be.
-  function place(link, animate) {
-    if (!link || !link.offsetWidth) {
-      indicator.style.opacity = "0";
-      return;
-    }
-    if (!animate) indicator.style.transition = "none";
-    indicator.style.width = `${link.offsetWidth}px`;
-    indicator.style.height = `${link.offsetHeight}px`;
-    indicator.style.transform = `translate(${link.offsetLeft}px, ${link.offsetTop}px)`;
-    indicator.style.opacity = "1";
-    if (!animate) {
-      void indicator.offsetHeight; // commit the un-animated placement first
-      indicator.style.transition = "";
-    }
-  }
-
   links.forEach((link) => {
-    const isActive = link === activeLink;
-    link.classList.toggle("is-active", isActive);
-    if (isActive) link.setAttribute("aria-current", "page");
+    if (link.dataset.page === currentPage) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
 
-  place(activeLink, false);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => place(activeLink, false)).catch(() => {});
-  window.addEventListener("load", () => place(activeLink, false), { once: true });
-  const replace = () => place(links.find((a) => a.classList.contains("is-active")) || activeLink, false);
-  window.addEventListener("resize", replace);
-  if ("ResizeObserver" in window) new ResizeObserver(replace).observe(nav);
-
   return {
+    // Slide the track so `link` ends up in the centre slot. The current
+    // link's styling is released via [data-moving] so only the target
+    // reads as active while it glides.
     moveTo(link) {
+      const idx = links.indexOf(link);
+      if (idx < 0) return;
+      nav.setAttribute("data-moving", "");
       links.forEach((a) => a.classList.toggle("is-active", a === link));
-      place(link, true);
+      track.style.setProperty("--nav-i", String(idx));
     },
+    // Navigation cancelled / page restored from cache: glide back.
     restore() {
-      links.forEach((a) => a.classList.toggle("is-active", a === activeLink));
-      place(activeLink, true);
+      nav.removeAttribute("data-moving");
+      links.forEach((a) => a.classList.remove("is-active"));
+      track.style.removeProperty("--nav-i");
     },
   };
 }
 
+// ---------- 2b. Reveal ----------
+function initReveal() {
+  if (!html.classList.contains("is-preparing")) return;
+  const reveal = () => html.classList.remove("is-preparing");
+  const frames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  const settled = (async () => {
+    if (document.readyState === "loading") {
+      await new Promise((r) => document.addEventListener("DOMContentLoaded", r, { once: true }));
+    }
+    await frames(); // layout has happened, so font requests have started
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    await frames();
+  })();
+  // Never hold the page hostage: 700ms is the longest anyone waits.
+  Promise.race([settled, new Promise((r) => setTimeout(r, 700))]).then(reveal);
+}
+
 // ---------- 3 + 4. Page transitions and same-page clicks ----------
-function initPageTransitions(indicator) {
+function initPageTransitions(primary) {
   let leaving = false;
   let safetyTimer = null;
   let navTimer = null;
@@ -186,7 +181,7 @@ function initPageTransitions(indicator) {
     clearTimeout(safetyTimer);
     clearTimeout(navTimer);
     html.classList.remove("is-leaving");
-    if (indicator) indicator.restore();
+    if (primary) primary.restore();
     fadeInAudio();
   }
 
@@ -197,7 +192,7 @@ function initPageTransitions(indicator) {
       return;
     }
     leaving = true;
-    if (indicator && link && link.classList.contains("primary-nav-link")) indicator.moveTo(link);
+    if (primary && link && link.classList.contains("primary-nav-link")) primary.moveTo(link);
     html.classList.add("is-leaving");
     fadeOutAudio(LEAVE_MS);
     navTimer = window.setTimeout(() => { window.location.href = href; }, LEAVE_MS);
@@ -347,8 +342,9 @@ function initSubnav() {
 }
 
 export function initMainNav() {
+  initReveal();
   initStickyMetrics();
-  const indicator = initPrimaryIndicator();
-  initPageTransitions(indicator);
+  const primary = initPrimaryNav();
+  initPageTransitions(primary);
   initSubnav();
 }

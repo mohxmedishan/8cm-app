@@ -376,12 +376,13 @@ function initHouseCards() {
     });
   });
 
-  // onStudents() fires immediately with the seed roster, then again
-  // once Firestore answers and whenever a monitor edits/moves a
-  // student — so the chart and cards never go stale.
+  // onLiveStudents() stays silent until Firestore has answered (no
+  // stale seed numbers flashing first), then fires again whenever a
+  // monitor edits/moves a student — so the chart and cards are always
+  // live. Until then the chart shows a loading skeleton.
   import("./students.js")
     .then((m) => {
-      m.onStudents((list) => {
+      m.onLiveStudents((list) => {
         renderHouseChart(list);
         renderHouseCardLists(list);
       });
@@ -407,6 +408,8 @@ const escapeHouseName = (v) =>
 function renderHouseChart(list) {
   const rows = document.querySelectorAll(".bar-row[data-house]");
   if (!rows.length) return;
+  const chart = document.getElementById("housesChart");
+  if (chart) { chart.classList.remove("is-loading"); chart.removeAttribute("aria-busy"); }
 
   const counts = {};
   HOUSE_KEYS.forEach((h) => { counts[h] = 0; });

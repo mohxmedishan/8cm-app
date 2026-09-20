@@ -230,6 +230,7 @@ function render() {
   upcoming.forEach((ev) => {
     const card = document.createElement("article");
     card.className = "event-card";
+    card.dataset.id = ev.id;
     card.innerHTML = `
       <div class="event-card-date">
         <span class="event-countdown">${countdownLabel(ev.date)}</span>

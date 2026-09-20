@@ -5360,3 +5360,283 @@ html[data-theme="light"] .glance-day { background: var(--bg); }
   .hub-nav { top: calc(var(--nav-h, 62px) - 1px); }
 }
 html[data-theme="light"] .glance-tile[data-state="warn"] .glance-tile-note { color: #92600a; }
+
+/* ============================================
+   V17.2.0 — Navigation v2, calm page loads, live house chart
+   ------------------------------------------------
+   Read DESIGN.md → "Main navigation" and "Page loads" before touching
+   any of this. The short version:
+   - The five primary destinations sit on one TRACK that slides so the
+     current page is always in the centre slot. The pill is a fixed
+     pseudo-element; nothing moves it. Position on first paint comes
+     from body[data-page] (pure CSS), so there is nothing for JS to
+     pop into place.
+   - Content is held back (html.is-preparing) until fonts are ready
+     and then fades in, so a late font swap or first layout pass is
+     never seen as the page "readjusting".
+   ============================================ */
+
+/* --- No sideways jump when a page gains/loses a scrollbar -------------- */
+/* Football / Rankings are short (no scrollbar), the other pages are long
+   (scrollbar). Without this every page-to-page change nudged the whole
+   layout — including the navbar — by half a scrollbar width. */
+html { overflow-y: scroll; scrollbar-gutter: stable; }
+
+/* --- Header grid: the nav is centred on the PAGE, not on "what's left" -- */
+/* Before, the middle column was `1fr` between the logo and the account
+   buttons, so the nav drifted whenever the logo image finished loading
+   or the Sign in button appeared. Equal side columns pin it. */
+@media (min-width: 721px) {
+  .nav-inner { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .nav-inner .brand { justify-self: start; }
+  .nav-inner .nav-right { justify-self: end; }
+}
+.nav-right { min-height: 36px; }
+
+/* --- Primary nav: five slots, sliding track ----------------------------- */
+body[data-page="football"] { --nav-i: 0; }
+body[data-page="houses"]   { --nav-i: 1; }
+body[data-page="home"]     { --nav-i: 2; }
+body[data-page="archives"] { --nav-i: 3; }
+body[data-page="rankings"] { --nav-i: 4; }
+
+.nav-links.primary-nav {
+  --slot: clamp(84px, 10vw, 104px);
+  position: relative;
+  display: block;
+  width: calc(var(--slot) * 5);
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  /* The outer slots fade out — "Foot|ball" reads faded → clear. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.5) 9%, #000 24%, #000 76%, rgba(0, 0, 0, 0.5) 91%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 0.5) 9%, #000 24%, #000 76%, rgba(0, 0, 0, 0.5) 91%, transparent 100%);
+}
+/* The pill: fixed in the centre slot for good. */
+.nav-links.primary-nav::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(40% + 3px);
+  width: calc(20% - 6px);
+  border-radius: 100px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  pointer-events: none;
+}
+.primary-nav-track {
+  position: relative;
+  display: flex;
+  width: 100%;
+  transform: translate3d(calc((2 - var(--nav-i, 2)) * 20%), 0, 0);
+  transition: transform 0.3s var(--ease);
+  will-change: transform;
+}
+.nav-links.primary-nav .primary-nav-track .primary-nav-link {
+  flex: 0 0 20%;
+  width: 20%;
+  padding: 7px 0;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 1;
+}
+.primary-nav-link:focus-visible { outline-offset: -3px; }
+
+/* Whichever link is the current page reads as active — from the first
+   paint, no JS. While a navigation is under way JS sets [data-moving]
+   and marks the destination with .is-active instead. */
+body[data-page="football"] .primary-nav:not([data-moving]) .primary-nav-link[data-page="football"],
+body[data-page="houses"]   .primary-nav:not([data-moving]) .primary-nav-link[data-page="houses"],
+body[data-page="home"]     .primary-nav:not([data-moving]) .primary-nav-link[data-page="home"],
+body[data-page="archives"] .primary-nav:not([data-moving]) .primary-nav-link[data-page="archives"],
+body[data-page="rankings"] .primary-nav:not([data-moving]) .primary-nav-link[data-page="rankings"],
+.primary-nav-link.is-active {
+  color: var(--text);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .nav-links.primary-nav {
+    width: 100%;
+    /* wider fade zone: the row is narrower, neighbours need to recede */
+  }
+  .nav-links.primary-nav .primary-nav-track .primary-nav-link { padding: 9px 0; font-size: 0.86rem; }
+}
+@media (max-width: 360px) {
+  .nav-links.primary-nav .primary-nav-track .primary-nav-link { font-size: 0.78rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .primary-nav-track { transition: none; }
+}
+
+/* --- Page loads: hold, then reveal ------------------------------------------ */
+/* Replaces the V17.1 keyframe entrance. The head script adds
+   .is-preparing; main-nav.js removes it once fonts are ready (700ms
+   at most, 1500ms failsafe in the page itself). */
+main, .footer, .hub-nav { animation: none; }
+main   { transition: opacity 0.45s var(--ease), transform 0.45s var(--ease); }
+.footer, .hub-nav { transition: opacity 0.45s var(--ease); }
+html.is-preparing main,
+html.is-preparing .footer,
+html.is-preparing .hub-nav { opacity: 0; }
+html.is-preparing main { transform: translateY(8px); }
+/* Hero entrance animations wait for the reveal instead of finishing
+   unseen underneath it. */
+html.is-preparing main * { animation-play-state: paused; }
+/* Leaving keeps its own quick fade. */
+html.is-leaving main,
+html.is-leaving .footer,
+html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
+
+/* --- Sub navigation: slimmer, calmer -------------------------------------------- */
+/* One 36px row (34px on phones) with a 2px underline that grows in.
+   Was ~46px tall with a 40px gap beneath it. */
+.hub-nav {
+  margin-bottom: 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.hub-nav-inner {
+  gap: 2px;
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: stretch;
+}
+.hub-nav-link {
+  position: relative;
+  height: 36px;
+  min-height: 0;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+}
+.hub-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.25s var(--ease);
+}
+.hub-nav-link:hover { background: none; }
+.hub-nav-link.is-active,
+.hub-nav-link:target { border: 0; background: none; color: var(--accent-strong); }
+.hub-nav-link.is-active::after,
+.hub-nav-link:target::after { transform: scaleX(1); }
+@media (max-width: 720px) {
+  .hub-nav-link { height: 34px; padding: 0 11px; font-size: 0.76rem; }
+  .hub-nav-link::after { left: 11px; right: 11px; }
+}
+/* the 40px gap that used to sit under the subnav */
+.hero { padding-top: 56px; }
+.page-hero.hero { padding-top: 32px; }
+@media (max-width: 860px) {
+  .hero { padding-top: 32px; }
+  .page-hero.hero { padding-top: 20px; }
+}
+
+/* --- Week strip: tappable days ------------------------------------------------------ */
+.glance-week > li { margin: 0; padding: 0; list-style: none; display: block; }
+.glance-day {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.glance-day:disabled { opacity: 1; }
+.glance-day.is-past:disabled { opacity: 0.5; }
+.glance-day.has-items { cursor: pointer; }
+.glance-day.has-items:hover { border-color: var(--text-faint); }
+.glance-day.has-items:active { transform: scale(0.95); }
+.glance-day.is-open { border-color: var(--accent); background: var(--accent-soft); }
+.glance-dot-an { background: var(--house-winter); }
+
+.glance-tray {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--bg-elevated-2);
+  padding: 8px;
+  animation: glance-tray-in 0.25s var(--ease);
+}
+@keyframes glance-tray-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+.glance-tray-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 6px 8px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.glance-tray-close {
+  width: 28px; height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.glance-tray-close:hover { background: var(--bg-elevated); color: var(--text); }
+.glance-tray-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.glance-tray-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.glance-tray-item:hover { background: var(--bg-elevated); border-color: var(--border); }
+.glance-tray-item:active { transform: scale(0.99); }
+.glance-tray-item .glance-dot { width: 7px; height: 7px; flex-shrink: 0; }
+.glance-tray-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.glance-tray-label { font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glance-tray-meta { font-size: 0.72rem; color: var(--text-faint); }
+.glance-tray-item:hover .glance-arrow { color: var(--accent); transform: translate(2px, -2px); }
+
+/* The item you jumped to pulses once so you can find it. */
+.is-flashed { animation: glance-flash 2.2s var(--ease); }
+@keyframes glance-flash {
+  0%   { box-shadow: 0 0 0 2px var(--accent); background-color: var(--accent-soft); }
+  60%  { box-shadow: 0 0 0 2px var(--accent); }
+  100% { box-shadow: 0 0 0 2px transparent; }
+}
+
+/* --- Houses chart: skeleton until the live roster arrives ------------------ */
+.bar-chart.is-loading .bar-fill { width: 0 !important; }
+.bar-chart.is-loading .bar-track {
+  background: linear-gradient(100deg, var(--bg-elevated-2) 30%, color-mix(in srgb, var(--border) 70%, transparent) 50%, var(--bg-elevated-2) 70%) 0 0 / 200% 100%;
+  animation: glance-shimmer 1.4s linear infinite;
+}
+.bar-chart.is-loading .bar-count { color: var(--text-faint); }
+@media (prefers-reduced-motion: reduce) {
+  .bar-chart.is-loading .bar-track { animation: none; }
+}
+@media (max-width: 340px) {
+  .nav-links.primary-nav .primary-nav-track .primary-nav-link { font-size: 0.7rem; letter-spacing: -0.01em; }
+}

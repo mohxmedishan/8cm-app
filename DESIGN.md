@@ -1,4 +1,4 @@
-# 8CM — Design guide (V17.1)
+# 8CM — Design guide (V17.2)
 
 Read this before adding or changing any UI. The goal is that a new page or
 component looks like it was always part of the site. **Don't invent a new
@@ -62,16 +62,34 @@ Tinting: mix a tone into transparent, never use a fixed hex —
 ## 4. Page skeleton
 
 ```html
-<body data-page="home|houses|archives|football">   <!-- drives the nav pill -->
+<body data-page="football|houses|home|archives|rankings">   <!-- picks the nav slot -->
   splash · grain · <header class="nav" id="nav"> … primary nav … </header>
   <nav class="hub-nav"> subnav (optional) </nav>
   <main id="main"> hero + sections </main>
   <footer class="footer"> … </footer>
 ```
 
-- **Main nav** (`.primary-nav-link[data-page]`): Football · Houses · Home · Archives.
-  Link to Home as **`index.html`** — never `index.html#top`.
-- **Subnav** (`.hub-nav > .hub-nav-inner > a.hub-nav-link`): the **first tab is
+- **Main nav** — five destinations in this fixed order: **Football · Houses ·
+  Home · Archives · Rankings**. Markup: `nav.primary-nav > .primary-nav-track >
+  a.primary-nav-link[data-page]`. Link to Home as **`index.html`** — never
+  `index.html#top`. To add a page: add a link to the track on every page, add
+  its index to the `body[data-page]` list in CSS (`--nav-i`), and change the
+  slot maths (`20%` = 1/5) if the count changes.
+  - The pill is a **fixed** `::before` in the centre slot. It never moves.
+  - The **track slides** so the current page is centred: `translateX((2 − --nav-i) × 20%)`.
+    `--nav-i` comes from `body[data-page]` in CSS (so the first paint is
+    already correct — no JS positioning) and is overridden inline by
+    `main-nav.js` while a navigation is starting.
+  - Outer slots fade via a CSS mask (gradient), so the edge labels recede.
+  - Slots are fixed-width (`--slot`, 84–104px desktop, 20% of the row on phones).
+    **Never make slot widths depend on text** — that is what made the bar drift
+    when fonts loaded.
+  - The header grid is `1fr auto 1fr` on desktop so the nav is centred on the
+    page regardless of the logo image or the Sign-in button appearing.
+- **Subnav** (`.hub-nav > .hub-nav-inner > a.hub-nav-link`): one slim row —
+  36px tall (34px on phones), 0.78rem text, a 2px accent underline that grows
+  in under the active tab, and no gap beneath it. Don't add padding or a
+  second row. The **first tab is
   always `href="#top"` and is named after the page** (Home / Houses / Archives).
   It scrolls to the true top. The rest are section ids. Scrollspy is automatic
   (`main-nav.js`) — don't write your own.
@@ -80,8 +98,9 @@ Tinting: mix a tone into transparent, never use a fixed hex —
 
 ## 5. Navigation & motion rules (all implemented in `main-nav.js` + `bgm.js`)
 
-1. **Every same-site link fades the page out (240ms) and the next page fades
-   in.** The header does *not* fade — it persists. Opt out with `data-no-transition`.
+1. **Every same-site link fades the page content out (~240ms) while the nav
+   track slides to the destination (300ms), then navigates.** The header does
+   *not* fade — it persists. Opt out with `data-no-transition`.
 2. **Clicking the page you're on never reloads** — it smooth-scrolls to the top.
    Real in-page anchors (`#students`) use native smooth scroll.
 3. **Music fades with the page** (`fadeOutBgm` / `fadeInBgm`) and resumes at the
@@ -92,8 +111,16 @@ Tinting: mix a tone into transparent, never use a fixed hex —
    offsets and scroll margins use them. Don't hard-code header heights.
 6. Motion budget: 150–250ms for hover/press, 400–700ms for entrances, always
    `var(--ease)`. Everything must respect `prefers-reduced-motion`.
-7. Page/section entrance animations must use `backwards` fill (or none) —
-   a lingering `transform` breaks `position: fixed` children.
+7. **Calm page loads.** Each page's `<head>` adds `html.is-preparing`;
+   `main`, the subnav and the footer stay at opacity 0 (and hero animations
+   stay paused) until fonts are ready (700ms max, 1.5s failsafe), then they
+   fade in. Anything that would visibly reflow — font swap, first layout —
+   therefore happens unseen. Don't animate entrances with keyframes that
+   start on parse; hang them off the reveal. Never leave a lingering
+   `transform` on `main` (breaks `position: fixed` children).
+8. **No layout shift between pages:** `html { overflow-y: scroll; scrollbar-gutter: stable }`
+   keeps short and long pages the same width. Reserve space for anything that
+   loads late (skeletons: `.is-loading`) instead of letting it push content.
 
 ## 6. Components
 
@@ -120,7 +147,14 @@ first button full width, the rest share a row (`.hero-actions`).
 A `.glance-panel` (elevated card, radial sage tint, 18px padding / 14px phone)
 containing, top to bottom:
 1. `.glance-head` — `.glance-kicker` (uppercase 0.72rem, pulsing `.glance-live` dot) + `.glance-date`.
-2. Optional `.glance-week` — 5 `.glance-day` chips (`is-today`, `is-past`, `.glance-dot-hw` accent dot, `.glance-dot-ev` amber dot).
+2. Optional `.glance-week` — 5 `button.glance-day` chips (`is-today`, `is-past`,
+   `has-items`). Dots: `.glance-dot-hw` accent = homework due, `.glance-dot-ev`
+   amber = event, `.glance-dot-an` blue = dated announcement. **Tapping a chip
+   with items takes you to the real item** (scrolls to it and flashes it with
+   `.is-flashed`); one item jumps straight there, several open a small
+   `.glance-tray` list to pick from. Days with nothing are disabled. Targets are
+   found by `data-id` on `.hw-row`, `.event-card`, `.announcement-row` — keep
+   those attributes when you change those renderers.
 3. `.glance-tiles` — 2-column grid of `a.glance-tile`. A tile = `.glance-tile-top`
    (`.glance-icon` 32px rounded-square, tinted by `--tone`; `.glance-arrow`),
    `.glance-num` (Fraunces 2.3rem, tabular numbers; `.is-word` for "Today"),
@@ -128,6 +162,10 @@ containing, top to bottom:
    Set the tone inline: `style="--tone: var(--house-summer)"`.
    `data-state="warn|alert"` colours the note.
 4. Optional `a.glance-strip` — wide one-line tile (icon + label + title + arrow).
+
+Numbers that come from Firestore data must use **live** subscriptions
+(`onLiveStudents`, not `onStudents`) so a built-in seed value never flashes
+first; show the `.is-loading` skeleton until data arrives.
 
 Rules: every tile is a link to a real section; data comes from live modules;
 loading state is `.is-loading` (shimmer) removed when data arrives; numbers use
@@ -163,7 +201,8 @@ the shared helpers (`timetable-data.js` `dateForDayKey`, `events.js`
 - [ ] Tap targets ≥ 40px; no hover-only affordances.
 - [ ] Nothing important hidden under the fixed version badge / home indicator.
 - [ ] Works with the iOS home-screen app (safe-area insets) and the light theme.
-- [ ] Clicking a link fades out/in; clicking the current page scrolls to top.
+- [ ] Clicking a link fades out/in and the nav track slides; clicking the current page scrolls to top.
+- [ ] Reload every page: the navbar must not move by a single pixel during load.
 
 ## 8. Don'ts
 
@@ -171,6 +210,7 @@ the shared helpers (`timetable-data.js` `dateForDayKey`, `events.js`
 - Don't add libraries or build steps; it's plain HTML/CSS/ES modules.
 - Don't use `localStorage`/`sessionStorage` for anything but the existing keys
   (guard every access with try/catch).
+- Don't position the nav pill with JS, and don't size nav slots by their text.
 - Don't hard-code header heights, don't add `#top` ids, don't link to `index.html#top`.
 - Don't write your own scrollspy, page-transition or audio-fade code.
 - Don't leave a link that calls `preventDefault()` without navigating or scrolling.

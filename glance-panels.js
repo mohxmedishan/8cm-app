@@ -5,9 +5,11 @@
 // in them comes from data already live elsewhere on the site — nothing
 // is typed in.
 //
-//   Home      "This week"  — a Mon–Fri strip (today marked, dots for
-//             homework due / events), a homework tile, a next-event
-//             countdown tile, and the latest achievement.
+//   Home      "This week"  — a Mon–Fri strip (today marked; dots for
+//             homework due / events / dated announcements — tap a day
+//             to jump to the item, or pick from a small list when there
+//             are several), a homework tile, a next-event countdown
+//             tile, and the latest achievement.
 //   Archives  "Archive snapshot" — students / teachers / photos /
 //             materials counts, each a shortcut to its section.
 //
@@ -98,6 +100,7 @@ export function initHomeGlance() {
   let assignments = [];
   let assignmentsApi = null;
   let events = [];
+  let notices = [];
   let dayDate = {}; // "mon" -> "2026-09-21"
 
   // The date each Mon–Fri chip stands for. Same rule as the timetable
@@ -116,31 +119,145 @@ export function initHomeGlance() {
   };
   computeDates(fallbackDateForDayKey);
 
+  // ---- what's on each day ----
+  // hw = homework due, ev = event, an = announcement with a date.
+  const KIND = {
+    hw: { dot: "glance-dot-hw", meta: "Homework due" },
+    ev: { dot: "glance-dot-ev", meta: "Event" },
+    an: { dot: "glance-dot-an", meta: "Announcement" },
+  };
+  function itemsFor(iso) {
+    const out = [];
+    if (assignmentsApi) {
+      assignments.forEach((a) => {
+        if (a.dueDate === iso && assignmentsApi.dueBucket(a) !== "completed") {
+          out.push({ kind: "hw", id: a.id, label: [a.subject, a.title].filter(Boolean).join(" · ") });
+        }
+      });
+    }
+    events.forEach((e) => { if (e.date === iso) out.push({ kind: "ev", id: e.id, label: e.title, extra: e.time }); });
+    notices.forEach((n) => { if (n.eventDate === iso) out.push({ kind: "an", id: n.id, label: n.title }); });
+    return out;
+  }
+
+  // ---- jumping to the real thing ----
+  const cssEscape = (v) => (window.CSS && CSS.escape ? CSS.escape(String(v)) : String(v).replace(/"/g, '\\"'));
+  function findTarget(item) {
+    const sel = {
+      hw: `.hw-row[data-id="${cssEscape(item.id)}"]`,
+      ev: `.event-card[data-id="${cssEscape(item.id)}"]`,
+      an: `.announcement-row[data-id="${cssEscape(item.id)}"]`,
+    }[item.kind];
+    return sel ? document.querySelector(sel) : null;
+  }
+  function flash(el) {
+    el.classList.remove("is-flashed");
+    void el.offsetWidth; // restart the animation on repeat taps
+    el.classList.add("is-flashed");
+    window.setTimeout(() => el.classList.remove("is-flashed"), 2400);
+  }
+  function jumpTo(item) {
+    closeTray();
+    let el = findTarget(item);
+    const go = (target) => {
+      if (!target) {
+        // Not on the page (filtered out, still loading): at least land in the right section.
+        const sec = document.getElementById(item.kind === "ev" ? "events" : "today");
+        if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      target.scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "center" });
+      window.setTimeout(() => flash(target), reduceMotion() ? 0 : 450);
+    };
+    if (!el && item.kind === "hw") {
+      // The homework list may be filtered (Pending / Due soon…): show everything and retry.
+      const all = document.querySelector('#homeworkFilters [data-filter="all"]');
+      if (all) { all.click(); window.setTimeout(() => go(findTarget(item)), 80); return; }
+    }
+    go(el);
+  }
+
+  // ---- small list for days with more than one thing ----
+  let tray = $("glanceTray");
+  let openIso = null;
+  function ensureTray() {
+    if (tray) return tray;
+    tray = document.createElement("div");
+    tray.className = "glance-tray";
+    tray.id = "glanceTray";
+    tray.hidden = true;
+    const week = $("glanceWeek");
+    week.insertAdjacentElement("afterend", tray);
+    tray.addEventListener("click", (e) => {
+      if (e.target.closest(".glance-tray-close")) { closeTray(); return; }
+      const btn = e.target.closest(".glance-tray-item");
+      if (btn) jumpTo({ kind: btn.dataset.kind, id: btn.dataset.id });
+    });
+    return tray;
+  }
+  function closeTray() {
+    openIso = null;
+    if (tray) tray.hidden = true;
+    panel.querySelectorAll(".glance-day.is-open").forEach((b) => { b.classList.remove("is-open"); b.setAttribute("aria-expanded", "false"); });
+  }
+  const ARROW = '<svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  function fillTray(iso) {
+    ensureTray();
+    const items = itemsFor(iso);
+    if (!items.length) { closeTray(); return; }
+    tray.innerHTML = `
+      <div class="glance-tray-head"><span>${esc(shortDate(iso))}</span><button type="button" class="glance-tray-close" aria-label="Close list">×</button></div>
+      <ul class="glance-tray-list">${items.map((it) => `
+        <li><button type="button" class="glance-tray-item" data-kind="${it.kind}" data-id="${esc(it.id)}">
+          <i class="glance-dot ${KIND[it.kind].dot}" aria-hidden="true"></i>
+          <span class="glance-tray-text"><span class="glance-tray-label">${esc(it.label)}</span><span class="glance-tray-meta">${KIND[it.kind].meta}${it.extra ? " · " + esc(it.extra) : ""}</span></span>
+          ${ARROW}
+        </button></li>`).join("")}</ul>`;
+    tray.hidden = false;
+  }
+  function onDayTap(iso, btn) {
+    const items = itemsFor(iso);
+    if (!items.length) return;
+    if (items.length === 1) { jumpTo(items[0]); return; }
+    if (openIso === iso) { closeTray(); return; }
+    closeTray();
+    openIso = iso;
+    btn.classList.add("is-open");
+    btn.setAttribute("aria-expanded", "true");
+    fillTray(iso);
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && openIso) closeTray(); });
+  document.addEventListener("click", (e) => { if (openIso && !e.target.closest("#homeGlance")) closeTray(); });
+
   function renderWeek() {
     const today = todayIso();
-    panel.querySelectorAll(".glance-day").forEach((li) => {
+    panel.querySelectorAll(".glance-day-wrap").forEach((li) => {
+      const btn = li.querySelector(".glance-day");
       const iso = dayDate[li.dataset.day];
-      if (!iso) return;
+      if (!btn || !iso) return;
       const [y, m, d] = iso.split("-").map(Number);
       li.querySelector(".glance-day-num").textContent = String(d);
-      li.classList.toggle("is-today", iso === today);
-      li.classList.toggle("is-past", iso < today);
+      btn.classList.toggle("is-today", iso === today);
+      btn.classList.toggle("is-past", iso < today);
 
-      const hw = assignmentsApi
-        ? assignments.filter((a) => a.dueDate === iso && assignmentsApi.dueBucket(a) !== "completed").length
-        : 0;
-      const ev = events.filter((e) => e.date === iso).length;
-      const dots = li.querySelector(".glance-day-dots");
-      dots.innerHTML = `${hw ? '<i class="glance-dot glance-dot-hw"></i>' : ""}${ev ? '<i class="glance-dot glance-dot-ev"></i>' : ""}`;
+      const items = itemsFor(iso);
+      const kinds = ["hw", "ev", "an"].filter((k) => items.some((it) => it.kind === k));
+      li.querySelector(".glance-day-dots").innerHTML = kinds.map((k) => `<i class="glance-dot ${KIND[k].dot}"></i>`).join("");
+      btn.disabled = items.length === 0;
+      btn.classList.toggle("has-items", items.length > 0);
+      btn.onclick = () => onDayTap(iso, btn);
+      if (items.length > 1) btn.setAttribute("aria-expanded", openIso === iso ? "true" : "false");
+      else btn.removeAttribute("aria-expanded");
 
       const bits = [new Date(y, m - 1, d).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })];
       if (iso === today) bits.push("today");
-      if (hw) bits.push(`${hw} homework due`);
-      if (ev) bits.push(`${ev} event${ev === 1 ? "" : "s"}`);
-      li.setAttribute("aria-label", bits.join(", "));
-      if (iso === today) li.setAttribute("aria-current", "date");
-      else li.removeAttribute("aria-current");
+      if (items.length) bits.push(items.length === 1 ? `${items[0].label} — tap to jump to it` : `${items.length} items — tap to see them`);
+      btn.setAttribute("aria-label", bits.join(", "));
+      if (iso === today) btn.setAttribute("aria-current", "date");
+      else btn.removeAttribute("aria-current");
     });
+    if (openIso) fillTray(openIso); // keep an open list in step with live data
   }
 
   import("./timetable-data.js")
@@ -201,6 +318,16 @@ export function initHomeGlance() {
       setText("glanceEvent", "Unavailable right now", { empty: true });
     });
 
+  // ---- Dated announcements (only those with a "date of event") ----
+  import("./notices.js")
+    .then((m) => {
+      m.onNotices((list) => {
+        notices = list || [];
+        renderWeek();
+      });
+    })
+    .catch(() => {});
+
   // ---- Latest achievement ----
   import("./achievements.js")
     .then((m) => {
@@ -224,7 +351,7 @@ export function initArchivesGlance() {
 
   import("./students.js")
     .then((m) => {
-      m.onStudents(count("glanceStudents"));
+      m.onLiveStudents(count("glanceStudents")); // live only — no seed number first
       m.loadStudents().catch(() => {});
     })
     .catch(() => setWord($("glanceStudents"), "–", { empty: true }));

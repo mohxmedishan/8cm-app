@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Houses — 8CM</title>
-<meta name="description" content="The four houses of 8CM — Winter, Autumn, Spring and Summer — and everyone in them.">
+<title>Rankings — 8CM</title>
+<meta name="description" content="Rankings are coming to 8CM: house points, class leaderboards and standings.">
 <meta name="theme-color" content="#16171a">
-<link rel="canonical" href="https://8cm.vercel.app/houses.html">
-<meta property="og:url" content="https://8cm.vercel.app/houses.html">
+<link rel="canonical" href="https://8cm.vercel.app/rankings.html">
+<meta property="og:url" content="https://8cm.vercel.app/rankings.html">
 <meta property="og:site_name" content="8CM">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -68,7 +68,7 @@
 <link rel="apple-touch-icon" sizes="192x192" href="assets/logos/cm-icon-192.png">
 <link rel="manifest" href="manifest.json">
 </head>
-<body data-page="houses">
+<body data-page="rankings">
 
 <div class="splash" id="splash" aria-hidden="true">
   <div class="splash-content">
@@ -126,58 +126,24 @@
   </div>
 </header>
 
-<nav class="hub-nav" aria-label="Houses sections">
-  <div class="section-inner hub-nav-inner">
-    <a href="#top" class="hub-nav-link">Houses</a>
-    <a href="#house-students" class="hub-nav-link">Students</a>
-  </div>
-</nav>
 
 <main id="main">
-  <!-- Mirrored hero: the headcount graph sits on the left, the title,
-       description and Dashboard link on the right (the opposite of
-       Archives, whose text sits left). DOM order is visual-then-text;
-       .hero-mirrored flips the column widths. -->
-  <section class="page-hero hero hero-mirrored">
-    <div class="section-inner hero-grid">
-      <div class="hero-visual">
-        <p class="hero-visual-label">Houses, by headcount</p>
-        <!-- Counts and bar widths are filled in by renderHouseChart()
-             in script.js from the real student roster — never typed
-             in here. -->
-        <div class="bar-chart is-loading" id="housesChart" aria-busy="true">
-          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-        </div>
-      </div>
-      <div class="hero-text hero-text-right">
-        <a href="index.html" class="back-to-dashboard">Dashboard →</a>
-        <div class="section-head">
-          <h1 class="hub-title">The four houses</h1>
-          <p class="section-sub">Winter, Autumn, Spring and Summer. Every student in 8CM belongs to one.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ HOUSE ROSTERS ============ -->
-  <section class="hub-section houses" id="house-students">
+  <section class="coming-soon">
     <div class="section-inner">
-      <div class="section-head">
-        <h2>Who's in each house</h2>
-        <p class="section-sub">Tap a name to open their profile.</p>
-      </div>
-      <div class="house-grid">
-        <!-- house-count and the student list below it are filled in by
-             renderHouseCardLists() in script.js, from the real student
-             roster — never hardcoded, so a monitor moving someone
-             between houses updates this automatically. -->
-        <article class="house-card" data-house="winter"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="autumn"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="spring"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="summer"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
+      <div class="coming-soon-card">
+        <svg class="coming-soon-pitch" viewBox="0 0 200 120" aria-hidden="true" focusable="false"><rect x="70" y="40" width="60" height="70" rx="3"/><rect x="8" y="64" width="56" height="46" rx="3"/><rect x="136" y="80" width="56" height="30" rx="3"/><path d="M100 12l4.2 8.6 9.5 1.4-6.9 6.7 1.6 9.4-8.4-4.4-8.4 4.4 1.6-9.4-6.9-6.7 9.5-1.4z"/></svg>
+        <span class="coming-soon-badge">Coming soon</span>
+        <h1>Rankings</h1>
+        <p>Standings for 8CM are on their way. Who's leading, which house is ahead and how the class stacks up will all live here.</p>
+        <ul class="coming-soon-list" aria-label="Planned ranking features">
+          <li>House points</li>
+          <li>Class leaderboard</li>
+          <li>Monthly standings</li>
+          <li>Top performers</li>
+          <li>Streaks</li>
+          <li>History</li>
+        </ul>
+        <a href="index.html" class="btn btn-ghost coming-soon-back">Back to Home</a>
       </div>
     </div>
   </section>

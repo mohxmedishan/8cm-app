@@ -129,6 +129,23 @@ callback(getStudentsSync());
 return () => changeListeners.delete(callback);
 }
 
+/** Like onStudents(), but stays silent until the roster has really come
+back from Firestore — it never hands out the built-in seed list first.
+Use it for anything that shows numbers (house chart, counts) so a stale
+seed value can't flash on screen before the live one replaces it.
+If Firestore hasn't answered after `fallbackMs`, the seed list is used
+so a slow or offline connection still shows something. */
+export function onLiveStudents(callback, { fallbackMs = 6000 } = {}) {
+  let fired = false;
+  const wrapped = (list) => { if (liveStudents) { fired = true; callback(list); } };
+  changeListeners.add(wrapped);
+  if (liveStudents) { fired = true; callback(liveStudents); }
+  else if (fallbackMs > 0) {
+    setTimeout(() => { if (!fired && !liveStudents) { fired = true; callback(students); } }, fallbackMs);
+  }
+  return () => changeListeners.delete(wrapped);
+}
+
 /** Loads students from Firestore (once, cached). Falls back to the
 
 local seed array on any error or if the collection is empty (i.e.

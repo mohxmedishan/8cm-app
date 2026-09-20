@@ -180,7 +180,7 @@ otherwise.
 
 > **Read `DESIGN.md` first** — it has the visual language, tokens, components (hero, glance panel, cards, buttons), the phone checklist and the don'ts. The notes below are the short version.
 
-- Navigation, page fades, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.1). The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
+- Navigation, the sliding five-slot primary nav, page fades/reveal, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.2). Pages: Football, Houses, Home, Archives, Rankings (`rankings.html` is a coming-soon page). The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
 - Link to Home as `index.html` (never `index.html#top`); the first subnav tab on every page is `href="#top"` named after the page.
 - Design tokens live in `:root` in `style.css` (colours, `--radius-*`, `--ease`, fonts). Reuse them; light theme is `html[data-theme="light"]` overrides. `style.css` is one big file with dated/versioned sections appended at the end — add new rules in a new dated section at the bottom.
 - A global `[hidden]{display:none!important}` rule exists. Use the `hidden` attribute to hide things.
