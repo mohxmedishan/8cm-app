@@ -68,7 +68,7 @@
 <link href="assets/logos/cm-icon-192.png" rel="apple-touch-icon" sizes="192x192"/>
 <link href="manifest.json" rel="manifest"/>
 </head>
-<body>
+<body data-page="home">
 <div aria-hidden="true" class="splash" id="splash">
 <div class="splash-content">
 <img alt="" class="splash-logo" src="assets/logos/cm-logo.png"/>
@@ -103,10 +103,17 @@
 <a aria-label="8CM home" class="brand" href="index.html">
 <img alt="8CM" src="assets/logos/cm-logo.png"/>
 </a>
-<nav class="nav-links" id="navLinks">
-  <a href="index.html" class="nav-link">Home</a>
-  <a href="archives.html" class="nav-link">Archives</a>
-</nav>
+<nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
+      <!-- The Monitor panel hangs off Home (its back link says "Dashboard"), so
+           the loop is centred on Home here. See DESIGN.md → Main navigation. -->
+      <div class="primary-nav-track">
+        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+        <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
+        <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
+        <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+        <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
+      </div>
+    </nav>
 <div class="nav-right">
 <button aria-label="Settings" class="icon-btn" id="settingsBtn" title="Settings" type="button">
 <svg aria-hidden="true" viewbox="0 0 24 24">
@@ -125,6 +132,7 @@
 </div>
 </div>
 </header>
+<script src="nav-boot.js"></script>
 <main>
 <section class="page-hero">
 <div class="section-inner">

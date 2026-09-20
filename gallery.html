@@ -156,6 +156,7 @@
     </div>
   </div>
 </header>
+<script src="nav-boot.js"></script>
 
 <main>
   <section class="page-hero">
@@ -166,7 +167,7 @@
 
   <section class="gallery" id="gallery">
     <div class="section-inner">
-      <div class="section-head"><h2>Gallery</h2></div>
+      <div class="section-head"><h2>Gallery</h2><p class="section-sub">Tap a photo to open it full size. Tap it again to zoom in.</p></div>
 
       <div class="gallery-grid" id="galleryGrid"></div>
       <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
@@ -304,17 +305,6 @@
 </div>
 </div>
 </div>
-</div>
-
-<!-- ============================================
-     Gallery lightbox — 4KWallpapers-style zoom view
-     ============================================ -->
-<div class="lightbox-overlay" id="lightboxOverlay" hidden>
-  <button class="lightbox-close" id="lightboxClose" aria-label="Close photo">✕</button>
-  <figure class="lightbox-frame">
-    <img id="lightboxImage" src="" alt="">
-    <figcaption id="lightboxCaption"></figcaption>
-  </figure>
 </div>
 
 <script type="module" src="script.js"></script>

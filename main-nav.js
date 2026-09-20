@@ -1,5 +1,5 @@
 // ============================================
-// 8CM — Navigation system (V17.1)
+// 8CM — Navigation system (V17.3)
 // ------------------------------------------------
 // One module owns everything about moving around the site, so every
 // page behaves the same. Plain <a> links stay plain <a> links — if
@@ -11,11 +11,12 @@
 //     scrolls away) and --sub-h (the subnav). CSS uses them so
 //     anchor jumps and the sticky subnav always clear the real chrome.
 //  2. PRIMARY NAV     Five destinations (Football, Houses, Home,
-//     Archives, Rankings) on ONE track. The current page always sits in
-//     the fixed centre slot (the pill never moves); going elsewhere
-//     slides the whole track. Which slot a page starts in is pure CSS
-//     (body[data-page] → --nav-i), so every page's first paint already
-//     has the bar in place: no JS-positioned pill, nothing to pop in.
+//     Archives, Rankings) that LOOP. The current page always sits in the
+//     fixed centre slot (the pill never moves) with two neighbours each
+//     side; every page lists its links in that order in its own HTML, so
+//     the first paint is already right (no JS-positioned pill, nothing
+//     to pop in) and Tab follows what you see. Going elsewhere slides the
+//     track; Left/Right/Home/End move focus round the ring.
 //  2b. REVEAL         Content stays hidden (html.is-preparing) until
 //     fonts are ready, then fades in — so late font swaps and first
 //     layout passes are never seen as the page "readjusting".
@@ -118,19 +119,72 @@ function initStickyMetrics() {
   }
 }
 
-// ---------- 2. Primary nav (sliding track) ----------
+// ---------- 2. Primary nav (looping, sliding track) ----------
+// The five destinations form a RING (Football · Houses · Home · Archives ·
+// Rankings, then back to Football). Every page writes the links in the
+// order it wants to show them — current page in the middle, two
+// neighbours each side — so the first paint is already right and the DOM
+// (and therefore Tab) order is the visual order. Going to a page slides
+// the track by (its slot − the centre slot) and, so the edges never go
+// blank while it glides, temporary aria-hidden clones of the links that
+// "wrap round" sit just outside both ends.
 function initPrimaryNav() {
   const nav = document.getElementById("navLinks");
   if (!nav) return null;
   const track = nav.querySelector(".primary-nav-track");
-  const links = Array.from(nav.querySelectorAll(".primary-nav-link"));
+  const links = track ? Array.from(track.querySelectorAll(".primary-nav-link")) : [];
   if (!track || !links.length) return null;
+
+  const count = links.length;
+  const centre = Math.floor(count / 2);
 
   const currentPage = document.body.dataset.page || "";
   links.forEach((link) => {
     if (link.dataset.page === currentPage) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
+
+  // Keyboard: Tab walks the links left to right (DOM order = visual
+  // order). Left/Right move focus round the ring, Home/End jump to the
+  // ends; Enter/Space then follow the link like any other.
+  nav.addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+    const i = links.indexOf(document.activeElement);
+    if (i < 0) return;
+    let next = -1;
+    if (e.key === "ArrowRight") next = (i + 1) % count;
+    else if (e.key === "ArrowLeft") next = (i - 1 + count) % count;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = count - 1;
+    else return;
+    e.preventDefault();
+    links[next].focus();
+  });
+
+  let clones = [];
+  let cleanupTimer = null;
+
+  function addClones() {
+    if (clones.length) return;
+    // Slots just outside the visible row, wrapping round the ring.
+    [-2, -1, count, count + 1].forEach((slot) => {
+      const source = links[((slot % count) + count) % count];
+      const clone = source.cloneNode(true);
+      clone.removeAttribute("href");
+      clone.removeAttribute("aria-current");
+      clone.removeAttribute("data-page");
+      clone.classList.remove("is-active");
+      clone.classList.add("is-clone");
+      clone.setAttribute("aria-hidden", "true");
+      clone.style.left = `${slot * (100 / count)}%`;
+      track.appendChild(clone);
+      clones.push(clone);
+    });
+  }
+  function removeClones() {
+    clones.forEach((c) => c.remove());
+    clones = [];
+  }
 
   return {
     // Slide the track so `link` ends up in the centre slot. The current
@@ -139,15 +193,19 @@ function initPrimaryNav() {
     moveTo(link) {
       const idx = links.indexOf(link);
       if (idx < 0) return;
+      clearTimeout(cleanupTimer);
+      addClones();
       nav.setAttribute("data-moving", "");
       links.forEach((a) => a.classList.toggle("is-active", a === link));
-      track.style.setProperty("--nav-i", String(idx));
+      track.style.setProperty("--nav-shift", String(idx - centre));
     },
     // Navigation cancelled / page restored from cache: glide back.
     restore() {
       nav.removeAttribute("data-moving");
       links.forEach((a) => a.classList.remove("is-active"));
-      track.style.removeProperty("--nav-i");
+      track.style.removeProperty("--nav-shift");
+      clearTimeout(cleanupTimer);
+      cleanupTimer = setTimeout(removeClones, 400);
     },
   };
 }

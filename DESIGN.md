@@ -1,4 +1,4 @@
-# 8CM — Design guide (V17.2)
+# 8CM — Design guide (V17.3)
 
 Read this before adding or changing any UI. The goal is that a new page or
 component looks like it was always part of the site. **Don't invent a new
@@ -69,23 +69,40 @@ Tinting: mix a tone into transparent, never use a fixed hex —
   <footer class="footer"> … </footer>
 ```
 
-- **Main nav** — five destinations in this fixed order: **Football · Houses ·
-  Home · Archives · Rankings**. Markup: `nav.primary-nav > .primary-nav-track >
-  a.primary-nav-link[data-page]`. Link to Home as **`index.html`** — never
-  `index.html#top`. To add a page: add a link to the track on every page, add
-  its index to the `body[data-page]` list in CSS (`--nav-i`), and change the
-  slot maths (`20%` = 1/5) if the count changes.
+- **Main nav** — five destinations that **loop**: Football · Houses · Home ·
+  Archives · Rankings, then round to Football again. Markup:
+  `nav.primary-nav > .primary-nav-track > a.primary-nav-link[data-page]`.
+  Link to Home as **`index.html`** — never `index.html#top`.
+  - **Each page writes its own links in ring order**, current page in the
+    middle (slot 3 of 5), two neighbours each side. Rankings reads
+    `Home · Archives · [Rankings] · Football · Houses`; Football reads
+    `Archives · Rankings · [Football] · Houses · Home`. The first paint is
+    therefore already right (no JS positioning), and DOM order = visual
+    order, so **Tab walks the links left to right**. Left/Right arrows move
+    focus round the ring, Home/End jump to the ends (`main-nav.js`).
+  - To add a page: add it to the ring and rewrite the track on **every**
+    page in the new per-page order (the ring is 5 wide — the slot maths uses
+    `20%`; change it if the count changes). Pages that aren't one of the five
+    (e.g. `manage.html`) borrow a parent's `data-page` and its ring order
+    (the Monitor panel uses `home`).
   - The pill is a **fixed** `::before` in the centre slot. It never moves.
-  - The **track slides** so the current page is centred: `translateX((2 − --nav-i) × 20%)`.
-    `--nav-i` comes from `body[data-page]` in CSS (so the first paint is
-    already correct — no JS positioning) and is overridden inline by
-    `main-nav.js` while a navigation is starting.
+  - The track only moves while a navigation is starting: `main-nav.js` sets
+    `--nav-shift` (target slot − centre slot) and adds temporary `.is-clone`
+    links just outside both ends (the links that wrap round the ring) so the
+    edges never go blank mid-glide. They are `aria-hidden` and removed on
+    cancel.
   - Outer slots fade via a CSS mask (gradient), so the edge labels recede.
   - Slots are fixed-width (`--slot`, 84–104px desktop, 20% of the row on phones).
     **Never make slot widths depend on text** — that is what made the bar drift
     when fonts loaded.
   - The header grid is `1fr auto 1fr` on desktop so the nav is centred on the
     page regardless of the logo image or the Sign-in button appearing.
+- **Things that must not pop in** (`nav-boot.js`, a classic script every page
+  loads right after its header): the **version badge** is created there and
+  the **account pill** is shown from a remembered copy (`.nav-auth-ghost`,
+  inert) until `auth-ui.js` renders the real one. `.nav-auth:empty` is
+  `display:none` so the empty slot adds no gap. Don't create the badge or
+  fill `#authSlot` late from a module.
 - **Subnav** (`.hub-nav > .hub-nav-inner > a.hub-nav-link`): one slim row —
   36px tall (34px on phones), 0.78rem text, a 2px accent underline that grows
   in under the active tab, and no gap beneath it. Don't add padding or a
@@ -202,7 +219,8 @@ the shared helpers (`timetable-data.js` `dateForDayKey`, `events.js`
 - [ ] Nothing important hidden under the fixed version badge / home indicator.
 - [ ] Works with the iOS home-screen app (safe-area insets) and the light theme.
 - [ ] Clicking a link fades out/in and the nav track slides; clicking the current page scrolls to top.
-- [ ] Reload every page: the navbar must not move by a single pixel during load.
+- [ ] Reload every page: the navbar must not move by a single pixel during load, and the version badge and account picture are there from the first paint.
+- [ ] Tab through the main nav (left to right), then use ←/→ (and Home/End) on a focused link.
 
 ## 8. Don'ts
 

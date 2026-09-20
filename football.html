@@ -104,16 +104,17 @@
   <div class="nav-inner">
     <a href="index.html" class="brand" aria-label="Back to home"><img src="assets/logos/cm-logo.png" alt="8CM"></a>
     <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
-      <!-- The five destinations sit on one track that slides so the current
-           page is always in the centre slot (see DESIGN.md → Main navigation).
-           Which slot is decided by body[data-page] in CSS, so the very first
-           paint of every page is already in the right place. -->
+      <!-- Five destinations that LOOP: the current page always sits in the centre
+           slot with two neighbours either side, so every page is one step from every
+           other (Rankings → Football, Football → Rankings). The links are written in
+           that per-page order here, so the first paint is already right and Tab
+           follows what you see. See DESIGN.md → Main navigation. -->
       <div class="primary-nav-track">
+        <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+        <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
         <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
         <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
         <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
-        <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
-        <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
       </div>
     </nav>
     <div class="nav-right">
@@ -125,6 +126,7 @@
     </div>
   </div>
 </header>
+<script src="nav-boot.js"></script>
 
 
 <main id="main">

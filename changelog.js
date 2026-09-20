@@ -10,6 +10,18 @@
 export const changelog = [
   {
     date: "2026-09-20",
+    version: "17.3.0",
+    items: [
+      "The main menu now loops. From Rankings the row reads Home, Archives, Rankings, Football, Houses, so Football is one step away instead of a trip back through Home (and the same the other way round). You can use it from the keyboard too: Tab walks along the links, the left and right arrow keys move between them, and Enter opens one.",
+      "The version badge and your account picture no longer disappear and come back when you change page. They are on screen from the first moment.",
+      "The Monitor panel has the proper main menu again.",
+      "Gallery photos open full size again. The viewer has previous and next buttons, arrow keys and swiping, and you can tap a photo (or press Z) to zoom in and look around. The gallery itself is now a mosaic with a big feature photo.",
+      "New look for the house graph: four columns with the count on top and the house name underneath. Tap a column to see that house.",
+      "Settings has a cleaner layout, with Appearance and Sound in their own panels. On phones it slides up from the bottom.",
+    ],
+  },
+  {
+    date: "2026-09-20",
     version: "17.2.0",
     items: [
       "New main menu movement: the highlighted pill now stays in the middle and the whole row slides to bring the page you pick into the centre. The buttons at the edges fade out. It starts in the right place on every page, so the menu no longer jumps, blinks or drifts sideways while a page loads.",

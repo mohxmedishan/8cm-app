@@ -415,6 +415,7 @@ function renderHouseChart(list) {
   HOUSE_KEYS.forEach((h) => { counts[h] = 0; });
   list.forEach((s) => { if (s.house in counts) counts[s.house] += 1; });
   const max = Math.max(1, ...Object.values(counts));
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   rows.forEach((row) => {
     const house = row.dataset.house;
@@ -425,9 +426,11 @@ function renderHouseChart(list) {
     if (fill) {
       fill.dataset.value = String(count);
       fill.dataset.max = String(max);
-      fill.style.width = `${(count / max) * 100}%`;
+      // The columns grow with CSS: height = --v × the track (0–1).
+      fill.style.setProperty("--v", String(count / max));
     }
     row.setAttribute("aria-label", `${houseLabelFor(house)} house, ${count} ${count === 1 ? "student" : "students"}`);
+    row.title = `${houseLabelFor(house)}: ${count} of ${total} (${total ? Math.round((count / total) * 100) : 0}%)`;
   });
 }
 
@@ -543,52 +546,238 @@ function initResources() {
 }
 
 // ============================================
-// Gallery lightbox — unchanged
+// Gallery lightbox (V17.3)
+// ------------------------------------------------
+// Builds its own overlay, so it works on ANY page that has a
+// #galleryGrid — it used to rely on markup that only some pages had,
+// which is why clicking a photo in Archives did nothing.
+//   - click / Enter / Space on a .gallery-photo opens it
+//   - prev / next buttons, ← → keys, swipe on touch; Esc, ✕ or a tap on
+//     the dark backdrop closes
+//   - the magnifier button (or Z, or a tap on the photo) zooms in; while
+//     zoomed, move the pointer (mouse) or drag (touch) to look around
 // ============================================
 function initGalleryLightbox() {
-  const galleryGrid = document.getElementById("galleryGrid");
-  const lightboxOverlay = document.getElementById("lightboxOverlay");
-  const lightboxImage = document.getElementById("lightboxImage");
-  const lightboxCaption = document.getElementById("lightboxCaption");
-  const lightboxClose = document.getElementById("lightboxClose");
-  if (!galleryGrid || !lightboxOverlay) return;
+  const grid = document.getElementById("galleryGrid");
+  if (!grid) return;
 
-  function openLightbox(photo) {
+  // A page may still carry the old static overlay; ours replaces it.
+  const legacy = document.getElementById("lightboxOverlay");
+  if (legacy) legacy.remove();
+
+  const ZOOM = 2.4;
+  const chev = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  const overlay = document.createElement("div");
+  overlay.className = "lightbox-overlay";
+  overlay.id = "lightboxOverlay";
+  overlay.hidden = true;
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Photo viewer");
+  overlay.innerHTML = `
+    <span class="lightbox-counter" id="lightboxCounter" aria-live="polite"></span>
+    <button type="button" class="lightbox-zoom" id="lightboxZoom" aria-label="Zoom in" aria-pressed="false" title="Zoom (Z)">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="lb-plus" d="M11 8.5v5M8.5 11h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16 16l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close photo">✕</button>
+    <button type="button" class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Previous photo">${chev("M15 5l-7 7 7 7")}</button>
+    <button type="button" class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Next photo">${chev("M9 5l7 7-7 7")}</button>
+    <figure class="lightbox-frame">
+      <img id="lightboxImage" src="" alt="" draggable="false">
+      <figcaption id="lightboxCaption"></figcaption>
+    </figure>`;
+  document.body.appendChild(overlay);
+
+  const frame = overlay.querySelector(".lightbox-frame");
+  const image = overlay.querySelector("#lightboxImage");
+  const caption = overlay.querySelector("#lightboxCaption");
+  const counter = overlay.querySelector("#lightboxCounter");
+  const zoomBtn = overlay.querySelector("#lightboxZoom");
+  const closeBtn = overlay.querySelector("#lightboxClose");
+  const prevBtn = overlay.querySelector("#lightboxPrev");
+  const nextBtn = overlay.querySelector("#lightboxNext");
+
+  let photos = [];
+  let index = 0;
+  let zoomed = false;
+  let lastFocus = null;
+  let hideTimer = null;
+
+  const isOpen = () => !overlay.hidden && overlay.classList.contains("open");
+
+  // Photos may be added/removed live, so ask the grid every time.
+  const currentPhotos = () => Array.from(grid.querySelectorAll(".gallery-photo"));
+
+  function setZoom(on, originX = 50, originY = 50) {
+    zoomed = on;
+    frame.classList.toggle("is-zoomed", on);
+    zoomBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    zoomBtn.setAttribute("aria-label", on ? "Zoom out" : "Zoom in");
+    // Zooming out keeps the origin it zoomed in at, so it shrinks back to
+    // where it came from instead of jumping to the centre first.
+    if (on) image.style.transformOrigin = `${originX}% ${originY}%`;
+  }
+
+  function show(i) {
+    if (!photos.length) return;
+    index = (i + photos.length) % photos.length;
+    const photo = photos[index];
     const img = photo.querySelector("img");
-    const caption = photo.querySelector("figcaption");
-    if (!img) return;
-    lightboxImage.src = img.currentSrc || img.src;
-    lightboxImage.alt = img.alt || "";
-    lightboxCaption.textContent = caption ? caption.textContent : "";
-    lightboxOverlay.hidden = false;
+    const cap = photo.querySelector("figcaption");
+    image.src = img ? (img.currentSrc || img.src) : "";
+    image.alt = img ? (img.alt || "") : "";
+    caption.textContent = cap ? cap.textContent.trim() : "";
+    caption.hidden = !caption.textContent;
+    counter.textContent = `${index + 1} / ${photos.length}`;
+    const single = photos.length < 2;
+    prevBtn.hidden = single;
+    nextBtn.hidden = single;
+    setZoom(false);
+    image.style.transformOrigin = "50% 50%";
+    // Warm the neighbours so ← → feels instant.
+    [index + 1, index - 1].forEach((n) => {
+      const p = photos[(n + photos.length) % photos.length];
+      const pi = p && p.querySelector("img");
+      if (pi) { const pre = new Image(); pre.src = pi.currentSrc || pi.src; }
+    });
+  }
+
+  function open(photo) {
+    photos = currentPhotos();
+    const i = photos.indexOf(photo);
+    if (i < 0) return;
+    clearTimeout(hideTimer);
+    lastFocus = document.activeElement;
+    show(i);
+    overlay.hidden = false;
     document.body.classList.add("lightbox-locked");
     playOpen();
-    requestAnimationFrame(() => requestAnimationFrame(() => lightboxOverlay.classList.add("open")));
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      overlay.classList.add("open");
+      closeBtn.focus({ preventScroll: true });
+    }));
   }
 
-  function closeLightbox() {
-    if (lightboxOverlay.hidden) return;
-    lightboxOverlay.classList.remove("open");
+  function close() {
+    if (overlay.hidden) return;
+    overlay.classList.remove("open");
     document.body.classList.remove("lightbox-locked");
+    setZoom(false);
     playClose();
-    setTimeout(() => {
-      lightboxOverlay.hidden = true;
-      lightboxImage.src = "";
-    }, 220);
+    hideTimer = setTimeout(() => {
+      overlay.hidden = true;
+      image.src = "";
+    }, 240);
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
 
-  galleryGrid.addEventListener("click", (e) => {
+  const step = (n) => { if (photos.length > 1) { show(index + n); playNav(); } };
+
+  // ----- opening from the grid -----
+  // Give every photo a keyboard stop, even if gallery.js didn't.
+  const tidy = () => {
+    grid.querySelectorAll(".gallery-photo").forEach((p) => {
+      if (!p.hasAttribute("tabindex")) p.setAttribute("tabindex", "0");
+      if (!p.hasAttribute("role")) p.setAttribute("role", "button");
+      if (!p.hasAttribute("aria-label")) {
+        const cap = p.querySelector("figcaption");
+        p.setAttribute("aria-label", `Open photo${cap && cap.textContent.trim() ? ": " + cap.textContent.trim() : ""}`);
+      }
+    });
+  };
+  tidy();
+  if ("MutationObserver" in window) new MutationObserver(tidy).observe(grid, { childList: true });
+
+  grid.addEventListener("click", (e) => {
     const photo = e.target.closest(".gallery-photo");
-    if (photo) openLightbox(photo);
+    if (photo) open(photo);
   });
-  galleryGrid.addEventListener("keydown", (e) => {
+  grid.addEventListener("keydown", (e) => {
     const photo = e.target.closest(".gallery-photo");
-    if (!photo) return;
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openLightbox(photo); }
+    if (photo && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); open(photo); }
   });
-  if (lightboxClose) lightboxClose.addEventListener("click", closeLightbox);
-  lightboxOverlay.addEventListener("click", (e) => { if (e.target === lightboxOverlay) closeLightbox(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeLightbox(); });
+
+  // ----- controls -----
+  closeBtn.addEventListener("click", close);
+  prevBtn.addEventListener("click", () => step(-1));
+  nextBtn.addEventListener("click", () => step(1));
+  zoomBtn.addEventListener("click", () => setZoom(!zoomed));
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+
+  document.addEventListener("keydown", (e) => {
+    if (!isOpen()) return;
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); step(1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); step(-1); }
+    else if (e.key === "z" || e.key === "Z") { e.preventDefault(); setZoom(!zoomed); }
+    else if (e.key === "Tab") {
+      // Keep focus inside the viewer while it is open.
+      const stops = [closeBtn, zoomBtn, prevBtn, nextBtn].filter((b) => !b.hidden);
+      const at = stops.indexOf(document.activeElement);
+      e.preventDefault();
+      stops[(at + (e.shiftKey ? -1 : 1) + stops.length) % stops.length].focus();
+    }
+  });
+
+  // ----- pointer: tap to zoom, look around, swipe -----
+  const pct = (v) => Math.max(0, Math.min(100, v));
+  let down = null;
+
+  image.addEventListener("pointerdown", (e) => {
+    // offsetWidth/Height are the unscaled layout size (getBoundingClientRect
+    // would include the zoom).
+    const origin = (image.style.transformOrigin || "50% 50%").split(" ");
+    down = {
+      x: e.clientX, y: e.clientY, moved: false, id: e.pointerId, type: e.pointerType,
+      ox: parseFloat(origin[0]) || 50,
+      oy: parseFloat(origin[1]) || 50,
+      w: image.offsetWidth || 1, h: image.offsetHeight || 1,
+    };
+    try { image.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  image.addEventListener("pointermove", (e) => {
+    if (zoomed && e.pointerType === "mouse") {
+      // Mouse: the picture follows the pointer, like a loupe.
+      const r = frame.getBoundingClientRect();
+      setZoom(true, pct(((e.clientX - r.left) / r.width) * 100), pct(((e.clientY - r.top) / r.height) * 100));
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.moved = true;
+      return;
+    }
+    if (!down) return;
+    const dx = e.clientX - down.x;
+    const dy = e.clientY - down.y;
+    if (Math.hypot(dx, dy) > 6) down.moved = true;
+    if (zoomed && down.type !== "mouse") {
+      // Touch: drag the picture.
+      // Moving the origin by Δ% shifts the picture by (ZOOM−1)·Δ% of its
+      // width, so a drag of dx pixels needs Δ = dx / ((ZOOM−1)·width).
+      const k = 100 / (ZOOM - 1);
+      setZoom(true, pct(down.ox - (dx / down.w) * k), pct(down.oy - (dy / down.h) * k));
+    }
+  });
+
+  const finish = (e) => {
+    if (!down) return;
+    const d = down;
+    down = null;
+    try { image.releasePointerCapture(d.id); } catch (_) {}
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!zoomed && d.moved && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      step(dx < 0 ? 1 : -1); // swipe
+      return;
+    }
+    if (!d.moved) {
+      if (zoomed) setZoom(false);
+      else {
+        const r = image.getBoundingClientRect();
+        setZoom(true, pct(((e.clientX - r.left) / r.width) * 100), pct(((e.clientY - r.top) / r.height) * 100));
+      }
+    }
+  };
+  image.addEventListener("pointerup", finish);
+  image.addEventListener("pointercancel", () => { down = null; });
 }
 
 // ============================================
@@ -746,20 +935,44 @@ function initHoverSfx() {
 // V12 — version watermark
 // ============================================
 function initVersionBadge() {
-  if (document.querySelector(".version-badge")) return;
-  const el = document.createElement("div");
-  el.className = "version-badge";
-  el.textContent = window.__cmVersion || "v14.1";
-  el.setAttribute("aria-hidden", "true");
-  document.body.appendChild(el);
+  // nav-boot.js (loaded right after the header) has normally created the
+  // badge already, so it is on screen from the first paint. This makes
+  // sure it exists anyway, then confirms it against changelog.js — the
+  // single source of truth — and remembers it for the next page.
+  let el = document.querySelector(".version-badge");
+  if (!el) {
+    el = document.createElement("div");
+    el.className = "version-badge";
+    el.setAttribute("aria-hidden", "true");
+    try { el.textContent = localStorage.getItem("8cm:version") || ""; } catch (_) {}
+    document.body.appendChild(el);
+  }
+  const version = changelog[0] && changelog[0].version;
+  if (!version) return;
+  const label = `v${version}`;
+  if (el.textContent !== label) el.textContent = label;
+  try { localStorage.setItem("8cm:version", label); } catch (_) {}
+}
 
-  // changelog.js's currentVersion (the newest entry's version field)
-  // is the single source of truth here — this used to be a separate
-  // hardcoded string that only updated when someone remembered to
-  // bump it by hand, so it silently fell behind the real changelog.
-  import("./changelog.js")
-    .then((m) => { el.textContent = m.currentVersion ? `v${m.currentVersion}` : "v14.3"; })
-    .catch(() => { el.textContent = "v14.3"; });
+// ============================================
+// Settings modal polish (V17.3)
+// ------------------------------------------------
+// The modal markup is the same on every page, so the heading is added
+// here once instead of in fifteen HTML files. Everything else is CSS.
+// ============================================
+function initSettingsPolish() {
+  const overlay = document.getElementById("settingsOverlay");
+  const card = overlay && overlay.querySelector(".settings-card");
+  if (!card || card.querySelector(".settings-head")) return;
+  const columns = card.querySelector(".settings-columns");
+  if (!columns) return;
+  const head = document.createElement("header");
+  head.className = "settings-head";
+  head.innerHTML = '<h2 class="settings-title" id="settingsTitle">Settings</h2><p class="settings-lede">Make the site yours. Colours and sound are saved on this device.</p>';
+  card.insertBefore(head, columns);
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "settingsTitle");
 }
 
 // ============================================
@@ -824,6 +1037,7 @@ initAnchorRescue();
 initStudentDirectory();
 initHouseCards();
 initGalleryLightbox();
+initSettingsPolish();
 initChangelog();  // no-ops on pages without #changelogEntries
 initTodayDate();
 initHoverSfx();

@@ -105,6 +105,7 @@ list runs everywhere. To add a feature module: create `foo.js` exporting `initFo
 - `error-utils.js` — `describeWriteError(err, verb)` → human message for failed writes. Use it for every monitor write.
 - `audit.js` — `logAction(...)` appends to `activityLogs` (monitor-only, append-only). Call it after monitor writes.
 - `sound.js` — Web-Audio-synthesised UI sounds (`playSuccess`, `playError`, `playToggleOn`…). No audio files.
+- `nav-boot.js` — classic script loaded right after every page's `<header>`: creates the version badge and shows a remembered copy of the account pill (so they never pop in). Bump `VERSION_FALLBACK` with `changelog.js`.
 - `bgm.js` — background music, hardcoded tracks. `theme.js` — accent/mode. `changelog.js` — release notes.
 
 ---
@@ -180,7 +181,7 @@ otherwise.
 
 > **Read `DESIGN.md` first** — it has the visual language, tokens, components (hero, glance panel, cards, buttons), the phone checklist and the don'ts. The notes below are the short version.
 
-- Navigation, the sliding five-slot primary nav, page fades/reveal, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.2). Pages: Football, Houses, Home, Archives, Rankings (`rankings.html` is a coming-soon page). The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
+- Navigation, the looping five-slot primary nav (each page lists its links in ring order — see DESIGN.md), keyboard arrows, page fades/reveal, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.3). Pages: Football, Houses, Home, Archives, Rankings (`rankings.html` is a coming-soon page). The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
 - Link to Home as `index.html` (never `index.html#top`); the first subnav tab on every page is `href="#top"` named after the page.
 - Design tokens live in `:root` in `style.css` (colours, `--radius-*`, `--ease`, fonts). Reuse them; light theme is `html[data-theme="light"]` overrides. `style.css` is one big file with dated/versioned sections appended at the end — add new rules in a new dated section at the bottom.
 - A global `[hidden]{display:none!important}` rule exists. Use the `hidden` attribute to hide things.
