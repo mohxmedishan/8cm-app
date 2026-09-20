@@ -115,8 +115,7 @@ Tinting: mix a tone into transparent, never use a fixed hex —
 
 ## 5. Navigation & motion rules (all implemented in `main-nav.js` + `bgm.js`)
 
-1. **Every same-site link fades the page content out (~240ms) while the nav
-   track slides to the destination (300ms), then navigates.** The header does
+1. **Every same-site link slides the nav track to the destination (300ms), then navigates.** With cross-page view transitions (Chrome/Edge 126+, Safari 18.2+; `@view-transition` in `style.css`) the content is left alone and the browser dissolves old page → new page; otherwise the content fades out (~240ms) first. The header does
    *not* fade — it persists. Opt out with `data-no-transition`.
 2. **Clicking the page you're on never reloads** — it smooth-scrolls to the top.
    Real in-page anchors (`#students`) use native smooth scroll.
@@ -128,7 +127,7 @@ Tinting: mix a tone into transparent, never use a fixed hex —
    offsets and scroll margins use them. Don't hard-code header heights.
 6. Motion budget: 150–250ms for hover/press, 400–700ms for entrances, always
    `var(--ease)`. Everything must respect `prefers-reduced-motion`.
-7. **Calm page loads.** Each page's `<head>` adds `html.is-preparing`;
+7. **Calm page loads.** On fresh loads and reloads (and in browsers without view transitions) each page's `<head>` adds `html.is-preparing`;
    `main`, the subnav and the footer stay at opacity 0 (and hero animations
    stay paused) until fonts are ready (700ms max, 1.5s failsafe), then they
    fade in. Anything that would visibly reflow — font swap, first layout —

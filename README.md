@@ -63,6 +63,7 @@ Deploying: upload/push the folder to Vercel. Whenever `firestore.rules` changes,
 | `timetable.html` | Standalone weekly timetable + teachers list |
 | `events.html`, `achievements.html`, `gallery.html`, `resources.html`, `stats.html`, `about.html` | Content pages |
 | `changelog.html`, `updates.html` | Renders `changelog.js` |
+| `football.html` | **Pitch** — match history, Barça (red) vs Madrid (blue) team cards, formation modal. Monitors edit it in place (no tab in the Monitor panel) |
 | `manage.html` | **Monitor panel** — tabs: homework, announcements, resources, events, achievements, gallery, students, teachers, monitors, archive, quicklinks, changelog, audit |
 
 Every page has the same inline "boot" script in `<head>` that applies the saved theme/accent before first paint
@@ -91,6 +92,7 @@ list runs everywhere. To add a feature module: create `foo.js` exporting `initFo
 - `resources.js` — Resources panel. **Reads/writes the collection named `announcements`** (historical; see Gotchas).
 - `announcements.js` — *legacy, not loaded by anything.* Don't edit it thinking it's live.
 - `arrange.js` — shared drag-to-reorder ("arrange mode") used by the three panels above.
+- `football-data.js` — Pitch constants, positions, formation layout maths (no DOM/Firebase). `football.js` — public Pitch page: match history, team cards, landscape formation modal; exports `getPitchState`, `setMatchEditMode`, `pitchMarkup` for the editor. `football-manage.js` — monitor-only buttons + dialogs (add/edit/delete match, Edit teams) on `football.html`. Collections `pitchTeams/{red,blue}` and `pitchMatches/{id}` (public read, monitor write — **republish `firestore.rules` if the Pitch blocks aren't live yet**).
 - `events.js`, `achievements.js`, `gallery.js`, `archive-materials.js`, `quick-links.js`, `tasks.js`, `dashboard.js`
 - `student-manage.js`, `teacher-manage.js`, `students.js` / `teachers.js` / `teachers-data.js` (Firestore-first, seed data as fallback)
 - `item-links.js` — the shared "attached links" editor/chips (up to 8 links per item)
@@ -181,7 +183,7 @@ otherwise.
 
 > **Read `DESIGN.md` first** — it has the visual language, tokens, components (hero, glance panel, cards, buttons), the phone checklist and the don'ts. The notes below are the short version.
 
-- Navigation, the looping five-slot primary nav (each page lists its links in ring order — see DESIGN.md), keyboard arrows, page fades/reveal, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.3). Pages: Football, Houses, Home, Archives, Rankings (`rankings.html` is a coming-soon page). The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
+- Navigation, the looping five-slot primary nav (each page lists its links in ring order — see DESIGN.md), keyboard arrows, page fades/reveal, same-page-click handling, sticky metrics and subnav scrollspy all live in `main-nav.js` (V17.3). Pages: Pitch, Houses, Home, Archives, Rankings (`rankings.html` is a coming-soon page). V17.4: on browsers with cross-page view transitions (`@view-transition` at the bottom of `style.css`) the old page stays until the new one is ready and they dissolve; the fade-out / hold / fade-in is only the fallback. The music fades (`fadeOutBgm`/`fadeInBgm`) are in `bgm.js`. Home/Archives hero panels are `glance-panels.js`. Don't duplicate any of that elsewhere.
 - Link to Home as `index.html` (never `index.html#top`); the first subnav tab on every page is `href="#top"` named after the page.
 - Design tokens live in `:root` in `style.css` (colours, `--radius-*`, `--ease`, fonts). Reuse them; light theme is `html[data-theme="light"]` overrides. `style.css` is one big file with dated/versioned sections appended at the end — add new rules in a new dated section at the bottom.
 - A global `[hidden]{display:none!important}` rule exists. Use the `hidden` attribute to hide things.

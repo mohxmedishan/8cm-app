@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
+<script>(function(){var d=document.documentElement,inSite=false;
+// Page-to-page inside the site, in a browser with cross-page view transitions: the previous page is still on screen and dissolves into this one, so there is nothing to hold back. Fresh loads and reloads still wait for fonts (html.is-preparing, see style.css).
+try{inSite=("CSSViewTransitionRule" in window)&&!!document.referrer&&new URL(document.referrer).origin===location.origin&&performance.getEntriesByType("navigation")[0].type==="navigate";}catch(e){}
+if(inSite){d.classList.add("is-arriving");return;}
+d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-preparing")},1500);})();</script>
+<link rel="expect" href="#main" blocking="render">
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>Monitor panel — 8CM</title>
 <meta content="#16171a" name="theme-color"/>
@@ -133,7 +138,7 @@
 </div>
 </header>
 <script src="nav-boot.js"></script>
-<main>
+<main id="main">
 <section class="page-hero">
 <div class="section-inner">
 <a class="back-to-dashboard" href="index.html">← Dashboard</a>
@@ -157,7 +162,6 @@
   <button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
   <button class="manage-tab" data-tab="archive" type="button">Archive</button>
   <button class="manage-tab" data-tab="quicklinks" type="button">Quick links</button>
-  <button class="manage-tab" data-tab="pitch" type="button">Pitch</button>
   <button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
   <button class="manage-tab" data-tab="changelog" type="button">Changelog</button>
   <button class="manage-tab" data-tab="monitors" type="button">Monitors</button>
@@ -458,46 +462,6 @@
       </div>
     </form>
     <div class="task-list" id="quickLinkManageList"></div>
-  </div>
-</div>
-
-<!-- PITCH -->
-<div class="manage-panel" data-panel="pitch">
-  <div class="today-panel" id="pitchManagePanel">
-    <div class="today-panel-head">
-      <div>
-        <h3 class="today-panel-title">Pitch</h3>
-        <p class="today-note">Log Friday's result, and keep each team's lineup and formation up to date.</p>
-      </div>
-    </div>
-    <div class="pitch-manage-sub-tabs" id="pitchManageSubTabs">
-      <button class="pill active" data-sub="matches" type="button">Match history</button>
-      <button class="pill" data-sub="teams" type="button">Teams &amp; players</button>
-    </div>
-
-    <div class="pitch-manage-section" data-sub-panel="matches">
-      <div class="today-panel-head">
-        <button class="btn btn-add-task btn-small monitor-only" id="addPitchMatchBtn" hidden>+ Add match</button>
-      </div>
-      <form class="task-form" id="pitchMatchForm" hidden>
-        <div class="task-form-grid">
-          <label class="field"><span>Red score</span><input type="number" name="redScore" min="0" value="0" required></label>
-          <label class="field"><span>Blue score</span><input type="number" name="blueScore" min="0" value="0" required></label>
-          <label class="field"><span>Date (optional)</span><input type="date" name="date"></label>
-          <label class="field field-wide"><span>Note (optional)</span><input type="text" name="note" placeholder="Injury-time winner, rematch, etc." maxlength="80"></label>
-        </div>
-        <p class="auth-error" id="pitchMatchFormError" hidden></p>
-        <div class="task-form-actions">
-          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
-          <button type="submit" class="btn btn-add-task btn-small">Add match</button>
-        </div>
-      </form>
-      <div class="task-list" id="pitchMatchManageList"></div>
-    </div>
-
-    <div class="pitch-manage-section" data-sub-panel="teams" hidden>
-      <div id="pitchTeamManageWrap"></div>
-    </div>
   </div>
 </div>
 

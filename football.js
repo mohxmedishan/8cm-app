@@ -1,11 +1,19 @@
 // ============================================
 // 8CM — Pitch (public display)
 // ------------------------------------------------
-// Renders football.html: the match-history hero, the Red/Blue team
-// cards, and the tap-to-open formation modal. Data lives in Firestore
-// (pitchTeams/{red,blue}, pitchMatches/{id}) and is monitor-managed
-// from manage.html via football-manage.js. See football-data.js for
-// the shared constants + seed content both modules use.
+// Renders football.html: the match-history card, the Barça / Madrid
+// team cards, and the tap-to-open formation modal (a landscape pitch
+// with the team's info beside it). Data lives in Firestore
+// (pitchTeams/{red,blue}, pitchMatches/{id}); monitors edit it from
+// this same page through football-manage.js — there is no Pitch tab in
+// the Monitor panel any more. See football-data.js for the shared
+// constants and the formation layout maths.
+//
+// This module owns everything that is drawn. football-manage.js only
+// adds the monitor-only buttons and the editing dialogs, and talks to
+// this file through the small API at the bottom (getPitchState,
+// setMatchEditMode, pitchPreviewMarkup) plus one DOM event:
+//   "pitch:match-action"  { action: "edit" | "delete", id }
 // ============================================
 import {
   collection, doc, onSnapshot, query, orderBy,
@@ -13,57 +21,84 @@ import {
 import { db } from "./firebase-config.js";
 import { playOpen, playClose, playClick } from "./sound.js";
 import {
-  PITCH_POSITIONS, PITCH_ENDS, SEED_TEAMS, escapeHtml, formatMatchDate,
+  PITCH_ENDS, CLUBS, resolveTeam, escapeHtml, formatMatchDate,
+  positionGroup, pitchPlacements, orderedPlayers, isFreePlay,
+  PITCH_POSITIONS, otherEnd,
 } from "./football-data.js";
 
 const $ = (id) => document.getElementById(id);
 
-let teams = { red: null, blue: null };
-let matches = null; // null = loading, [] = loaded empty
+let teams = { red: null, blue: null };        // resolved team objects once loaded
+let teamsLoaded = { red: false, blue: false };
+let matches = null;                            // null = loading, [] = loaded empty
 let visibleCount = 5;
+let matchEditMode = false;
 const PAGE_SIZE = 5;
 
+const teamOf = (id) => teams[id] || resolveTeam(id, null);
+const nameOf = (id) => teamOf(id).name;
+
 // ------------------------------------------------
-// Crest — a small colored shield with the team's initial. Stands in
-// for a real logo until one's uploaded; the shape + tint stays
-// consistent everywhere a team is referenced.
+// Logos — BARCA.png / RAM.png, with the old shield as a safety net
 // ------------------------------------------------
-function crestMarkup(teamId, name) {
-  const initial = (name || teamId || "?").trim().charAt(0).toUpperCase() || "?";
-  return `<span class="pitch-crest pitch-crest-${escapeHtml(teamId)}" aria-hidden="true">
-    <svg viewBox="0 0 24 24"><path d="M12 2.4 4.5 5.2v5.6c0 5.1 3.2 8.9 7.5 10.8 4.3-1.9 7.5-5.7 7.5-10.8V5.2L12 2.4z"/></svg>
-    <span class="pitch-crest-letter">${escapeHtml(initial)}</span>
+const SHIELD = `<svg class="pitch-crest-shield" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.4 4.5 5.2v5.6c0 5.1 3.2 8.9 7.5 10.8 4.3-1.9 7.5-5.7 7.5-10.8V5.2L12 2.4z"/></svg>`;
+
+function crestMarkup(id, size = "") {
+  const club = CLUBS[id] || CLUBS.red;
+  return `<span class="pitch-crest pitch-crest-${escapeHtml(id)}${size ? ` pitch-crest-${size}` : ""}" aria-hidden="true">
+    <img class="pitch-logo" src="${escapeHtml(club.logo)}" alt="" width="64" height="64" decoding="async">
+    ${SHIELD}
   </span>`;
 }
 
-function teamWithFallback(id) {
-  return teams[id] || SEED_TEAMS[id];
+function guardLogos(root) {
+  root.querySelectorAll(".pitch-crest").forEach((crest) => {
+    const img = crest.querySelector(".pitch-logo");
+    if (!img) return;
+    const fail = () => crest.classList.add("is-fallback");
+    img.addEventListener("error", fail, { once: true });
+    if (img.complete && img.naturalWidth === 0) fail(); // already failed before we listened
+  });
 }
 
 // ------------------------------------------------
-// Match history hero
+// Position chip
 // ------------------------------------------------
+function posChip(code) {
+  const c = escapeHtml(code || "CM");
+  return `<span class="pitch-pos pitch-pos-${positionGroup(code).toLowerCase()}" title="${escapeHtml(PITCH_POSITIONS[code] || "")}">${c}</span>`;
+}
+
+// ------------------------------------------------
+// Match history
+// ------------------------------------------------
+const PENCIL = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`;
+
 function matchRow(match, { latest = false } = {}) {
-  const red = teamWithFallback("red");
-  const blue = teamWithFallback("blue");
   const rWin = match.redScore > match.blueScore;
   const bWin = match.blueScore > match.redScore;
+  const controls = matchEditMode ? `
+      <div class="match-edit-actions">
+        <button type="button" class="task-icon-btn" data-match-action="edit" data-id="${escapeHtml(match.id)}" aria-label="Edit this match" title="Edit">✎</button>
+        <button type="button" class="task-icon-btn task-icon-btn-danger" data-match-action="delete" data-id="${escapeHtml(match.id)}" aria-label="Delete this match" title="Delete">✕</button>
+      </div>` : "";
   return `
-    <article class="match-card${latest ? " match-card--latest" : ""}" data-id="${escapeHtml(match.id)}">
+    <article class="match-card${latest ? " match-card--latest" : ""}${matchEditMode ? " is-editing" : ""}" data-id="${escapeHtml(match.id)}">
       ${latest ? `<span class="match-latest-tag">Latest match</span>` : ""}
+      ${controls}
       <div class="match-row">
         <div class="match-side match-side-red${rWin ? " match-side--win" : ""}">
-          ${crestMarkup("red", red.name)}
-          <span class="match-team-name">${escapeHtml(red.name)}</span>
+          ${crestMarkup("red")}
+          <span class="match-team-name">${escapeHtml(nameOf("red"))}</span>
         </div>
         <div class="match-score">
-          <span class="${rWin ? "is-winner" : ""}">${match.redScore}</span>
+          <span class="${rWin ? "is-winner" : ""}">${Number(match.redScore) || 0}</span>
           <span class="match-score-sep">–</span>
-          <span class="${bWin ? "is-winner" : ""}">${match.blueScore}</span>
+          <span class="${bWin ? "is-winner" : ""}">${Number(match.blueScore) || 0}</span>
         </div>
         <div class="match-side match-side-blue${bWin ? " match-side--win" : ""}">
-          <span class="match-team-name">${escapeHtml(blue.name)}</span>
-          ${crestMarkup("blue", blue.name)}
+          <span class="match-team-name">${escapeHtml(nameOf("blue"))}</span>
+          ${crestMarkup("blue")}
         </div>
       </div>
       <div class="match-meta">
@@ -95,6 +130,7 @@ function renderMatches() {
     (shown.length ? `<div class="match-history-prev">${shown.map((m) => matchRow(m)).join("")}</div>` : "") +
     (more ? `<button type="button" class="btn btn-ghost btn-small match-show-more" id="pitchShowMore">Show 5 more</button>` : "");
 
+  guardLogos(wrap);
   const moreBtn = $("pitchShowMore");
   if (moreBtn) moreBtn.addEventListener("click", () => {
     visibleCount += PAGE_SIZE;
@@ -106,28 +142,31 @@ function renderMatches() {
 // ------------------------------------------------
 // Team cards
 // ------------------------------------------------
-function playerRow(p) {
+function playerRow(p, showSub) {
   return `<li class="pitch-player-row">
-    <span class="pitch-pos-tag pitch-pos-${escapeHtml(p.position || "MF")}">${escapeHtml(p.position || "MF")}</span>
+    ${posChip(p.position)}
     <span class="pitch-player-name">${escapeHtml(p.name || "Unnamed")}</span>
+    ${showSub && p.slot == null ? `<span class="pitch-sub-tag">Sub</span>` : ""}
   </li>`;
 }
 
 function teamCard(id) {
-  const t = teamWithFallback(id);
-  const players = t.players || [];
+  const t = teamOf(id);
+  const players = orderedPlayers(t);
+  const shape = isFreePlay(t.formation) ? "Free play" : t.formation;
+  const showSub = !isFreePlay(t.formation);
   return `
     <article class="team-card team-card-${id}" data-team="${id}" tabindex="0" role="button"
       aria-label="View ${escapeHtml(t.name)}'s formation">
       <div class="team-card-head">
-        ${crestMarkup(id, t.name)}
+        ${crestMarkup(id, "lg")}
         <div>
           <h3>${escapeHtml(t.name)}</h3>
-          <p class="team-card-sub">${players.length} player${players.length === 1 ? "" : "s"} · ${escapeHtml(PITCH_ENDS[t.end] || "End not set")}</p>
+          <p class="team-card-sub">${players.length} player${players.length === 1 ? "" : "s"} · ${escapeHtml(PITCH_ENDS[t.end] || "End not set")} · ${escapeHtml(shape)}</p>
         </div>
       </div>
       <ul class="pitch-player-list">
-        ${players.length ? players.map(playerRow).join("") : `<li class="pitch-player-row pitch-player-row-empty">No players added yet.</li>`}
+        ${players.length ? players.map((p) => playerRow(p, showSub)).join("") : `<li class="pitch-player-row pitch-player-row-empty">No players added yet.</li>`}
       </ul>
       <span class="team-card-cta">View formation →</span>
     </article>`;
@@ -136,7 +175,10 @@ function teamCard(id) {
 function renderTeams() {
   const grid = $("pitchTeamGrid");
   if (!grid) return;
+  // Wait for both teams once, so a card never flashes "no players" and then fills in.
+  if (!(teamsLoaded.red && teamsLoaded.blue)) return;
   grid.innerHTML = teamCard("red") + teamCard("blue");
+  guardLogos(grid);
   grid.querySelectorAll(".team-card").forEach((card) => {
     card.addEventListener("click", () => openFormation(card.dataset.team));
     card.addEventListener("keydown", (e) => {
@@ -146,48 +188,151 @@ function renderTeams() {
 }
 
 // ------------------------------------------------
-// Formation modal — half-pitch view of one team's arrangement
+// The pitch itself — landscape, drawn once as SVG, players on top
 // ------------------------------------------------
-function formationDots(players) {
-  return (players || []).map((p) => `
-    <div class="pitch-dot" style="left:${Number(p.x) || 50}%; top:${Number(p.y) || 50}%" title="${escapeHtml(p.name || "Unnamed")} · ${escapeHtml(PITCH_POSITIONS[p.position] || p.position || "")}">
-      <span class="pitch-dot-mark"></span>
-      <span class="pitch-dot-label">${escapeHtml((p.name || "?").split(" ")[0])}</span>
-    </div>`).join("");
+const PITCH_SVG = (() => {
+  const line = `fill="none" stroke="currentColor" stroke-width=".35" stroke-linejoin="round"`;
+  const stripes = Array.from({ length: 10 }, (_, i) =>
+    i % 2 ? "" : `<rect x="${i * 10.5}" y="0" width="10.5" height="68" class="pitch-mow"/>`).join("");
+  return `<svg class="pitch-lines" viewBox="0 0 105 68" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+    <rect width="105" height="68" class="pitch-grass"/>
+    ${stripes}
+    <g class="pitch-marks" color="rgba(255,255,255,.62)">
+      <rect x="1.2" y="1.2" width="102.6" height="65.6" ${line}/>
+      <line x1="52.5" y1="1.2" x2="52.5" y2="66.8" ${line}/>
+      <circle cx="52.5" cy="34" r="8.6" ${line}/>
+      <circle cx="52.5" cy="34" r=".55" fill="currentColor"/>
+      <rect x="1.2" y="14" width="15.6" height="40" ${line}/>
+      <rect x="1.2" y="24.4" width="5.2" height="19.2" ${line}/>
+      <path d="M16.8 27.4a8.6 8.6 0 0 1 0 13.2" ${line}/>
+      <circle cx="11.2" cy="34" r=".5" fill="currentColor"/>
+      <rect x="88.2" y="14" width="15.6" height="40" ${line}/>
+      <rect x="98.6" y="24.4" width="5.2" height="19.2" ${line}/>
+      <path d="M88.2 27.4a8.6 8.6 0 0 0 0 13.2" ${line}/>
+      <circle cx="93.8" cy="34" r=".5" fill="currentColor"/>
+    </g>
+    <rect x="-.1" y="29.6" width="1.3" height="8.8" class="pitch-goalmouth"/>
+    <rect x="103.8" y="29.6" width="1.3" height="8.8" class="pitch-goalmouth"/>
+  </svg>`;
+})();
+
+function shortName(p) {
+  const parts = String(p.name || "").trim().split(/\s+/);
+  return parts[0] || "?";
+}
+
+/**
+ * The pitch for one team. Red attacks left (goal on the right), Blue
+ * attacks right (goal on the left) so the two modals mirror each other.
+ *  opts.ghosts — also draw the empty formation slots (editor preview)
+ */
+export function pitchMarkup(id, team, opts = {}) {
+  const faceLeft = id === "red";
+  const dots = pitchPlacements(team, { faceLeft }).map(({ player, x, y }, i) => `
+      <div class="pitch-dot${player.position === "GK" ? " pitch-dot--gk" : ""}" style="left:${x.toFixed(2)}%; top:${y.toFixed(2)}%; --i:${i}"
+        title="${escapeHtml(player.name)} · ${escapeHtml(PITCH_POSITIONS[player.position] || player.position)}">
+        <span class="pitch-dot-mark">${escapeHtml(player.position)}</span>
+        <span class="pitch-dot-name">${escapeHtml(shortName(player))}</span>
+      </div>`).join("");
+
+  const ownEnd = PITCH_ENDS[team.end] || "";
+  const farEnd = PITCH_ENDS[otherEnd(team.end)] || "";
+  const empty = !dots ? `<p class="pitch-empty">${orderedPlayers(team).length ? "Everyone is on the bench." : "No lineup yet."}</p>` : "";
+
+  return `
+    <div class="pitch-field pitch-field-${escapeHtml(id)}" data-team="${escapeHtml(id)}">
+      ${PITCH_SVG}
+      <span class="pitch-end pitch-end-own">${escapeHtml(ownEnd)}</span>
+      <span class="pitch-end pitch-end-far">${escapeHtml(farEnd)}</span>
+      <div class="pitch-players">${dots}</div>
+      ${empty}
+    </div>`;
+}
+
+// ------------------------------------------------
+// Formation modal — info on one side, pitch on the other.
+// Red: info left, pitch right.  Blue: the opposite.
+// ------------------------------------------------
+function factsMarkup(t) {
+  const free = isFreePlay(t.formation);
+  const shape = free
+    ? `<span class="formation-shape formation-shape-word">Free play</span>`
+    : `<span class="formation-shape" aria-label="${escapeHtml(t.formation.replace(/-/g, " "))}">${
+        t.formation.split("-").map((n) => `<b>${escapeHtml(n)}</b>`).join(`<i aria-hidden="true">–</i>`)
+      }</span>`;
+  return `
+    <dl class="formation-facts">
+      <div class="formation-fact">
+        <dt>Defending</dt>
+        <dd>${escapeHtml(PITCH_ENDS[t.end] || "End not set")}</dd>
+      </div>
+      <div class="formation-fact">
+        <dt>Formation</dt>
+        <dd>${shape}${free ? `<span class="formation-fact-note">Players sit where their position says.</span>` : ""}</dd>
+      </div>
+    </dl>`;
+}
+
+function listMarkup(t) {
+  const players = orderedPlayers(t);
+  const showSub = !isFreePlay(t.formation);
+  return `
+    <h4 class="formation-list-title">${players.length ? `Players <span>${players.length}</span>` : "Players"}</h4>
+    <ul class="formation-list">
+      ${players.length
+        ? players.map((p) => `<li class="formation-list-row">
+            ${posChip(p.position)}
+            <span class="formation-list-name">${escapeHtml(p.name)}</span>
+            <span class="formation-list-role">${showSub && p.slot == null ? "Substitute" : escapeHtml(PITCH_POSITIONS[p.position] || "")}</span>
+          </li>`).join("")
+        : `<li class="formation-list-row formation-list-empty">No players added yet.</li>`}
+    </ul>`;
 }
 
 function renderFormation(id) {
-  const t = teamWithFallback(id);
-  const titleEl = $("pitchFormationTitle");
-  const subEl = $("pitchFormationSub");
-  const diagram = $("pitchFormationDiagram");
-  const list = $("pitchFormationList");
-  if (!titleEl || !diagram) return;
+  const t = teamOf(id);
+  const layout = $("pitchFormationLayout");
+  const info = $("pitchFormationInfo");
+  const field = $("pitchFormationField");
+  const card = $("pitchFormationCard");
+  if (!layout || !info || !field) return;
 
-  titleEl.textContent = `${t.name} — formation`;
-  titleEl.style.setProperty("--team-color", `var(--team-${id})`);
-  if (subEl) subEl.textContent = `Defending the ${(PITCH_ENDS[t.end] || "end not set").toLowerCase()}, half of the pitch shown.`;
-  diagram.className = `pitch-half pitch-half-${id}`;
-  diagram.innerHTML = `
-    <div class="pitch-half-label">${escapeHtml(PITCH_ENDS[t.end] || "End not set")}</div>
-    ${formationDots(t.players)}
-    <div class="pitch-goal"></div>`;
-  if (list) {
-    const players = t.players || [];
-    list.innerHTML = players.length
-      ? players.map(playerRow).join("")
-      : `<li class="pitch-player-row pitch-player-row-empty">No players added yet.</li>`;
-  }
+  layout.dataset.team = id;
+  if (card) card.dataset.team = id;
+  info.innerHTML = `
+    <header class="formation-head">
+      ${crestMarkup(id, "xl")}
+      <div>
+        <h3 id="pitchFormationTitle">${escapeHtml(t.name)}</h3>
+        <p class="formation-sub">${escapeHtml(id === "red" ? "Red team" : "Blue team")}</p>
+      </div>
+    </header>
+    ${factsMarkup(t)}
+    ${listMarkup(t)}`;
+  const toward = PITCH_ENDS[otherEnd(t.end)] || "";
+  const arrow = id === "red"
+    ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></svg>`
+    : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>`;
+  field.innerHTML = pitchMarkup(id, t) +
+    `<p class="pitch-caption pitch-caption-${id}">${id === "red" ? arrow : ""}<span>Attacking toward the ${escapeHtml(toward.toLowerCase())}</span>${id === "red" ? "" : arrow}</p>`;
+  guardLogos(info);
 }
+
+let lastFocus = null;
 
 function openFormation(id) {
   const overlay = $("pitchFormationOverlay");
   if (!overlay) return;
+  lastFocus = document.activeElement;
   overlay.dataset.team = id;
   renderFormation(id);
   overlay.hidden = false;
   playOpen();
-  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("open")));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.classList.add("open");
+    const closeBtn = $("pitchFormationClose");
+    if (closeBtn) closeBtn.focus({ preventScroll: true });
+  }));
 }
 
 function closeFormation() {
@@ -195,7 +340,26 @@ function closeFormation() {
   if (!overlay || overlay.hidden) return;
   overlay.classList.remove("open");
   playClose();
-  setTimeout(() => { overlay.hidden = true; }, 200);
+  setTimeout(() => {
+    overlay.hidden = true;
+    if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+  }, 220);
+}
+
+// ------------------------------------------------
+// Small API for football-manage.js
+// ------------------------------------------------
+export function getPitchState() {
+  return {
+    teams: { red: teamOf("red"), blue: teamOf("blue") },
+    matches: matches || [],
+    loaded: { teams: teamsLoaded.red && teamsLoaded.blue, matches: matches !== null },
+  };
+}
+
+export function setMatchEditMode(on) {
+  matchEditMode = !!on;
+  renderMatches();
 }
 
 // ------------------------------------------------
@@ -207,15 +371,17 @@ export function initFootball() {
 
   ["red", "blue"].forEach((id) => {
     onSnapshot(doc(db, "pitchTeams", id), (snap) => {
-      teams[id] = snap.exists() ? { ...SEED_TEAMS[id], ...snap.data(), id } : null;
+      teams[id] = resolveTeam(id, snap.exists() ? snap.data() : null);
+      teamsLoaded[id] = true;
       renderTeams();
-      // Keep an open formation modal in sync if a monitor edits this
-      // team's players while someone has it open.
+      renderMatches(); // team names appear in the match rows
+      // Keep an open formation modal in sync if a monitor edits this team.
       const overlay = $("pitchFormationOverlay");
       if (overlay && !overlay.hidden && overlay.dataset.team === id) renderFormation(id);
     }, (err) => {
       console.error("[8CM] Failed to load pitch team:", id, err);
-      teams[id] = null;
+      teams[id] = resolveTeam(id, null);
+      teamsLoaded[id] = true;
       renderTeams();
     });
   });
@@ -228,6 +394,16 @@ export function initFootball() {
     console.error("[8CM] Failed to load pitch matches:", err);
     if (matches === null) matches = [];
     renderMatches();
+  });
+
+  // Edit / delete buttons on match cards (only rendered while a monitor is editing).
+  const history = $("pitchMatchHistory");
+  if (history) history.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-match-action]");
+    if (!btn) return;
+    document.dispatchEvent(new CustomEvent("pitch:match-action", {
+      detail: { action: btn.dataset.matchAction, id: btn.dataset.id, button: btn },
+    }));
   });
 
   const overlay = $("pitchFormationOverlay");

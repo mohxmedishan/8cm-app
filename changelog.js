@@ -10,6 +10,17 @@
 export const changelog = [
   {
     date: "2026-09-20",
+    version: "17.4.0",
+    items: [
+      "Pitch is now Barça (red) against Madrid (blue), with their logos. Until a monitor adds players, each team's list is simply empty.",
+      "Tap a team to open its formation. The pitch is now laid out sideways: Barça's info is on the left with the pitch on the right, and Madrid is the mirror image. The info shows which end they defend (auditorium or kindergarten), the formation, and every player's name and position.",
+      "Positions are GK, CB, LB, RB, CDM, CM, CAM, CF, RW, LW and SS. Pick a formation (2-3-1, 3-2-1, 2-1-2-1, 1-3-2 or 2-2-2), roll a random one, or choose Free play if a team doesn't want a set shape.",
+      "Monitors: the Pitch tab is gone from the Monitor panel. Edit right on the Pitch page instead: the pencil above Match history edits or deletes results and + Add match logs a new one, and Edit teams (next to the Teams heading) changes names, ends, formations and line-ups.",
+      "Changing page is smoother. Where your browser supports it, the old page stays put and dissolves into the next one, instead of going blank in between. The menu still slides to the page you picked.",
+    ],
+  },
+  {
+    date: "2026-09-20",
     version: "17.3.0",
     items: [
       "The main menu now loops. From Rankings the row reads Home, Archives, Rankings, Football, Houses, so Football is one step away instead of a trip back through Home (and the same the other way round). You can use it from the keyboard too: Tab walks along the links, the left and right arrow keys move between them, and Enter opens one.",

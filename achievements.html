@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
+<script>(function(){var d=document.documentElement,inSite=false;
+// Page-to-page inside the site, in a browser with cross-page view transitions: the previous page is still on screen and dissolves into this one, so there is nothing to hold back. Fresh loads and reloads still wait for fonts (html.is-preparing, see style.css).
+try{inSite=("CSSViewTransitionRule" in window)&&!!document.referrer&&new URL(document.referrer).origin===location.origin&&performance.getEntriesByType("navigation")[0].type==="navigate";}catch(e){}
+if(inSite){d.classList.add("is-arriving");return;}
+d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-preparing")},1500);})();</script>
+<link rel="expect" href="#main" blocking="render">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Achievements — 8CM</title>
 <meta name="description" content="Academic, sport, and competition wins for 8CM.">
@@ -158,7 +163,7 @@
 </header>
 <script src="nav-boot.js"></script>
 
-<main>
+<main id="main">
   <section class="page-hero">
     <div class="section-inner">
       <a href="index.html" class="back-to-dashboard">← Dashboard</a>

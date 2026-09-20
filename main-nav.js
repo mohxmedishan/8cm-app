@@ -43,6 +43,12 @@ const LEAVE_MS = 280; // fade-out + nav slide length before the browser navigate
 const SAFETY_MS = 7000; // give up waiting for a navigation that never happens
 
 const html = document.documentElement;
+// Cross-page view transitions (Chrome / Edge 126+, Safari 18.2+). When the
+// browser has them, style.css asks for one on every same-site navigation and
+// the OLD page stays on screen, untouched, until the NEW one is ready — then
+// the two dissolve. So we must not fade the old content out first (that is
+// what left a blank beat between pages). Everything else keeps the old fade.
+const hasPageTransitions = "CSSViewTransitionRule" in window;
 const mobileQuery = window.matchMedia("(max-width: 720px)");
 const prefersReducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -234,11 +240,11 @@ function initPageTransitions(primary) {
   let navTimer = null;
 
   function endLeaving() {
-    if (!leaving && !html.classList.contains("is-leaving")) return;
+    if (!leaving && !html.classList.contains("is-leaving") && !html.classList.contains("is-leaving-slide")) return;
     leaving = false;
     clearTimeout(safetyTimer);
     clearTimeout(navTimer);
-    html.classList.remove("is-leaving");
+    html.classList.remove("is-leaving", "is-leaving-slide");
     if (primary) primary.restore();
     fadeInAudio();
   }
@@ -251,7 +257,9 @@ function initPageTransitions(primary) {
     }
     leaving = true;
     if (primary && link && link.classList.contains("primary-nav-link")) primary.moveTo(link);
-    html.classList.add("is-leaving");
+    // With page transitions only the menu slides here; the content is left
+    // alone so the browser can dissolve it into the next page.
+    html.classList.add(hasPageTransitions ? "is-leaving-slide" : "is-leaving");
     fadeOutAudio(LEAVE_MS);
     navTimer = window.setTimeout(() => { window.location.href = href; }, LEAVE_MS);
     // If the navigation never happens (cancelled, blocked, very slow
@@ -286,7 +294,7 @@ function initPageTransitions(primary) {
   // Restored from the back/forward cache (Safari, Chrome): the page is
   // exactly as we left it — faded out and silent — so bring it back.
   window.addEventListener("pageshow", (e) => {
-    if (e.persisted || html.classList.contains("is-leaving")) endLeaving();
+    if (e.persisted || html.classList.contains("is-leaving") || html.classList.contains("is-leaving-slide")) endLeaving();
   });
 
   // Warm the next page as soon as a link is likely to be used, so the

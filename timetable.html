@@ -3,7 +3,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
+<script>(function(){var d=document.documentElement,inSite=false;
+// Page-to-page inside the site, in a browser with cross-page view transitions: the previous page is still on screen and dissolves into this one, so there is nothing to hold back. Fresh loads and reloads still wait for fonts (html.is-preparing, see style.css).
+try{inSite=("CSSViewTransitionRule" in window)&&!!document.referrer&&new URL(document.referrer).origin===location.origin&&performance.getEntriesByType("navigation")[0].type==="navigate";}catch(e){}
+if(inSite){d.classList.add("is-arriving");return;}
+d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-preparing")},1500);})();</script>
+<link rel="expect" href="#main" blocking="render">
 <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
 <title>Timetable — 8CM</title>
 <meta content="8CM's weekly timetable, Monday to Friday, as a compact grid." name="description"/>
@@ -146,7 +151,7 @@
 </div>
 </header>
 <script src="nav-boot.js"></script>
-<main>
+<main id="main">
 <section class="timetable" id="timetable">
 <div class="section-inner">
 <a class="back-to-dashboard" href="index.html">← Dashboard</a>

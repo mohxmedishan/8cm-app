@@ -6166,11 +6166,21 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
 }
 
 /* ============================================
-   Pitch (football) — match history, team cards,
-   formation modal, and the monitor-panel editor.
+   Pitch v2 (V17.4) — match history, team cards, the landscape
+   formation modal, and the monitor-only editors that now live on
+   football.html itself (there is no Pitch tab in the Monitor panel).
+   ------------------------------------------------
+   Read football.js / football-data.js first. The short version:
+   - Red = Barça, Blue = Madrid. Logos are assets/logos/BARCA.png and
+     RAM.png; if one fails to load the old shield takes its place.
+   - The formation modal is two columns: info + landscape pitch. Red has
+     the info on the left and the pitch on the right; Blue is the mirror.
+     Under 860px it stacks (pitch first).
+   - Player dots are positioned in % of the pitch; sizes use container
+     units so the whole board scales with the modal.
    ============================================ */
 
-/* ---- crest (stand-in team logo) ---- */
+/* ---- crests (club logos) ---- */
 .pitch-crest {
   position: relative;
   display: inline-flex;
@@ -6180,37 +6190,64 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
   height: 36px;
   flex-shrink: 0;
 }
-.pitch-crest svg { width: 100%; height: 100%; }
-.pitch-crest-red svg { fill: var(--team-red); }
-.pitch-crest-blue svg { fill: var(--team-blue); }
-.pitch-crest-letter {
-  position: absolute;
-  inset: 0;
-  display: flex;
+.pitch-crest-lg { width: 46px; height: 46px; }
+.pitch-crest-xl { width: 62px; height: 62px; }
+.pitch-logo { display: block; width: 100%; height: 100%; object-fit: contain; }
+.pitch-crest-shield { display: none; width: 100%; height: 100%; }
+.pitch-crest-red .pitch-crest-shield { fill: var(--team-red); }
+.pitch-crest-blue .pitch-crest-shield { fill: var(--team-blue); }
+.pitch-crest.is-fallback .pitch-logo { display: none; }
+.pitch-crest.is-fallback .pitch-crest-shield { display: block; }
+
+/* ---- position chips (tone per line of the team, not per team) ---- */
+.pitch-pos {
+  --tone: var(--text-muted);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding-top: 2px;
-  color: #fff;
-  font-family: var(--font-display);
+  min-width: 36px;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  font-size: 0.66rem;
   font-weight: 600;
-  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  color: var(--tone);
+  background: color-mix(in srgb, var(--tone) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 55%, transparent);
+  flex-shrink: 0;
 }
+.pitch-pos-gk  { --tone: var(--house-summer); }
+.pitch-pos-def { --tone: var(--house-winter); }
+.pitch-pos-mid { --tone: var(--house-spring); }
+.pitch-pos-fwd { --tone: var(--house-autumn); }
 
-/* ---- match history hero ---- */
+/* ---- match history card ---- */
+.hero-visual-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px; /* the monitor buttons arriving must not push the list down */
+  margin-bottom: 20px;
+}
+.hero.hero-mirrored .hero-visual-head .hero-visual-label { margin: 0; }
+.hero-visual-head .panel-head-actions { flex-shrink: 0; }
+
 .match-history { display: flex; flex-direction: column; gap: 14px; }
 
 .match-card {
+  position: relative;
   background: var(--bg-elevated-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-m);
   padding: 16px 18px;
 }
 .match-card--latest {
-  position: relative;
   background: linear-gradient(160deg, var(--accent-soft), var(--bg-elevated-2) 60%);
   border-color: var(--accent);
-  padding-top: 30px;
+  padding-top: 38px;
 }
+.match-card.is-editing { padding-top: 46px; }
 .match-latest-tag {
   position: absolute;
   top: 12px;
@@ -6223,6 +6260,22 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
   border: 1px solid var(--accent);
   padding: 2px 8px;
   border-radius: 100px;
+}
+.match-edit-actions {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+}
+.match-edit-actions .task-icon-btn { min-width: 30px; height: 30px; }
+.match-edit-actions .task-icon-btn.is-armed {
+  width: auto;
+  padding: 0 10px;
+  border-color: var(--danger);
+  color: var(--danger);
+  background: var(--danger-soft);
+  font-weight: 500;
 }
 
 .match-row {
@@ -6255,6 +6308,7 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   flex-shrink: 0;
   padding: 0 6px;
@@ -6277,11 +6331,36 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
 
 .match-history-prev { display: flex; flex-direction: column; gap: 10px; }
 .match-history-prev .match-card { opacity: 0.85; padding: 12px 16px; }
-.match-history-prev .match-crest,
+.match-history-prev .match-card.is-editing { padding-top: 44px; opacity: 1; }
 .match-history-prev .pitch-crest { width: 28px; height: 28px; }
 .match-history-prev .match-score { font-size: 1.15rem; }
-
 .match-show-more { align-self: center; margin-top: 4px; }
+
+/* ---- Teams section heading with the monitor's edit button ---- */
+.section-head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.section-head-row .section-head { margin-bottom: 0; }
+.pitch-edit-teams {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 36px;
+}
+.pitch-edit-teams svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* ---- team cards ---- */
 .team-grid, .pitch-team-grid {
@@ -6297,15 +6376,18 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
   cursor: pointer;
   transition: border-color 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.team-card:hover, .team-card:focus-visible {
-  transform: translateY(-2px);
-  outline: none;
+.team-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (hover: hover) {
+  .team-card:hover { transform: translateY(-2px); }
+  .team-card-red:hover { border-color: var(--team-red); }
+  .team-card-blue:hover { border-color: var(--team-blue); }
 }
-.team-card-red:hover, .team-card-red:focus-visible { border-color: var(--team-red); }
-.team-card-blue:hover, .team-card-blue:focus-visible { border-color: var(--team-blue); }
+.team-card:active { transform: scale(0.99); }
+.team-card-red:focus-visible { border-color: var(--team-red); }
+.team-card-blue:focus-visible { border-color: var(--team-blue); }
 
 .team-card-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-.team-card-head h3 { margin: 0 0 2px; font-size: 1.15rem; }
+.team-card-head h3 { margin: 0 0 2px; font-size: 1.2rem; }
 .team-card-sub { margin: 0; font-size: 0.8rem; color: var(--text-faint); }
 
 .pitch-player-list {
@@ -6316,168 +6398,484 @@ html.is-leaving .hub-nav { transition: opacity 0.24s ease-in; }
   flex-direction: column;
   gap: 8px;
 }
-.pitch-player-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.86rem;
-}
+.pitch-player-row { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; }
 .pitch-player-row-empty { color: var(--text-faint); }
-.pitch-player-name { color: var(--text-muted); }
+.pitch-player-name { color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pitch-sub-tag { font-size: 0.68rem; color: var(--text-faint); border: 1px solid var(--border); border-radius: 100px; padding: 1px 7px; }
 
-.pitch-pos-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  padding: 2px 6px;
-  border-radius: var(--radius-s);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  background: var(--bg-elevated-2);
-  border: 1px solid var(--border);
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-.pitch-pos-GK { color: var(--house-summer); border-color: var(--house-summer); }
-.pitch-pos-DF { color: var(--team-blue); border-color: var(--team-blue); }
-.pitch-pos-MF { color: var(--accent-strong); border-color: var(--accent); }
-.pitch-pos-FW { color: var(--team-red); border-color: var(--team-red); }
-
-.team-card-cta {
-  display: inline-block;
-  font-size: 0.82rem;
-  color: var(--text-faint);
-}
+.team-card-cta { display: inline-block; font-size: 0.82rem; color: var(--text-faint); transition: color 0.2s var(--ease); }
 .team-card:hover .team-card-cta,
 .team-card:focus-visible .team-card-cta { color: var(--accent-strong); }
 
-.pitch-team-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; }
-.pitch-team-dot-red { background: var(--team-red); }
-.pitch-team-dot-blue { background: var(--team-blue); }
-
-/* ---- half-pitch diagram (formation modal + placer) ---- */
-.pitch-half {
+/* ============================================
+   The pitch — landscape, 105 × 68
+   ============================================ */
+.pitch-field {
+  --team-color: var(--accent);
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  max-height: 420px;
-  margin: 0 auto;
-  background: linear-gradient(180deg, #1f5f3a, #1a4f30);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: var(--radius-m);
+  aspect-ratio: 105 / 68;
   overflow: hidden;
+  border-radius: var(--radius-m);
+  background: #1d5a38;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 14px 30px -18px rgba(0, 0, 0, 0.7);
+  container-type: inline-size;
+  isolation: isolate;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.pitch-half::before {
-  /* center circle arc at the top (halfway line) */
-  content: "";
-  position: absolute;
-  top: -60px;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  border-radius: 50%;
-  transform: translateX(-50%);
-}
-.pitch-half-label {
+.pitch-field-red  { --team-color: var(--team-red); }
+.pitch-field-blue { --team-color: var(--team-blue); }
+.pitch-lines { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pitch-grass { fill: #1d5a38; }
+.pitch-mow { fill: #226541; }
+.pitch-goalmouth { fill: rgba(255, 255, 255, 0.4); }
+
+/* the two ends: the one this team defends is filled with the team colour */
+.pitch-end {
   position: absolute;
   top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.75);
-  background: rgba(0, 0, 0, 0.28);
+  z-index: 2;
   padding: 3px 10px;
   border-radius: 100px;
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(6, 18, 11, 0.42);
   white-space: nowrap;
-  z-index: 2;
 }
-.pitch-goal {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 34%;
-  height: 8%;
-  transform: translateX(-50%);
-  border: 2px solid rgba(255, 255, 255, 0.55);
-  border-bottom: none;
-}
+.pitch-end-own { color: #fff; background: var(--team-color); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35) inset; }
+.pitch-field-red  .pitch-end-own { right: 8px; }
+.pitch-field-red  .pitch-end-far { left: 8px; }
+.pitch-field-blue .pitch-end-own { left: 8px; }
+.pitch-field-blue .pitch-end-far { right: 8px; }
 
+.pitch-players { position: absolute; inset: 0; z-index: 3; }
 .pitch-dot {
   position: absolute;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  z-index: 3;
+  gap: 4px;
+  width: max-content;
+  animation: pitch-dot-in 0.5s var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * 50ms + 140ms);
+}
+@keyframes pitch-dot-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.55); }
 }
 .pitch-dot-mark {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid rgba(0, 0, 0, 0.25);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
-}
-.pitch-half-red .pitch-dot-mark { background: var(--team-red); }
-.pitch-half-blue .pitch-dot-mark { background: var(--team-blue); }
-.pitch-dot-label {
-  font-size: 0.62rem;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 1px 6px;
-  border-radius: 100px;
-  white-space: nowrap;
-}
-.pitch-dot-ghost { opacity: 0.55; }
-.pitch-dot-ghost .pitch-dot-mark { background: rgba(255, 255, 255, 0.5); }
-.pitch-dot-pending .pitch-dot-mark {
-  background: #fff;
-  box-shadow: 0 0 0 3px var(--accent);
-}
-
-.pitch-placer { cursor: crosshair; max-height: 300px; }
-.pitch-placer-hint { font-size: 0.8rem; color: var(--text-faint); margin: 14px 0 8px; }
-
-/* ---- formation modal ---- */
-.formation-card { max-width: 560px; max-height: 88vh; overflow-y: auto; }
-.formation-card h3 { --team-color: var(--accent-strong); color: var(--team-color); }
-#pitchFormationDiagram { margin-bottom: 16px; }
-#pitchFormationList {
-  list-style: none;
-  margin: 0;
-  padding: 14px 0 0;
-  border-top: 1px solid var(--border-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-/* ---- monitor panel: Pitch tab ---- */
-.pitch-manage-sub-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
-.pitch-team-editors {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  width: clamp(24px, 6.4cqw, 40px);
+  height: clamp(24px, 6.4cqw, 40px);
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-size: clamp(0.5rem, 0.32rem + 1.5cqw, 0.74rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: var(--team-color);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
-.pitch-team-editor {
+.pitch-dot--gk .pitch-dot-mark { background: var(--house-summer); color: #2a2000; }
+.pitch-dot-name {
+  max-width: 11ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 8px;
+  border-radius: 100px;
+  font-size: 0.66rem;
+  font-size: clamp(0.58rem, 0.4rem + 1.6cqw, 0.8rem);
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(6, 18, 11, 0.58);
+}
+.pitch-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ============================================
+   Formation modal
+   ============================================ */
+#pitchFormationOverlay,
+.pitch-dialog {
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+  overscroll-behavior: contain;
+}
+#pitchFormationOverlay.open,
+.pitch-dialog.open { opacity: 1; }
+#pitchFormationOverlay .modal-card,
+.pitch-dialog .modal-card {
+  animation: none;
+  transform: translateY(12px) scale(0.985);
+  transition: transform 0.3s var(--ease);
+}
+#pitchFormationOverlay.open .modal-card,
+.pitch-dialog.open .modal-card { transform: none; }
+
+.formation-card {
+  --team-color: var(--accent);
+  max-width: 1000px;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 54px 28px 28px;
+}
+.formation-card[data-team="red"]  { --team-color: var(--team-red); }
+.formation-card[data-team="blue"] { --team-color: var(--team-blue); }
+
+.formation-layout {
+  display: grid;
+  grid-template-columns: minmax(250px, 340px) minmax(0, 1fr);
+  grid-template-areas: "info field";
+  gap: 28px;
+  align-items: start;
+}
+/* Blue is the mirror image: pitch on the left, info on the right. */
+.formation-layout[data-team="blue"] {
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+  grid-template-areas: "field info";
+}
+.formation-info  { grid-area: info; min-width: 0; }
+.formation-field { grid-area: field; min-width: 0; align-self: center; }
+.pitch-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 2px 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+.pitch-caption-blue { justify-content: flex-end; }
+.pitch-caption svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.formation-head { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.formation-head h3 { margin: 0; font-size: 1.6rem; line-height: 1.15; }
+.formation-sub {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+.formation-sub::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--team-color);
+}
+
+.formation-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+.formation-fact {
+  min-width: 0;
+  padding: 12px 14px 13px;
+  background: var(--bg-elevated-2);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-m);
-  padding: 16px;
 }
-.pitch-team-editor-head { margin-bottom: 12px; }
-.pitch-team-editor-head h4 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
-.pitch-team-editor .task-form-grid { margin-bottom: 10px; }
-.pitch-team-editor [data-action="save-team"] { margin-bottom: 16px; }
-.pitch-player-manage-list { margin-top: 14px; }
+.formation-fact dt { margin: 0 0 6px; font-size: 0.74rem; color: var(--text-faint); }
+.formation-fact dd { margin: 0; font-size: 0.95rem; font-weight: 500; color: var(--text); }
+.formation-shape {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.formation-shape b { font-weight: 600; }
+.formation-shape i { font-style: normal; font-weight: 400; font-size: 1.1rem; color: var(--text-faint); }
+.formation-shape-word { font-size: 1.25rem; }
+.formation-fact-note { display: block; margin-top: 6px; font-family: var(--font-body); font-size: 0.72rem; font-weight: 400; line-height: 1.35; color: var(--text-faint); }
+
+.formation-list-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 6px;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.formation-list-title span {
+  padding: 0 7px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+}
+.formation-list { list-style: none; margin: 0; padding: 0; }
+.formation-list-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 0.92rem;
+}
+.formation-list-row:last-child { border-bottom: 0; }
+.formation-list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.formation-list-role { font-size: 0.74rem; color: var(--text-faint); }
+.formation-list-empty { display: block; color: var(--text-faint); }
+
+@media (max-width: 860px) {
+  .formation-card { padding: 50px 18px 22px; }
+  .formation-layout,
+  .formation-layout[data-team="blue"] {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "field" "info";
+    gap: 22px;
+  }
+}
+@media (max-width: 420px) {
+  .formation-list-role { display: none; }
+  .formation-shape { font-size: 1.6rem; }
+}
+
+/* ============================================
+   Monitor-only dialogs (football-manage.js)
+   ============================================ */
+.pitch-match-card { max-width: 420px; }
+.pm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.pm-dot-red { background: var(--team-red); }
+.pm-dot-blue { background: var(--team-blue); }
+.pm-score {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.pm-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pm-team b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.field.pm-score-field input {
+  height: 64px;
+  padding: 8px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.pm-sep { padding-bottom: 16px; font-family: var(--font-display); font-size: 1.6rem; color: var(--text-faint); }
+.pm-grid { grid-template-columns: 1fr; margin-bottom: 14px; }
+
+.pitch-editor-card {
+  display: flex;
+  flex-direction: column;
+  max-width: 760px;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  padding: 26px 0 0;
+  overflow: hidden;
+}
+.pitch-editor-card > h3,
+.pitch-editor-card > .modal-sub,
+.pitch-editor-card > .pe-tabs { margin-left: 26px; margin-right: 26px; }
+.pitch-editor-card > .modal-sub { margin-bottom: 14px; padding-right: 26px; }
+
+.pe-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  background: var(--bg-elevated-2);
+  border-radius: var(--radius-s);
+}
+.pe-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.pe-tab-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-tab:hover { color: var(--text); }
+.pe-tab.is-active { background: var(--bg-elevated); border-color: var(--border); color: var(--text); }
+.pe-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.pe-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 26px 22px;
+}
+.pe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+
+.pe-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 8px; font-size: 0.82rem; font-weight: 500; color: var(--text-muted); }
+.pe-hint { font-size: 0.74rem; font-weight: 400; color: var(--text-faint); }
+.pe-label-subs { margin-top: 22px; }
+
+.pe-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.pe-chip em { font-style: normal; font-size: 0.68rem; opacity: 0.75; }
+.pe-chip-random svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  transition: transform 0.35s var(--ease);
+}
+.pe-chip-random:active svg { transform: rotate(120deg) scale(0.9); }
+.pe-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pe-preview { margin: 16px 0 22px; }
+.pe-preview .pitch-field { max-width: 540px; margin-inline: auto; }
+.pe-preview .pitch-dot { animation: none; }
+
+.pe-rows { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pe-line { margin-top: 10px; font-size: 0.74rem; color: var(--text-faint); }
+.pe-line:first-child { margin-top: 0; }
+.pe-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(130px, 220px); gap: 8px; align-items: center; }
+.pe-row-extra { grid-template-columns: minmax(0, 1fr) minmax(130px, 220px) auto; }
+.pe-name, .pe-pos {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-s);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+.pe-name:focus, .pe-pos:focus { outline: none; border-color: var(--accent); }
+.pe-remove { width: 36px; height: 36px; }
+.pe-add { margin-top: 2px; }
+html[data-theme="light"] .pe-name,
+html[data-theme="light"] .pe-pos { background: #fff; border-color: #cfcbc1; }
+
+.pitch-editor-card > .auth-error { margin: 0 26px 12px; }
+.pe-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 26px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-elevated);
+}
+.pe-dirty { margin-right: auto; font-size: 0.8rem; color: var(--house-summer); }
 
 @media (max-width: 640px) {
+  .pitch-editor-card > h3,
+  .pitch-editor-card > .modal-sub,
+  .pitch-editor-card > .pe-tabs { margin-left: 16px; margin-right: 16px; }
+  .pitch-editor-card { padding-top: 22px; }
+  .pe-body { padding: 12px 16px 18px; }
+  .pe-footer { padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .pitch-editor-card > .auth-error { margin: 0 16px 10px; }
+  .pe-grid { grid-template-columns: 1fr; }
+  .pe-row { grid-template-columns: minmax(0, 1fr) minmax(112px, 40%); }
+  .pe-row-extra { grid-template-columns: minmax(0, 1fr) minmax(112px, 40%) auto; }
   .match-row { grid-template-columns: 1fr auto 1fr; gap: 6px; }
   .match-team-name { display: none; }
   .team-grid, .pitch-team-grid { grid-template-columns: 1fr; }
+  .section-head-row { margin-bottom: 26px; }
+  .pitch-edit-teams span { display: none; }
+  .pitch-edit-teams { width: 38px; min-height: 38px; padding: 0; justify-content: center; }
+  .hero-visual-head { min-height: 38px; }
+  .match-edit-actions .task-icon-btn { min-width: 36px; height: 36px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pitch-dot { animation: none; }
+  #pitchFormationOverlay, .pitch-dialog,
+  #pitchFormationOverlay .modal-card, .pitch-dialog .modal-card { transition: none; }
+  .pe-chip-random svg { transition: none; }
+}
+
+/* ============================================
+   V17.4 — Page changes: cross-page dissolve
+   ------------------------------------------------
+   Before: content faded out, the page went blank while the next one
+   loaded, then it faded in — that blank beat read as a "snap".
+   Now, where the browser supports it (Chrome / Edge 126+, Safari 18.2+),
+   the old page stays put until the new one is ready to draw and the two
+   cross-fade. main-nav.js only slides the menu in that case; the older
+   fade-out / hold / fade-in in this file is still the fallback for
+   Firefox. Each page's <head> skips the "hold" (html.is-preparing) when it is
+   arriving from another page of the site in such a browser.
+   ============================================ */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The menu already slid to its new place before the page left, so it
+   must not cross-fade with itself. */
+.nav { view-transition-name: site-nav; }
+::view-transition-group(site-nav) { animation-duration: 0s; }
+::view-transition-old(site-nav) { display: none; }
+::view-transition-new(site-nav) { animation: none; }
+
+html.is-leaving-slide body { pointer-events: none; }
+
+/* Arriving from another page of the site (set in each page's <head>). If the
+   dissolve doesn't run for some reason, the page still settles in softly
+   instead of cutting in hard. It never starts from fully hidden. */
+@keyframes page-settle { from { opacity: 0.6; } }
+html.is-arriving main,
+html.is-arriving .footer,
+html.is-arriving .hub-nav { animation: page-settle 0.26s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  html.is-arriving main,
+  html.is-arriving .footer,
+  html.is-arriving .hub-nav { animation: none; }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
 }

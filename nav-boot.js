@@ -26,7 +26,7 @@
 (function () {
   "use strict";
 
-  var VERSION_FALLBACK = "v17.3.0";
+  var VERSION_FALLBACK = "v17.4.0";
   var KEY_VERSION = "8cm:version";
   var KEY_AUTH = "8cm:auth-slot";
 
