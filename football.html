@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <script>document.documentElement.classList.add("is-preparing");setTimeout(function(){document.documentElement.classList.remove("is-preparing")},1500);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Football — 8CM</title>
-<meta name="description" content="Football is coming to 8CM: matches, tournaments, rankings and player profiles.">
+<title>Pitch — 8CM</title>
+<meta name="description" content="8CM's football hub: Friday PE match history, and the Red and Blue teams with their lineups and formations.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/football.html">
 <meta property="og:url" content="https://8cm.vercel.app/football.html">
@@ -112,7 +112,7 @@
       <div class="primary-nav-track">
         <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
         <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
-        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Pitch</a>
         <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
         <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
       </div>
@@ -129,25 +129,48 @@
 <script src="nav-boot.js"></script>
 
 
+<nav class="hub-nav" aria-label="Pitch sections">
+  <div class="section-inner hub-nav-inner">
+    <a href="#top" class="hub-nav-link">Pitch</a>
+    <a href="#teams" class="hub-nav-link">Teams</a>
+  </div>
+</nav>
+
 <main id="main">
-  <section class="coming-soon">
+  <!-- ============ HERO — MATCH HISTORY ============ -->
+  <section class="page-hero hero hero-mirrored" id="top">
+    <div class="section-inner hero-grid">
+      <div class="hero-visual">
+        <p class="hero-visual-label">Match history</p>
+        <!-- Filled in by renderMatches() in football.js. Latest match
+             is highlighted; the rest page in 5 at a time. -->
+        <div class="match-history" id="pitchMatchHistory" aria-live="polite">
+          <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading matches…</span></div>
+        </div>
+      </div>
+      <div class="hero-text hero-text-right">
+        <a href="index.html" class="back-to-dashboard">Dashboard →</a>
+        <div class="section-head">
+          <h1 class="hub-title">Pitch</h1>
+          <p class="section-sub">Red vs Blue, every Friday during PE. Results, lineups, and who's playing where.</p>
+        </div>
+        <div class="hero-actions">
+          <a href="#teams" class="btn btn-primary">See the teams</a>
+          <a href="index.html" class="btn btn-ghost">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TEAMS ============ -->
+  <section class="hub-section" id="teams">
     <div class="section-inner">
-      <div class="coming-soon-card">
-        <svg class="coming-soon-pitch" viewBox="0 0 200 120" aria-hidden="true" focusable="false"><rect x="2" y="2" width="196" height="116" rx="4"/><line x1="100" y1="2" x2="100" y2="118"/><circle cx="100" cy="60" r="16"/><rect x="2" y="34" width="26" height="52"/><rect x="172" y="34" width="26" height="52"/></svg>
-        <span class="coming-soon-badge">Coming soon</span>
-        <h1>Football</h1>
-        <p>The 8CM football hub is on its way. Fixtures, results and who's playing well will all live here once it kicks off.</p>
-        <ul class="coming-soon-list" aria-label="Planned football features">
-          <li>Matches</li>
-          <li>Match history</li>
-          <li>Tournaments</li>
-          <li>Rankings</li>
-          <li>Teams</li>
-          <li>Player stats</li>
-          <li>Player profiles</li>
-          <li>Results</li>
-        </ul>
-        <a href="index.html" class="btn btn-ghost coming-soon-back">Back to Home</a>
+      <div class="section-head">
+        <h2>Teams</h2>
+        <p class="section-sub">Tap a team to see their formation — who's playing where, and which end they're defending.</p>
+      </div>
+      <div class="team-grid pitch-team-grid" id="pitchTeamGrid">
+        <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading teams…</span></div>
       </div>
     </div>
   </section>
@@ -159,6 +182,18 @@
     <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
   </div>
 </footer>
+
+<!-- ============ FORMATION MODAL ============ -->
+<div class="modal-overlay" id="pitchFormationOverlay" hidden>
+  <div class="modal-card formation-card">
+    <button class="modal-close" id="pitchFormationClose" aria-label="Close">✕</button>
+    <h3 id="pitchFormationTitle">Formation</h3>
+    <p class="modal-sub" id="pitchFormationSub"></p>
+    <div class="pitch-half" id="pitchFormationDiagram"></div>
+    <ul id="pitchFormationList"></ul>
+  </div>
+</div>
+
 
 <div class="modal-overlay" id="authOverlay" hidden>
   <div class="modal-card">

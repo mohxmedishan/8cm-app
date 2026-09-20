@@ -238,6 +238,18 @@ service cloud.firestore {
       allow write: if isMonitor();
     }
 
+    // Pitch (football) — Red vs Blue, every Friday PE. Public read,
+    // monitor-only write, same openness as quickLinks/students/etc.
+    match /pitchMatches/{matchId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
+
+    match /pitchTeams/{teamId} {
+      allow read: if true;
+      allow write: if isMonitor();
+    }
+
     match /events/{eventId} {
       allow read: if true;
       allow write: if isMonitor();

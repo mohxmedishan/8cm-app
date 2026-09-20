@@ -1069,6 +1069,8 @@ const OPTIONAL_MODULES = [
   ["achievements", "./achievements.js", "initAchievements"],
   ["archive materials", "./archive-materials.js", "initArchiveMaterials"],
   ["quick links", "./quick-links.js", "initQuickLinks"],
+  ["pitch", "./football.js", "initFootball"],
+  ["pitch management", "./football-manage.js", "initFootballManagement"],
   ["manage page", "./manage.js", "initManagePage"],
   ["home glance", "./glance-panels.js", "initHomeGlance"],
   ["archives glance", "./glance-panels.js", "initArchivesGlance"],

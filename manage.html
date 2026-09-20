@@ -107,7 +107,7 @@
       <!-- The Monitor panel hangs off Home (its back link says "Dashboard"), so
            the loop is centred on Home here. See DESIGN.md → Main navigation. -->
       <div class="primary-nav-track">
-        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Football</a>
+        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Pitch</a>
         <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Houses</a>
         <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
         <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
@@ -157,6 +157,7 @@
   <button class="manage-tab" data-tab="gallery" type="button">Gallery</button>
   <button class="manage-tab" data-tab="archive" type="button">Archive</button>
   <button class="manage-tab" data-tab="quicklinks" type="button">Quick links</button>
+  <button class="manage-tab" data-tab="pitch" type="button">Pitch</button>
   <button class="manage-tab" data-tab="achievements" type="button">Achievements</button>
   <button class="manage-tab" data-tab="changelog" type="button">Changelog</button>
   <button class="manage-tab" data-tab="monitors" type="button">Monitors</button>
@@ -457,6 +458,46 @@
       </div>
     </form>
     <div class="task-list" id="quickLinkManageList"></div>
+  </div>
+</div>
+
+<!-- PITCH -->
+<div class="manage-panel" data-panel="pitch">
+  <div class="today-panel" id="pitchManagePanel">
+    <div class="today-panel-head">
+      <div>
+        <h3 class="today-panel-title">Pitch</h3>
+        <p class="today-note">Log Friday's result, and keep each team's lineup and formation up to date.</p>
+      </div>
+    </div>
+    <div class="pitch-manage-sub-tabs" id="pitchManageSubTabs">
+      <button class="pill active" data-sub="matches" type="button">Match history</button>
+      <button class="pill" data-sub="teams" type="button">Teams &amp; players</button>
+    </div>
+
+    <div class="pitch-manage-section" data-sub-panel="matches">
+      <div class="today-panel-head">
+        <button class="btn btn-add-task btn-small monitor-only" id="addPitchMatchBtn" hidden>+ Add match</button>
+      </div>
+      <form class="task-form" id="pitchMatchForm" hidden>
+        <div class="task-form-grid">
+          <label class="field"><span>Red score</span><input type="number" name="redScore" min="0" value="0" required></label>
+          <label class="field"><span>Blue score</span><input type="number" name="blueScore" min="0" value="0" required></label>
+          <label class="field"><span>Date (optional)</span><input type="date" name="date"></label>
+          <label class="field field-wide"><span>Note (optional)</span><input type="text" name="note" placeholder="Injury-time winner, rematch, etc." maxlength="80"></label>
+        </div>
+        <p class="auth-error" id="pitchMatchFormError" hidden></p>
+        <div class="task-form-actions">
+          <button type="button" class="btn btn-ghost btn-small" data-action="cancel">Cancel</button>
+          <button type="submit" class="btn btn-add-task btn-small">Add match</button>
+        </div>
+      </form>
+      <div class="task-list" id="pitchMatchManageList"></div>
+    </div>
+
+    <div class="pitch-manage-section" data-sub-panel="teams" hidden>
+      <div id="pitchTeamManageWrap"></div>
+    </div>
   </div>
 </div>
 
