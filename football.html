@@ -10,7 +10,7 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 <link rel="expect" href="#main" blocking="render">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Pitch — 8CM</title>
-<meta name="description" content="8CM's football hub: Friday PE match history, and the Barça and Madrid teams with their lineups and formations.">
+<meta name="description" content="8CM's football hub: Friday PE match history, the Barça and Madrid teams, and the player leaderboard.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/football.html">
 <meta property="og:url" content="https://8cm.vercel.app/football.html">
@@ -138,6 +138,8 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
   <div class="section-inner hub-nav-inner">
     <a href="#top" class="hub-nav-link">Pitch</a>
     <a href="#teams" class="hub-nav-link">Teams</a>
+    <a href="#leaderboard" class="hub-nav-link">Leaderboard</a>
+    <a href="#performance" class="hub-nav-link">Performance</a>
   </div>
 </nav>
 
@@ -188,6 +190,41 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
       </div>
       <div class="team-grid pitch-team-grid" id="pitchTeamGrid">
         <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading teams…</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LEADERBOARD ============
+       Filled in by football-points.js: the gold / silver / bronze podium and
+       everyone else ranked underneath, from approved performances only. -->
+  <section class="hub-section" id="leaderboard">
+    <div class="section-inner">
+      <div class="section-head-row">
+        <div class="section-head">
+          <h2>Leaderboard</h2>
+          <p class="section-sub">Every Friday adds up. Goals, assists, saves, clean sheets, MVPs and the team result all earn points, and the top three take the podium.</p>
+        </div>
+      </div>
+      <div class="pitch-leaderboard" id="pitchLeaderboard" aria-live="polite">
+        <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading the leaderboard…</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAYER PERFORMANCE ============
+       Locked until Friday. On Friday it opens, lists the players who are on the
+       teams, and a tap turns a player into the stat form. Submissions wait for
+       a monitor. Filled in by football-points.js. -->
+  <section class="hub-section" id="performance">
+    <div class="section-inner">
+      <div class="section-head-row">
+        <div class="section-head">
+          <h2>Player performance</h2>
+          <p class="section-sub">After Friday PE, log how each player did. A monitor checks it before it counts.</p>
+        </div>
+      </div>
+      <div class="pitch-performance" id="pitchPerformance">
+        <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading…</span></div>
       </div>
     </div>
   </section>

@@ -250,6 +250,53 @@ service cloud.firestore {
       allow write: if isMonitor();
     }
 
+    // Pitch performances — one doc per player per Friday, id =
+    // "YYYY-MM-DD_playerId". The leaderboard is public, so anyone can
+    // read. A signed-in student may CREATE a *pending* entry under their
+    // own uid, and may re-save their own entry while it is still pending.
+    // Only a monitor can approve one (status -> approved), touch an
+    // approved one, or delete anything — so nothing counts on the
+    // leaderboard until a monitor says so. The "opens on Friday" lock is
+    // client-side on purpose: rules can't know the class's timezone, and
+    // every entry is reviewed by a monitor before it counts, so the lock
+    // is a convenience, not the security boundary.
+    match /pitchPerformances/{perfId} {
+      function statsAreSane(s) {
+        return s is map &&
+          s.keys().hasOnly(['goals', 'assists', 'saves', 'ownGoals', 'yellows', 'mvp', 'cleanSheet', 'red', 'result']) &&
+          s.get('goals', 0) is number && s.get('goals', 0) >= 0 && s.get('goals', 0) <= 12 &&
+          s.get('assists', 0) is number && s.get('assists', 0) >= 0 && s.get('assists', 0) <= 12 &&
+          s.get('saves', 0) is number && s.get('saves', 0) >= 0 && s.get('saves', 0) <= 20 &&
+          s.get('ownGoals', 0) is number && s.get('ownGoals', 0) >= 0 && s.get('ownGoals', 0) <= 5 &&
+          s.get('yellows', 0) is number && s.get('yellows', 0) >= 0 && s.get('yellows', 0) <= 2 &&
+          s.get('result', 'loss') in ['win', 'draw', 'loss'];
+      }
+
+      // A student's submission: pending, theirs, well-formed, and the doc
+      // id has to match its own date + player (so it can't be aimed at
+      // somebody else's entry).
+      function isMyPendingEntry() {
+        let d = request.resource.data;
+        return d.keys().hasOnly(['playerId', 'playerName', 'team', 'position', 'date', 'stats', 'points', 'status', 'submittedBy', 'submittedByName', 'createdAtMs']) &&
+          d.keys().hasAll(['playerId', 'playerName', 'team', 'date', 'stats', 'status', 'submittedBy', 'createdAtMs']) &&
+          d.playerId is string && d.playerId.size() > 0 && d.playerId.size() <= 60 &&
+          d.playerName is string && d.playerName.size() <= 80 &&
+          d.team in ['red', 'blue'] &&
+          d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+          perfId == d.date + '_' + d.playerId &&
+          statsAreSane(d.stats) &&
+          d.status == 'pending' &&
+          d.submittedBy == request.auth.uid;
+      }
+
+      allow read: if true;
+      allow create: if isSignedIn() && isMyPendingEntry();
+      allow update: if isSignedIn() && isMyPendingEntry() &&
+        resource.data.status == 'pending' &&
+        resource.data.submittedBy == request.auth.uid;
+      allow write: if isMonitor();
+    }
+
     match /events/{eventId} {
       allow read: if true;
       allow write: if isMonitor();

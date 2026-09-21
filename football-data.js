@@ -355,3 +355,186 @@ export function formatMatchDate(iso) {
     return iso;
   }
 }
+
+// ============================================
+// Points system (leaderboard + Friday performance)
+// ------------------------------------------------
+// Everything the Pitch leaderboard needs to turn a stat line into
+// points and points into a ranking. Pure functions: no DOM, no
+// Firebase. football-points.js draws it; the numbers live HERE, so
+// the scoring can be re-tuned in one place. Nothing is stored as a
+// "final" score: the leaderboard re-scores every approved stat line
+// each time it draws, so changing SCORING below re-ranks everyone
+// (the stored `points` field on a performance is only a snapshot
+// for the approval queue and for anyone reading the raw data).
+//
+// A performance is one player's Friday:
+//   pitchPerformances/{YYYY-MM-DD_playerId}
+//   { playerId, playerName, team, position, date, stats, points,
+//     status: "pending" | "approved", submittedBy, submittedByName,
+//     createdAtMs, approvedBy?, approvedByName?, approvedAtMs? }
+// stats = { goals, assists, saves, ownGoals, yellows,
+//           mvp, cleanSheet, red, result: "win" | "draw" | "loss" }
+//
+// WHY THESE NUMBERS (so they can be argued with, not just trusted):
+//  - Everyone who plays gets a little (appearance), so a quiet
+//    match still counts and nobody sits on 0 forever.
+//  - A goal is worth more the harder it is to get from that
+//    position: forward 4, midfielder 5, defender 6, keeper 8. A
+//    striker's hat-trick still beats everything else in a match,
+//    which is fair — but defenders and keepers have their own ways
+//    to a big day (clean sheet, saves) so the board isn't only
+//    strikers.
+//  - A clean sheet is a team effort that the back line owns: keeper
+//    5, defenders 4, midfielders 1, forwards 0.
+//  - Saves are 1 each, capped at 8 a match so one busy keeper can't
+//    run away with the table.
+//  - MVP is +4: a real prize, but smaller than a hat-trick.
+//  - Team result (win 3 / draw 1) is small on purpose: it rewards
+//    playing for the team without letting the stronger side sweep
+//    the table on results alone.
+//  - Own goal −2, yellow −1, red −3. A match can never score below 0,
+//    so one bad Friday dents a player instead of wiping their season.
+// ============================================
+export const SCORING = {
+  appearance: 2,
+  goal: { GK: 8, DEF: 6, MID: 5, FWD: 4 },
+  assist: 3,
+  hatTrick: 3,   // 3 or more goals in the match
+  bigHaul: 4,    // 5 or more goals, on top of the hat-trick bonus
+  save: 1,
+  saveCap: 8,
+  cleanSheet: { GK: 5, DEF: 4, MID: 1, FWD: 0 },
+  mvp: 4,
+  win: 3,
+  draw: 1,
+  ownGoal: -2,
+  yellow: -1,
+  red: -3,
+};
+
+// The most a stepper on the form will go to (sanity, not scoring).
+export const STAT_LIMITS = { goals: 12, assists: 12, saves: 20, ownGoals: 5, yellows: 2 };
+
+export const RESULTS = ["win", "draw", "loss"];
+
+/** A blank stat line. `result` starts unset so nobody gets a win by default. */
+export function emptyStats() {
+  return { goals: 0, assists: 0, saves: 0, ownGoals: 0, yellows: 0, mvp: false, cleanSheet: false, red: false, result: "" };
+}
+
+/** Anything (Firestore data, a half-filled form) → a clean, in-range stat line. */
+export function normalizeStats(raw) {
+  const r = raw && typeof raw === "object" ? raw : {};
+  const num = (key) => {
+    const n = Math.floor(Number(r[key]));
+    return Number.isFinite(n) ? Math.min(STAT_LIMITS[key], Math.max(0, n)) : 0;
+  };
+  return {
+    goals: num("goals"), assists: num("assists"), saves: num("saves"),
+    ownGoals: num("ownGoals"), yellows: num("yellows"),
+    mvp: r.mvp === true, cleanSheet: r.cleanSheet === true, red: r.red === true,
+    result: RESULTS.includes(r.result) ? r.result : "",
+  };
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/**
+ * Score one stat line for a player in `position`.
+ * Returns { total, rows } where rows is the breakdown the form shows:
+ * [{ label, detail, points }, …]. `total` is never below 0.
+ */
+export function scorePerformance(stats, position) {
+  const s = normalizeStats(stats);
+  const g = positionGroup(position);
+  const rows = [];
+  const add = (label, points, detail = "") => { if (points) rows.push({ label, points, detail }); };
+
+  add("Played", SCORING.appearance);
+  add("Goals", s.goals * SCORING.goal[g], s.goals ? `${s.goals} × ${SCORING.goal[g]}` : "");
+  add("Assists", s.assists * SCORING.assist, s.assists ? `${s.assists} × ${SCORING.assist}` : "");
+  if (s.goals >= 3) add("Hat-trick", SCORING.hatTrick);
+  if (s.goals >= 5) add("Five-goal haul", SCORING.bigHaul);
+  const counted = Math.min(s.saves, SCORING.saveCap);
+  add("Saves", counted * SCORING.save, s.saves ? (s.saves > counted ? `${plural(counted, "counted save")} (max ${SCORING.saveCap})` : plural(s.saves, "save")) : "");
+  if (s.cleanSheet) add("Clean sheet", SCORING.cleanSheet[g] || 0);
+  if (s.mvp) add("MVP", SCORING.mvp);
+  if (s.result === "win") add("Team won", SCORING.win);
+  else if (s.result === "draw") add("Team drew", SCORING.draw);
+  add("Own goals", s.ownGoals * SCORING.ownGoal, s.ownGoals ? `${s.ownGoals} × ${SCORING.ownGoal}` : "");
+  add("Yellow cards", s.yellows * SCORING.yellow, s.yellows ? `${s.yellows} × ${SCORING.yellow}` : "");
+  if (s.red) add("Red card", SCORING.red);
+
+  const sum = rows.reduce((t, r) => t + r.points, 0);
+  if (sum < 0) rows.push({ label: "Floor", points: -sum, detail: "a match can't score below 0" });
+  return { total: Math.max(0, sum), rows };
+}
+
+/**
+ * The leaderboard: every player on either team right now, plus anyone
+ * who has an approved performance but has since left a team. Only
+ * "approved" performances count. Sorted by points, then goals,
+ * assists, MVPs, saves, then name — so a tie is settled by who did
+ * more, never by who signed up first.
+ */
+export function buildLeaderboard(teamsById, performances) {
+  const byPlayer = new Map();
+  const blank = (id, name, team, position, current) => ({
+    id, name, team, position, current,
+    points: 0, goals: 0, assists: 0, saves: 0, mvps: 0, played: 0,
+  });
+
+  ["red", "blue"].forEach((teamId) => {
+    const team = teamsById && teamsById[teamId];
+    ((team && team.players) || []).forEach((p) => {
+      if (!p || !String(p.name || "").trim()) return;
+      byPlayer.set(p.id, blank(p.id, p.name, teamId, p.position, true));
+    });
+  });
+
+  (performances || []).forEach((perf) => {
+    if (!perf || perf.status !== "approved") return;
+    let row = byPlayer.get(perf.playerId);
+    if (!row) {
+      row = blank(perf.playerId, perf.playerName || "Player", perf.team === "blue" ? "blue" : "red", perf.position, false);
+      byPlayer.set(perf.playerId, row);
+    }
+    const s = normalizeStats(perf.stats);
+    row.points += scorePerformance(s, perf.position).total;
+    row.goals += s.goals;
+    row.assists += s.assists;
+    row.saves += s.saves;
+    row.mvps += s.mvp ? 1 : 0;
+    row.played += 1;
+  });
+
+  return [...byPlayer.values()].sort((a, b) =>
+    b.points - a.points || b.goals - a.goals || b.assists - a.assists ||
+    b.mvps - a.mvps || b.saves - a.saves || String(a.name).localeCompare(String(b.name)));
+}
+
+// ------------------------------------------------
+// Fridays
+// ------------------------------------------------
+/** Local YYYY-MM-DD (not toISOString, which is UTC and can land on the wrong day). */
+export function isoDate(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+export function isFriday(d = new Date()) { return d.getDay() === 5; }
+/** 0 on a Friday, otherwise 1–6. */
+export function daysUntilFriday(d = new Date()) { return (5 - d.getDay() + 7) % 7; }
+/** The most recent Friday on or before `d`, as a Date. */
+export function lastFriday(d = new Date()) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() - 5 + 7) % 7));
+}
+
+export function performanceId(date, playerId) { return `${date}_${playerId}`; }
+
+/** "win" | "draw" | "loss" for `teamId` in a match doc { redScore, blueScore }. */
+export function resultFor(match, teamId) {
+  const mine = Number(teamId === "blue" ? match.blueScore : match.redScore) || 0;
+  const theirs = Number(teamId === "blue" ? match.redScore : match.blueScore) || 0;
+  return mine > theirs ? "win" : mine < theirs ? "loss" : "draw";
+}

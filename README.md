@@ -63,7 +63,7 @@ Deploying: upload/push the folder to Vercel. Whenever `firestore.rules` changes,
 | `timetable.html` | Standalone weekly timetable + teachers list |
 | `events.html`, `achievements.html`, `gallery.html`, `resources.html`, `stats.html`, `about.html` | Content pages |
 | `changelog.html`, `updates.html` | Renders `changelog.js` |
-| `football.html` | **Pitch** — match history, Barça (red) vs Madrid (blue) team cards, formation modal. Monitors edit it in place (no tab in the Monitor panel) |
+| `football.html` | **Pitch** — match history, Barça (red) vs Madrid (blue) team cards, formation modal, then the **Leaderboard** (podium + ranking) and **Player performance** (Friday-locked stat form + monitor approval). Monitors edit it in place (no tab in the Monitor panel) |
 | `manage.html` | **Monitor panel** — tabs: homework, announcements, resources, events, achievements, gallery, students, teachers, monitors, archive, quicklinks, changelog, audit |
 
 Every page has the same inline "boot" script in `<head>` that applies the saved theme/accent before first paint
@@ -93,6 +93,7 @@ list runs everywhere. To add a feature module: create `foo.js` exporting `initFo
 - `announcements.js` — *legacy, not loaded by anything.* Don't edit it thinking it's live.
 - `arrange.js` — shared drag-to-reorder ("arrange mode") used by the three panels above.
 - `football-data.js` — Pitch constants, positions, formation layout maths (no DOM/Firebase). `football.js` — public Pitch page: match history, team cards, landscape formation modal; exports `getPitchState`, `setMatchEditMode`, `pitchMarkup` for the editor. `football-manage.js` — monitor-only buttons + dialogs (add/edit/delete match, Edit teams) on `football.html`. Collections `pitchTeams/{red,blue}` and `pitchMatches/{id}` (public read, monitor write — **republish `firestore.rules` if the Pitch blocks aren't live yet**).
+- **Pitch points (V17.5)** — `football-points.js` draws the leaderboard (`#pitchLeaderboard`) and the Friday performance gate/editor/approval queue (`#pitchPerformance`). The scoring table (`SCORING`), `scorePerformance`, `buildLeaderboard` and the Friday helpers live in `football-data.js`; retune points THERE — the board re-scores every approved stat line each time it draws, so no stored data needs touching. Collection `pitchPerformances/{YYYY-MM-DD_playerId}` (public read; a signed-in student may create/re-save their own *pending* entry, only monitors approve or delete — **republish `firestore.rules`**). Only `status: "approved"` entries count. The Friday lock is client-side (device clock); monitors can open the form any day. Players listed in the form come from `pitchTeams`, never the student directory.
 - `events.js`, `achievements.js`, `gallery.js`, `archive-materials.js`, `quick-links.js`, `tasks.js`, `dashboard.js`
 - `student-manage.js`, `teacher-manage.js`, `students.js` / `teachers.js` / `teachers-data.js` (Firestore-first, seed data as fallback)
 - `item-links.js` — the shared "attached links" editor/chips (up to 8 links per item)

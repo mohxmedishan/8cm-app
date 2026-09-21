@@ -9,6 +9,17 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-21",
+    version: "17.5.0",
+    items: [
+      "Pitch now has a Leaderboard under the teams. The top three stand on a gold, silver and bronze podium and everyone else is ranked by points underneath. Players who haven't scored yet are listed at the bottom, so every player on a team is on the board.",
+      "How points work (tap \"How points work\" under the leaderboard): playing is +2, a goal is +4 for a forward, +5 for a midfielder, +6 for a defender and +8 for a goalkeeper, an assist is +3, a hat-trick is +3 extra, saves are +1 each (up to 8), a clean sheet is +5 for the keeper, +4 for defenders and +1 for midfielders, MVP is +4, and the team's result is +3 for a win or +1 for a draw. Own goals are −2, a yellow is −1 and a red is −3. A match never scores below 0.",
+      "New Player performance section at the bottom of Pitch. It stays locked until Friday. On Friday it opens and lists the players who are on the teams (not the whole class). Tap a player and their row opens into a form for goals, assists, saves, own goals, cards, clean sheet, MVP and the team result, with the points adding up as you go.",
+      "Saving closes everything and shows a message: wait until a monitor approves it. Nothing counts on the leaderboard until then.",
+      "Monitors: waiting entries show up in the same section. Approve one, edit it first (Save & approve), reject it, or approve everything at once. A monitor's own entries are approved straight away, and monitors can open the form on any day to catch up on a missed Friday. Republish firestore.rules once for this to work.",
+    ],
+  },
+  {
     date: "2026-09-20",
     version: "17.4.0",
     items: [
