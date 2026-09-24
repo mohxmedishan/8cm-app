@@ -175,6 +175,12 @@ function initStudentDirectory() {
   function renderStudents(list) {
     grid.innerHTML = "";
     grid.classList.toggle("empty", list.length === 0);
+    if (!list.length) {
+      const empty = document.createElement("p");
+      empty.className = "student-grid-empty";
+      empty.textContent = "No one matches that search.";
+      grid.appendChild(empty);
+    }
     list.forEach((s, i) => {
       const card = document.createElement("div");
       card.className = "student-card";

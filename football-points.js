@@ -152,7 +152,7 @@ function scoreCard(m) {
   const r = Number(m.redScore) || 0;
   const b = Number(m.blueScore) || 0;
   const verdict = r === b ? "Draw" : `${teamOf(r > b ? "red" : "blue").name} won`;
-  return `<article class="lm-score">
+  return `<article class="lm-score" data-match-breakdown="${escapeHtml(m.id)}" role="button" tabindex="0" aria-label="Open full breakdown for ${escapeHtml(formatMatchDate(m.date))}">
     <div class="lm-side lm-side-red${r > b ? " is-win" : ""}">${crestMarkup("red")}<span class="lm-team">${escapeHtml(teamOf("red").name)}</span></div>
     <div class="lm-result"><span class="lm-nums"><b class="${r > b ? "is-winner" : ""}">${r}</b><i>–</i><b class="${b > r ? "is-winner" : ""}">${b}</b></span><span class="lm-meta">${escapeHtml(formatMatchDate(m.date))} · ${escapeHtml(verdict)}</span></div>
     <div class="lm-side lm-side-blue${b > r ? " is-win" : ""}">${crestMarkup("blue")}<span class="lm-team">${escapeHtml(teamOf("blue").name)}</span></div>
@@ -167,6 +167,58 @@ function matchPicker(current) {
     ${matches.slice(0, 8).map((m, i) => `<button type="button" class="lm-chip${m.id === current.id ? " is-active" : ""}" data-match="${escapeHtml(m.id)}" aria-pressed="${m.id === current.id}">
       <span>${i === 0 ? "Latest" : escapeHtml(formatMatchDate(m.date))}</span><b>${scoreOf(m)}</b></button>`).join("")}
   </div>`;
+}
+
+function openMatchBreakdown(match) {
+  const overlay = $("perfViewOverlay");
+  const body = $("perfViewBody");
+  if (!overlay || !body || !match) return;
+
+  const key = matchKey(match);
+  const board = matchBoard(performances || [], key);
+  const r = Number(match.redScore) || 0;
+  const b = Number(match.blueScore) || 0;
+  const verdict = r === b ? "Draw" : `${teamOf(r > b ? "red" : "blue").name} won`;
+
+  const playerRows = board.all.length
+    ? board.all.map((row) => {
+        const stats = [
+          row.stats.goals ? `${row.stats.goals} G` : "",
+          row.stats.assists ? `${row.stats.assists} A` : "",
+          row.stats.saves ? `${row.stats.saves} S` : "",
+          row.stats.mvp ? "★ MVP" : "",
+          row.stats.ownGoal ? "🤡 Own goal" : "",
+        ].filter(Boolean).join(" · ");
+        return `<button type="button" class="match-break-player" data-pid="${escapeHtml(row.id)}">
+          <span class="match-break-player-main">
+            <span class="match-break-player-name">${escapeHtml(row.name)}</span>
+            <span class="match-break-player-meta">${escapeHtml(teamOf(row.team).name)} · ${escapeHtml(row.position || "CM")}${stats ? ` · ${escapeHtml(stats)}` : ""}</span>
+          </span>
+          <b>${row.points} pts</b>
+        </button>`;
+      }).join("")
+    : `<p class="perf-break-empty">No player stats have been logged for this match yet.</p>`;
+
+  body.innerHTML = `
+    <div class="perf-edit-head match-break-head">
+      ${crestMarkup("red", "lg")}
+      <div>
+        <h3>Match breakdown</h3>
+        <p class="perf-edit-sub"><span>${escapeHtml(formatMatchDate(match.date))} · ${escapeHtml(verdict)}</span></p>
+      </div>
+      ${crestMarkup("blue", "lg")}
+    </div>
+    <div class="match-break-score"><b>${r}</b><span>–</span><b>${b}</b></div>
+    <div class="match-break-list">${playerRows}</div>`;
+
+  lastFocus = document.activeElement;
+  overlay.hidden = false;
+  playOpen();
+  guardLogos(body);
+  body.querySelectorAll("[data-pid]").forEach((el) => {
+    el.addEventListener("click", () => openStatsView(el.dataset.pid, match));
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("open")));
 }
 
 function renderLastMatch() {
@@ -189,14 +241,32 @@ function renderLastMatch() {
   if (performances === null) {
     box.innerHTML = head + `<div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading player stats…</span></div>`;
     wirePicker(box);
+    box.querySelectorAll("[data-match-breakdown]").forEach((el) => {
+      el.addEventListener("click", () => openMatchBreakdown(match));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openMatchBreakdown(match);
+        }
+      });
+    });
     return;
   }
 
   const key = matchKey(match);
   const board = matchBoard(performances, key);
   if (!board.all.length) {
-    box.innerHTML = head + `<p class="empty-body lm-empty">No player stats logged for this match yet. Once a monitor logs some, the top scorers, MVP and Clown show up here.</p>`;
+    box.innerHTML = head + `<p class="empty-body lm-empty">No player stats logged for this match yet. Tap the match card for the full breakdown.</p>`;
     wirePicker(box);
+    box.querySelectorAll("[data-match-breakdown]").forEach((el) => {
+      el.addEventListener("click", () => openMatchBreakdown(match));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openMatchBreakdown(match);
+        }
+      });
+    });
     return;
   }
 
@@ -214,6 +284,9 @@ function renderLastMatch() {
     </div>`;
   guardLogos(box);
   wirePicker(box);
+  box.querySelectorAll("[data-match-breakdown]").forEach((el) => {
+    el.addEventListener("click", () => openMatchBreakdown(match));
+  });
   box.querySelectorAll("[data-pid]").forEach((el) => {
     el.addEventListener("click", () => openStatsView(el.dataset.pid, match));
   });

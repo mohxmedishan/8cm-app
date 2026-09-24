@@ -688,12 +688,13 @@ h1, h2, h3 {
 
 .controls {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 16px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 18px;
 }
+.search-wrap { flex: 0 0 auto; }
 
 .search-wrap input {
   background: var(--bg-elevated);
@@ -824,12 +825,12 @@ h1, h2, h3 {
   color: var(--border);
 }
 
-.student-grid.empty::after {
-  content: "No one matches that search.";
+.student-grid-empty {
   color: var(--text-faint);
   font-size: 0.9rem;
   grid-column: 1 / -1;
   padding: 20px 0;
+  margin: 0;
 }
 
 /* ============================================
@@ -3025,12 +3026,12 @@ a.tt-detail-hw:hover {
 /* ============================================
    V11.1 — dropdown filter row
    ============================================ */
-.filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filter-row { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; justify-content: flex-end; margin-left: auto; }
 .filter-box {
   display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
   padding: 8px 14px; background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: var(--radius-s); color: var(--text); font-family: var(--font-body);
-  cursor: pointer; transition: border-color 0.1s var(--ease), background 0.1s var(--ease); min-width: 110px;
+  cursor: pointer; transition: border-color 0.1s var(--ease), background 0.1s var(--ease); min-width: 100px;
 }
 .filter-box:hover,.filter-box.open,.filter-box.is-active { border-color: var(--accent); }
 .filter-box.is-active .filter-box-value { color: var(--accent-strong); font-weight: 500; }
@@ -4388,6 +4389,7 @@ html[data-theme="light"] .bgm-loop-toggle { background-color:#fff; border-color:
   .student-card-roll { font-size: 0.68rem; }
   .student-card .student-meta > span { font-size: 0.68rem; padding: 2px 7px; }
   .controls { gap: 12px; flex-direction: column; align-items: stretch; }
+  .filter-row { margin-left: 0; justify-content: stretch; flex-wrap: wrap; }
   .search-wrap { width: 100%; }
   .search-wrap input { width: 100%; font-size: 0.95rem; padding: 12px 14px; }
   .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -7386,6 +7388,33 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
   padding: 18px 20px; margin-bottom: 20px;
   background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-m);
 }
+.lm-score {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: border-color 0.1s var(--ease), transform 0.08s var(--ease);
+}
+.lm-score:hover { border-color: var(--accent); }
+.lm-score:active { transform: scale(0.995); }
+.lm-score:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.match-break-head { justify-content: center; }
+.match-break-head > div { text-align: center; }
+.match-break-score { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 4px 0 18px; font-family: var(--font-display); font-size: 2rem; font-weight: 700; }
+.match-break-score span { color: var(--text-faint); }
+.match-break-list { display: flex; flex-direction: column; gap: 7px; }
+.match-break-player {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--bg-elevated-2);
+  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.match-break-player:hover { border-color: var(--accent); }
+.match-break-player:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.match-break-player-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.match-break-player-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-break-player-meta { font-size: 0.72rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-break-player > b { flex-shrink: 0; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
 .lm-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .lm-side-blue { justify-content: flex-end; flex-direction: row-reverse; text-align: right; }
 .lm-team { font-family: var(--font-display); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
