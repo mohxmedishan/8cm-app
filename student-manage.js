@@ -68,7 +68,7 @@ function render() {
     row.innerHTML = `
       <span class="roll-badge">${escapeHtml(String(s.rollNumber || "?").padStart(2, "0"))}</span>
       <div class="manage-row-body">
-        <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ''} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ''}</p>
+        <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ''} ${s.guest ? '<span class="guest-tag">guest</span>' : ''} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ''}</p>
         <p class="task-detail">
           <span class="house-dot ${escapeHtml(s.house)}"></span> ${escapeHtml(s.house)}
           · ${escapeHtml(s.language || "—")}
@@ -100,6 +100,7 @@ function openForm(student) {
   form.creative.value = student?.creative || "";
   form.transport.value = student?.transport || "";
   form.rollNumber.value = student?.rollNumber || (currentList.reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1);
+  form.guest.checked = !!student?.guest;
   form.active.checked = student ? student.active !== false : true;
   setFormError(null);
   form.hidden = false;
@@ -128,7 +129,7 @@ async function handleSubmit(e) {
     islamic: form.islamic.value || null,
     creative: form.creative.value || null,
     transport: form.transport.value.trim(),
-    rollNumber: parseInt(form.rollNumber.value, 10) || 0, active: form.active.checked,
+    rollNumber: parseInt(form.rollNumber.value, 10) || 0, guest: form.guest.checked, active: form.active.checked,
   };
   if (!payload.name || !payload.rollNumber) return;
   setFormError(null);
@@ -137,11 +138,11 @@ async function handleSubmit(e) {
   try {
     if (editingId) {
       await setDoc(doc(db, "students", editingId), { id: editingId, ...payload }, { merge: true });
-      await logAction("updated", { resourceType: "student", resourceId: editingId, summary: `Updated student: ${payload.name}` });
+      await logAction("updated", { resourceType: "student", resourceId: editingId, summary: `Updated ${payload.guest ? "guest" : "student"}: ${payload.name}` });
     } else {
       const id = newStudentId();
       await setDoc(doc(db, "students", id), { id, ...payload });
-      await logAction("created", { resourceType: "student", resourceId: id, summary: `Added student: ${payload.name}` });
+      await logAction("created", { resourceType: "student", resourceId: id, summary: `Added ${payload.guest ? "guest" : "student"}: ${payload.name}` });
     }
     playSuccess(); closeForm({ silent: true }); await invalidateStudentsCache(); claimsLoaded = false;
   } catch (err) {

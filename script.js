@@ -62,7 +62,7 @@ function initStudentDirectory() {
 
   let liveStudents = [];
   let searchTerm = "";
-  const filters = { house: "", language: "", transport: "", islamic: "", creative: "" };
+  const filters = { house: "", language: "", transport: "", islamic: "", creative: "", guest: "" };
 
   // --- Badge data + avatar data -------------------------------------
   const claimUids = new Map();       // studentId → uid
@@ -145,6 +145,11 @@ function initStudentDirectory() {
       { value: "music", label: "Music" },
       { value: "art", label: "Art" },
     ],
+    guest: [
+      { value: "", label: "All" },
+      { value: "guest", label: "Guests only" },
+      { value: "regular", label: "No guests" },
+    ],
   };
 
   const houseLabel = (h) => h.charAt(0).toUpperCase() + h.slice(1);
@@ -162,6 +167,8 @@ function initStudentDirectory() {
     if (filters.transport === "bus" && s.transport === "OT") return false;
     if (filters.islamic && s.islamic !== filters.islamic) return false;
     if (filters.creative && s.creative !== filters.creative) return false;
+    if (filters.guest === "guest" && !s.guest) return false;
+    if (filters.guest === "regular" && s.guest) return false;
     return true;
   }
 
@@ -189,7 +196,7 @@ function initStudentDirectory() {
         <div class="student-card-top">
           ${avatarHtml}
           <div class="student-card-name-block">
-            <span class="student-name">${escapeHtml(s.name)}${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}</span>
+            <span class="student-name">${escapeHtml(s.name)}${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}${s.guest ? `<span class="guest-badge">Guest</span>` : ""}</span>
             <span class="student-card-roll">Roll ${rollLabel(s.rollNumber)}</span>
           </div>
         </div>
@@ -210,7 +217,8 @@ function initStudentDirectory() {
       });
       grid.appendChild(card);
     });
-    resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}`;
+    const guests = list.filter((s) => s.guest).length;
+    resultCount.textContent = `${list.length} student${list.length === 1 ? "" : "s"}` + (guests ? ` (${guests} guest${guests === 1 ? "" : "s"})` : "");
   }
 
   function applyFilters() {
@@ -480,7 +488,7 @@ function renderHouseCardLists(list) {
       body.appendChild(listEl);
     }
     listEl.innerHTML = members
-      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}" data-student-id="${escapeHouseName(s.id)}" tabindex="0" role="button" aria-label="View profile for ${escapeHouseName(s.name)}">${escapeHouseName(s.name)}</li>`)
+      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}" data-student-id="${escapeHouseName(s.id)}" tabindex="0" role="button" aria-label="View profile for ${escapeHouseName(s.name)}${s.guest ? " (guest)" : ""}">${escapeHouseName(s.name)}${s.guest ? `<span class="guest-badge">Guest</span>` : ""}</li>`)
       .join("");
   });
 

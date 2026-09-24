@@ -7335,3 +7335,26 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
 .nav-links a:focus-visible {
   outline: none !important;
 }
+
+
+/* ============================================
+   Guests — marked in the directory, house lists, profile and Manage
+   ============================================ */
+.guest-badge,
+.guest-tag,
+.profile-stat-pill.guest-pill {
+  display: inline-block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  margin-left: 6px;
+  border-radius: 100px;
+  color: var(--text-muted);
+  background: var(--bg-elevated-2);
+  border: 1px dashed var(--text-faint);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.profile-stat-pill.guest-pill { margin-left: 0; font-size: inherit; text-transform: none; letter-spacing: normal; padding: revert; }
+.guest-tag { font-size: 0.62rem; }

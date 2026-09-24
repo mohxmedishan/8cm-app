@@ -12,6 +12,7 @@ export const changelog = [
     date: "2026-09-24",
     version: "17.6.0",
     items: [
+      "Guests: a monitor can mark any student as a Guest (when adding or editing them in Manage). Guests get a Guest badge in the directory, house lists and profile, and Archives has a new Guest filter — All, Guests only, or No guests.",
       "Last match performance fixed: the latest match is now picked by its date (and old matches saved without a timestamp show up again), undated matches no longer share stats with each other, and changing a match's date carries its logged stats along.",
       "Attached links have no limit now — homework, announcements, events, resources and notices take as many links as you like (the old 8-link cap is gone).",
       "Gallery photo names are editable data now: the default photos can be renamed, re-linked or removed from the Gallery tab in Manage, and a photo saved without a title is captioned from its file name.",

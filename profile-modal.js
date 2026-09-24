@@ -58,6 +58,7 @@ function renderProfileBody(student) {
   const myAchievements = achievements.filter((a) => a.studentId === student.id);
 
   const pills = [
+    student.guest ? `<span class="profile-stat-pill guest-pill">Guest</span>` : "",
     `<span class="profile-stat-pill house-${escapeHtml(student.house)}"><span class="house-dot ${escapeHtml(student.house)}"></span>${escapeHtml(houseLabel(student.house))}</span>`,
     student.language ? `<span class="profile-stat-pill">${escapeHtml(student.language)}</span>` : "",
     `<span class="profile-stat-pill">${escapeHtml(transportLabel(student.transport))}</span>`,

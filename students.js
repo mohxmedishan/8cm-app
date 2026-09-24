@@ -91,6 +91,7 @@ rollNumber: rollByName.get(s.name),
 language: language || null,
 islamic: s.islamic || null,
 creative: s.creative || null,
+guest: false,
 active: true,
 };
 })
