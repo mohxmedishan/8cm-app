@@ -229,7 +229,10 @@ function initStudentDirectory() {
     }
     renderStudents(list);
     const anyActive = Object.values(filters).some(Boolean) || searchTerm.trim();
-    if (clearBtn) clearBtn.hidden = !anyActive;
+    // Keep the Clear button's space reserved even when it's not shown, so the
+    // filter row's width never changes — that width change was what pushed
+    // it onto a new line (the "tweak" when a filter is picked).
+    if (clearBtn) clearBtn.classList.toggle("is-hidden", !anyActive);
   }
 
   function updateBoxLabel(key) {

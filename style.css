@@ -3041,6 +3041,11 @@ a.tt-detail-hw:hover {
   border-radius: var(--radius-s); color: var(--text-faint); font-family: var(--font-body); font-size: .8rem; cursor: pointer;
 }
 .filter-clear:hover { border-color: var(--danger); color: var(--danger); }
+/* Reserve the Clear button's space even when it's inactive, instead of
+   removing it from layout — otherwise the row's width changes the moment a
+   filter is picked, which can push it onto a new line and make the whole
+   filter row visibly jump. */
+.filter-clear.is-hidden { visibility: hidden; pointer-events: none; }
 .filter-dropdown-host {
   position: fixed; z-index: 400; background: var(--bg-elevated); border: 1px solid var(--border);
   border-radius: var(--radius-m); padding: 6px; box-shadow: 0 12px 32px -12px rgba(0,0,0,.4);

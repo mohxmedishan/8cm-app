@@ -95,7 +95,7 @@ export function initTeachers() {
     const box = document.querySelector('#teacherFilterRow .filter-box[data-filter-key="category"]');
     if (box) box.classList.toggle("is-active", !!activeCategory);
     const clear = $("teacherFilterClear");
-    if (clear) clear.hidden = !activeCategory && !searchTerm.trim();
+    if (clear) clear.classList.toggle("is-hidden", !activeCategory && !searchTerm.trim());
   }
 
   function renderList(list) {
