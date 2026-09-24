@@ -171,7 +171,7 @@ function initStudentDirectory() {
     list.forEach((s, i) => {
       const card = document.createElement("div");
       card.className = "student-card";
-      card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+      card.style.animationDelay = `${Math.min(i, 12) * 0.01}s`;
       card.dataset.studentId = s.id;
       card.setAttribute("role", "button");
       card.setAttribute("tabindex", "0");
@@ -834,7 +834,7 @@ function initStatCountUp() {
   if (statNumbers.length === 0) return;
   function countUp(el) {
     const target = parseInt(el.dataset.count, 10);
-    const duration = 900;
+    const duration = 450;
     const start = performance.now();
     function tick(now) {
       const progress = Math.min((now - start) / duration, 1);
@@ -861,13 +861,13 @@ function initSplash() {
     if (hidden) return;
     hidden = true;
     splash.classList.add("hide");
-    window.setTimeout(() => splash.remove(), 550);
+    window.setTimeout(() => splash.remove(), 275);
   };
 
   if (document.readyState === "complete") {
-    window.setTimeout(hide, 350);
+    window.setTimeout(hide, 175);
   } else {
-    window.addEventListener("load", () => window.setTimeout(hide, 350), { once: true });
+    window.addEventListener("load", () => window.setTimeout(hide, 175), { once: true });
   }
   // Hard timeout: no dependency, no promise, no Firebase. The splash can
   // never permanently cover the site because a module failed to load.

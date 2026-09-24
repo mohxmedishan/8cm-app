@@ -12,6 +12,9 @@ export const changelog = [
     date: "2026-09-24",
     version: "17.6.0",
     items: [
+      "Last match performance fixed: the latest match is now picked by its date (and old matches saved without a timestamp show up again), undated matches no longer share stats with each other, and changing a match's date carries its logged stats along.",
+      "Attached links have no limit now — homework, announcements, events, resources and notices take as many links as you like (the old 8-link cap is gone).",
+      "Gallery photo names are editable data now: the default photos can be renamed, re-linked or removed from the Gallery tab in Manage, and a photo saved without a title is captioned from its file name.",
       "Pitch points reworked. The old Leaderboard section is now Last match performance: the top 3 from the most recent match on a podium, plus a dedicated MVP card and a Clowned card (for an own goal) beside it. Tap any card for that player's full stat breakdown. A full season leaderboard is planned for the Rankings page — this section is only ever the last match.",
       "New scoring: goal +5, assist +2, hat-trick (3+ goals) an extra +5, five or more goals a further +10, save +3, MVP +10. Yellow/red cards and clean sheets are gone. An own goal no longer costs points — it just takes the match's Clowned spot.",
       "Player performance (bottom of Pitch) is monitor-only now — the whole section, including its Performance tab up top, is invisible to everyone else. There's no more submit-and-wait-for-approval: a monitor taps a player, logs goals/assists/saves/MVP/own goal, and it counts the moment it's saved. Republish firestore.rules once for this to work — pitchPerformances is monitor-write-only now.",

@@ -45,7 +45,7 @@ Two unrelated things got tangled into one bad merge.
   "Monitors" tab in manage.html, public Monitors panel on the homepage.
 - Real teacher roster + a fix so editing one teacher in Firestore no
   longer makes every other untouched teacher vanish from the directory.
-- Rewritten links stack (`item-links.js`) — up to 8 named links per
+- Rewritten links stack (`item-links.js`) — any number of named links per
   homework/announcement/event instead of 6 unnamed ones, used across
   `assignments.js`, `announcements.js`, `events.js`.
 - Resource page icons, footer Changelog/Monitors toggle panels.

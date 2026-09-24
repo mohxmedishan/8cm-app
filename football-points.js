@@ -21,7 +21,7 @@
 // matchBoard) — nothing here decides what a goal is worth.
 // ============================================
 import {
-  collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy, limit,
+  collection, doc, setDoc, deleteDoc, onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
@@ -29,7 +29,7 @@ import { describeWriteError } from "./error-utils.js";
 import { playOpen, playClose, playSuccess, playError, playClick, playToggleOn, playToggleOff } from "./sound.js";
 import {
   CLUBS, PITCH_POSITIONS, escapeHtml, formatMatchDate, resolveTeam, orderedPlayers, positionGroup,
-  SCORING, STAT_LIMITS, emptyStats, normalizeStats, scorePerformance, matchBoard, performanceId,
+  SCORING, STAT_LIMITS, emptyStats, normalizeStats, scorePerformance, matchBoard, performanceId, matchKey, sortMatches,
 } from "./football-data.js";
 
 const $ = (id) => document.getElementById(id);
@@ -154,7 +154,8 @@ function renderLastMatch() {
   }
   if (sub) sub.textContent = `${formatMatchDate(match.date)} · ${teamOf("red").name} vs ${teamOf("blue").name}. Tap a card for the full breakdown.`;
 
-  const board = matchBoard(performances, match.date);
+  const key = matchKey(match);
+  const board = matchBoard(performances, key);
   if (!board.all.length) {
     box.innerHTML = `<p class="empty-body">No stats logged for this match yet. Once a monitor logs some, the top scorers, MVP and Clown show up here.</p>`;
     return;
@@ -174,7 +175,7 @@ function renderLastMatch() {
     </div>`;
   guardLogos(box);
   box.querySelectorAll("[data-pid]").forEach((el) => {
-    el.addEventListener("click", () => openStatsView(el.dataset.pid, match.date));
+    el.addEventListener("click", () => openStatsView(el.dataset.pid, match));
   });
 }
 
@@ -188,10 +189,11 @@ function breakdownRows(rows) {
 
 let lastFocus = null;
 
-function openStatsView(playerId, date) {
+function openStatsView(playerId, match) {
   const overlay = $("perfViewOverlay");
   if (!overlay) return;
-  const perf = (performances || []).find((p) => p.date === date && p.playerId === playerId);
+  const key = matchKey(match);
+  const perf = (performances || []).find((p) => p.date === key && p.playerId === playerId);
   if (!perf) return;
   const s = normalizeStats(perf.stats);
   const { total, rows } = scorePerformance(s);
@@ -200,7 +202,7 @@ function openStatsView(playerId, date) {
       ${crestMarkup(perf.team, "lg")}
       <div>
         <h3>${escapeHtml(perf.playerName)}</h3>
-        <p class="perf-edit-sub">${posChip(perf.position)}<span>${escapeHtml(teamOf(perf.team).name)} · ${escapeHtml(formatMatchDate(date))}</span></p>
+        <p class="perf-edit-sub">${posChip(perf.position)}<span>${escapeHtml(teamOf(perf.team).name)} · ${escapeHtml(formatMatchDate(match.date))}</span></p>
       </div>
       <div class="perf-total"><b>${total}</b><i>pts</i></div>
     </div>
@@ -218,6 +220,7 @@ function closeStatsView() {
   overlay.classList.remove("open");
   playClose();
   setTimeout(() => {
+    if (overlay.classList.contains("open")) return; // reopened during the fade-out
     overlay.hidden = true;
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }, 220);
@@ -231,7 +234,7 @@ function perfFor(date, playerId) {
 }
 
 function playerRow(p, team, date) {
-  const perf = perfFor(date, p.id);
+  const perf = perfFor(date, p.id); // `date` here is the match key
   const pts = perf ? scorePerformance(normalizeStats(perf.stats)).total : null;
   return `<button type="button" class="perf-player" data-pid="${escapeHtml(p.id)}" data-team="${escapeHtml(team)}">
     ${posChip(p.position)}
@@ -263,19 +266,20 @@ function renderPerformance() {
     box.innerHTML = `<p class="empty-body">Add a match in Match history above first — performances are logged against a match.</p>`;
     return;
   }
+  const key = matchKey(match);
   box.innerHTML = `
     <p class="perf-for">Logging for <b>${escapeHtml(formatMatchDate(match.date))}</b> — ${escapeHtml(teamOf("red").name)} vs ${escapeHtml(teamOf("blue").name)}.</p>
-    <div class="perf-teams">${teamBlock("red", match.date)}${teamBlock("blue", match.date)}</div>`;
+    <div class="perf-teams">${teamBlock("red", key)}${teamBlock("blue", key)}</div>`;
   guardLogos(box);
   box.querySelectorAll(".perf-player").forEach((btn) => {
-    btn.addEventListener("click", () => openEditor(btn.dataset.pid, btn.dataset.team, match.date));
+    btn.addEventListener("click", () => openEditor(btn.dataset.pid, btn.dataset.team, match));
   });
 }
 
 // ------------------------------------------------
 // Editor — steppers for goals/assists/saves, toggles for MVP/own goal
 // ------------------------------------------------
-let ed = null; // { playerId, playerName, team, position, date, stats, existing }
+let ed = null; // { playerId, playerName, team, position, date (match key), label, stats, existing }
 
 function editorTotal() {
   return scorePerformance(ed.stats).total;
@@ -325,7 +329,7 @@ function editorMarkup() {
       ${crestMarkup(ed.team, "lg")}
       <div>
         <h3 id="perfEditTitle">${escapeHtml(ed.playerName)}</h3>
-        <p class="perf-edit-sub">${posChip(ed.position)}<span>${escapeHtml(teamOf(ed.team).name)} · ${escapeHtml(formatMatchDate(ed.date))}</span></p>
+        <p class="perf-edit-sub">${posChip(ed.position)}<span>${escapeHtml(teamOf(ed.team).name)} · ${escapeHtml(ed.label)}</span></p>
       </div>
       <div class="perf-total" id="perfTotal"><b>${editorTotal()}</b><i>pts</i></div>
     </div>
@@ -352,13 +356,14 @@ function editorMarkup() {
     </div>`;
 }
 
-function openEditor(playerId, team, date) {
+function openEditor(playerId, team, match) {
+  const date = matchKey(match);
   const t = teamOf(team);
   const p = (t.players || []).find((x) => x.id === playerId);
   if (!p) return;
   const existing = perfFor(date, playerId);
   ed = {
-    playerId, playerName: p.name, team, position: p.position, date,
+    playerId, playerName: p.name, team, position: p.position, date, label: formatMatchDate(match.date),
     stats: existing ? normalizeStats(existing.stats) : emptyStats(),
     existing: !!existing,
   };
@@ -376,7 +381,11 @@ function closeEditor() {
   if (!overlay || overlay.hidden) return;
   overlay.classList.remove("open");
   playClose();
-  setTimeout(() => { overlay.hidden = true; ed = null; }, 220);
+  setTimeout(() => {
+    if (overlay.classList.contains("open")) return; // reopened during the fade-out
+    overlay.hidden = true;
+    ed = null;
+  }, 220);
 }
 
 function setEditorError(msg) {
@@ -511,17 +520,19 @@ export function initFootballPoints() {
       teams[id] = resolveTeam(id, null);
       teamsLoaded[id] = true;
       renderLastMatch();
+      if (me.monitor) renderPerformance();
     });
   });
 
-  onSnapshot(query(collection(db, "pitchMatches"), orderBy("createdAtMs", "desc"), limit(1)), (snap) => {
-    matches = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  onSnapshot(collection(db, "pitchMatches"), (snap) => {
+    matches = sortMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     renderLastMatch();
     if (me.monitor) renderPerformance();
   }, (err) => {
     console.error("[8CM] Pitch points: failed to load matches", err);
     if (matches === null) matches = [];
     renderLastMatch();
+    if (me.monitor) renderPerformance();
   });
 
   onSnapshot(collection(db, "pitchPerformances"), (snap) => {
@@ -532,5 +543,6 @@ export function initFootballPoints() {
     console.error("[8CM] Pitch points: failed to load performances", err);
     if (performances === null) performances = [];
     renderLastMatch();
+    if (me.monitor) renderPerformance();
   });
 }

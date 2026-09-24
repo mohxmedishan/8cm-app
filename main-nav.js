@@ -15,8 +15,8 @@
 //     fixed centre slot (the pill never moves) with two neighbours each
 //     side; every page lists its links in that order in its own HTML, so
 //     the first paint is already right (no JS-positioned pill, nothing
-//     to pop in) and Tab follows what you see. Going elsewhere slides the
-//     track; Left/Right/Home/End move focus round the ring.
+//     to pop in) and Left/Right Arrow go to the neighbouring page (Tab skips the
+//     navbar). Going elsewhere slides the track.
 //  2b. REVEAL         Content stays hidden (html.is-preparing) until
 //     fonts are ready, then fades in — so late font swaps and first
 //     layout passes are never seen as the page "readjusting".
@@ -39,7 +39,7 @@
 //    scrolling — a dead link is worse than an abrupt one.
 // ============================================
 
-const LEAVE_MS = 280; // fade-out + nav slide length before the browser navigates
+const LEAVE_MS = 130; // fade-out + nav slide length before the browser navigates
 const SAFETY_MS = 7000; // give up waiting for a navigation that never happens
 
 const html = document.documentElement;
@@ -150,21 +150,28 @@ function initPrimaryNav() {
     else link.removeAttribute("aria-current");
   });
 
-  // Keyboard: Tab walks the links left to right (DOM order = visual
-  // order). Left/Right move focus round the ring, Home/End jump to the
-  // ends; Enter/Space then follow the link like any other.
-  nav.addEventListener("keydown", (e) => {
+  // Keyboard: Tab no longer cycles through the navbar (links are taken out
+  // of the tab order). Instead Left/Right Arrow, pressed anywhere on the
+  // page, go to the previous / next destination in the ring — i.e. the
+  // neighbour shown to the left / right of the centre pill.
+  links.forEach((link) => link.setAttribute("tabindex", "-1"));
+  const subLinks = document.querySelectorAll(".hub-nav-link");
+  subLinks.forEach((link) => link.setAttribute("tabindex", "-1"));
+
+  const currentPos = links.some((l) => l.dataset.page === currentPage) ? links.findIndex((l) => l.dataset.page === currentPage) : centre;
+  document.addEventListener("keydown", (e) => {
+    if (e.defaultPrevented) return;
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    const i = links.indexOf(document.activeElement);
-    if (i < 0) return;
-    let next = -1;
-    if (e.key === "ArrowRight") next = (i + 1) % count;
-    else if (e.key === "ArrowLeft") next = (i - 1 + count) % count;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = count - 1;
-    else return;
+    const t = e.target;
+    if (t && t.closest && t.closest("input, textarea, select, [contenteditable], [role='slider'], [role='textbox'], [role='listbox'], [role='menu']")) return;
+    // Leave modals / the gallery viewer alone (they use the arrows themselves).
+    if (document.querySelector("[aria-modal='true']:not([hidden]), .modal-overlay.open, .lightbox-overlay.open")) return;
+    if (html.classList.contains("is-leaving") || html.classList.contains("is-leaving-slide")) return;
+    const target = links[(currentPos + (e.key === "ArrowRight" ? 1 : -1) + count) % count];
+    if (!target || !target.href) return;
     e.preventDefault();
-    links[next].focus();
+    target.click();
   });
 
   let clones = [];
@@ -211,7 +218,7 @@ function initPrimaryNav() {
       links.forEach((a) => a.classList.remove("is-active"));
       track.style.removeProperty("--nav-shift");
       clearTimeout(cleanupTimer);
-      cleanupTimer = setTimeout(removeClones, 400);
+      cleanupTimer = setTimeout(removeClones, 200);
     },
   };
 }

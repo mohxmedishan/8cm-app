@@ -1,15 +1,14 @@
 // ============================================
 // 8CM — Shared "attached links" stack
 // ------------------------------------------------
-// Homework, announcements and events all need the same thing: up to
-// eight external resource links per item (a Google Form, a Drive
+// Homework, announcements and events all need the same thing: any number of
+// external resource links per item (a Google Form, a Drive
 // folder, a worksheet, a ClassDojo story…), each independently
 // nameable. Rather than writing this three times, all three import
 // this module.
 //
 // UX: a stack of [name] [url] row pairs. Paste a URL or press Enter
-// in the URL field and, if that row is the last one and under the
-// cap, a fresh empty row appears below it — no add/remove buttons to
+// in the URL field and, if that row is the last one, a fresh empty row appears below it — no add/remove buttons to
 // click. A row with no name typed in is labeled "Link 1", "Link 2",
 // etc. by its position among that item's saved links; typing a name
 // in later and resaving is how a link gets renamed.
@@ -19,14 +18,12 @@
 // resource wherever its owner actually manages it, cost nothing to
 // store, and never hit Firestore's ~1 MiB per-document limit.
 //
-// Stored shape:  links: [{ label, url }, …]   (max 8)
+// Stored shape:  links: [{ label, url }, …]   (no limit)
 // Backward compatible with two older shapes this project has used:
 // a single `link` string, and a `links` array of bare URL strings
 // (no names) — readLinks() below folds both into the same shape, so
 // nothing needs migrating and old items keep rendering correctly.
 // ============================================
-
-export const MAX_ITEM_LINKS = 8;
 
 const escapeHtml = (v) =>
   String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({
@@ -78,8 +75,7 @@ export function readLinks(item) {
       const label = isObject ? String(entry.label || "").trim() : ""; // bare-string shape never had names
       return { label, url };
     })
-    .filter(Boolean)
-    .slice(0, MAX_ITEM_LINKS);
+    .filter(Boolean);
 
   return valid.map((l, i) => ({ label: l.label || `Link ${i + 1}`, url: l.url }));
 }
@@ -118,7 +114,6 @@ function addRow(container, { name = "", url = "" } = {}) {
   const maybeGrow = () => {
     if (!urlInput.value.trim()) return;
     if (row !== container.lastElementChild) return; // only the last row grows the stack
-    if (rowsIn(container).length >= MAX_ITEM_LINKS) return;
     addRow(container);
   };
 
@@ -146,7 +141,7 @@ export function setLinkStack(container, item) {
     return;
   }
   links.forEach((l) => addRow(container, { name: l.label, url: l.url }));
-  if (links.length < MAX_ITEM_LINKS) addRow(container); // one spare row to type into
+  addRow(container); // one spare row to type into
 }
 
 /**
@@ -163,8 +158,7 @@ export function readLinkStack(container) {
       const label = row.querySelector(".link-name-input").value.trim();
       return { label, url };
     })
-    .filter(Boolean)
-    .slice(0, MAX_ITEM_LINKS);
+    .filter(Boolean);
 
   return collected.map((l, i) => ({ label: l.label || `Link ${i + 1}`, url: l.url }));
 }

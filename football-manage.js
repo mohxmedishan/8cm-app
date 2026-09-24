@@ -20,6 +20,7 @@
 // ============================================
 import {
   collection, doc, addDoc, setDoc, updateDoc, deleteDoc, serverTimestamp,
+  getDocs, query, where, writeBatch,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
@@ -32,7 +33,7 @@ import {
 import {
   PITCH_POSITIONS, POSITION_GROUPS, PITCH_ENDS, CLUBS, DEFAULT_FORMATION,
   escapeHtml, otherEnd, newPlayerId, parseFormation, isValidFormation, formationSlots,
-  defaultCodeForSlot, retargetFormation, normalizePosition, OUTFIELD,
+  defaultCodeForSlot, retargetFormation, normalizePosition, OUTFIELD, matchKey, performanceId,
 } from "./football-data.js";
 import { getPitchState, setMatchEditMode, pitchMarkup } from "./football.js";
 
@@ -70,7 +71,7 @@ function closeOverlay(overlay, { silent = false } = {}) {
   if (!overlay || overlay.hidden) return;
   overlay.classList.remove("open");
   if (!silent) playClose();
-  setTimeout(() => { overlay.hidden = true; }, 220);
+  setTimeout(() => { if (!overlay.classList.contains("open")) overlay.hidden = true; }, 220);
 }
 
 function makeOverlay(id, cardClass, inner) {
@@ -164,6 +165,21 @@ function openMatchDialog(match) {
   f.redScore.select();
 }
 
+// Performances are stored against the match's date. If a monitor changes a
+// match's date, its logged stats move with it instead of being orphaned.
+async function moveMatchPerformances(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey) return;
+  const snap = await getDocs(query(collection(db, "pitchPerformances"), where("date", "==", oldKey)));
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => {
+    const perf = d.data();
+    batch.set(doc(db, "pitchPerformances", performanceId(newKey, perf.playerId)), { ...perf, date: newKey, updatedAtMs: Date.now() });
+    batch.delete(d.ref);
+  });
+  await batch.commit();
+}
+
 async function submitMatch(e) {
   e.preventDefault();
   const f = e.target;
@@ -183,7 +199,9 @@ async function submitMatch(e) {
   setMatchError(null);
   try {
     if (editingMatchId) {
+      const before = getPitchState().matches.find((x) => x.id === editingMatchId);
       await updateDoc(doc(db, "pitchMatches", editingMatchId), payload);
+      if (before) await moveMatchPerformances(matchKey(before), matchKey({ id: editingMatchId, date: payload.date }));
       await logAction("updated", { resourceType: "pitchMatch", resourceId: editingMatchId, summary: `Updated match: ${label}` });
     } else {
       const ref = await addDoc(collection(db, "pitchMatches"), { ...payload, createdAtMs: Date.now(), createdAt: serverTimestamp() });
@@ -402,7 +420,7 @@ const cleanTeam2 = (t) => ({ ...t, ...cleanTeam(t) });
 
 function refreshPreview() {
   const box = $("pePreview");
-  if (box) box.innerHTML = pitchMarkup(activeTeam, cleanTeam2(draft[activeTeam]), { flip: previewFlipped });
+  if (box) box.innerHTML = pitchMarkup(activeTeam, cleanTeam2(draft[activeTeam]), { flip: previewFlipped, instant: true });
   updateFooter();
 }
 

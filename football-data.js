@@ -425,3 +425,24 @@ export function lastFriday(d = new Date()) {
 }
 
 export function performanceId(date, playerId) { return `${date}_${playerId}`; }
+
+/**
+ * What a match's performances hang off: its date, or — for a match saved
+ * without one — its own id. (A bare `null` date used to make every undated
+ * match share the same "null_<player>" documents.)
+ */
+export function matchKey(match) {
+  return (match && (match.date || match.id)) || "";
+}
+
+/**
+ * Newest match first. By match date (or, with no date, the day it was
+ * logged), then by when it was logged — so a past Friday entered late
+ * lands where it belongs and old documents that lack `createdAtMs` still
+ * show up (an orderBy() query silently drops those).
+ */
+export function sortMatches(list) {
+  const day = (m) => m.date || (m.createdAtMs ? isoDate(new Date(m.createdAtMs)) : "");
+  return [...(list || [])].sort((a, b) =>
+    day(b).localeCompare(day(a)) || (b.createdAtMs || 0) - (a.createdAtMs || 0));
+}

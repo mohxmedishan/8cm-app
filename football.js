@@ -16,14 +16,14 @@
 //   "pitch:match-action"  { action: "edit" | "delete", id }
 // ============================================
 import {
-  collection, doc, onSnapshot, query, orderBy,
+  collection, doc, onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { playOpen, playClose, playClick } from "./sound.js";
 import {
   PITCH_ENDS, CLUBS, resolveTeam, escapeHtml, formatMatchDate,
   positionGroup, pitchPlacements, orderedPlayers,
-  PITCH_POSITIONS, otherEnd,
+  PITCH_POSITIONS, otherEnd, sortMatches,
 } from "./football-data.js";
 
 const $ = (id) => document.getElementById(id);
@@ -256,7 +256,7 @@ export function pitchMarkup(id, team, opts = {}) {
   const empty = !dots ? `<p class="pitch-empty">${orderedPlayers(team).length ? "Everyone is on the bench." : "No lineup yet."}</p>` : "";
 
   return `
-    <div class="pitch-field pitch-field-${escapeHtml(id)}" data-team="${escapeHtml(id)}">
+    <div class="pitch-field pitch-field-${escapeHtml(id)}${opts.instant ? " pitch-field--instant" : ""}" data-team="${escapeHtml(id)}" data-face="${faceLeft ? "left" : "right"}">
       ${PITCH_SVG}
       <span class="pitch-end pitch-end-own">${escapeHtml(ownEnd)}</span>
       <span class="pitch-end pitch-end-far">${escapeHtml(farEnd)}</span>
@@ -304,7 +304,7 @@ function listMarkup(t) {
 
 let formationFlipped = false;
 
-function renderFormation(id) {
+function renderFormation(id, flipRender = false) {
   const t = teamOf(id);
   const layout = $("pitchFormationLayout");
   const info = $("pitchFormationInfo");
@@ -325,11 +325,13 @@ function renderFormation(id) {
     ${factsMarkup(t)}
     ${listMarkup(t)}`;
   const toward = PITCH_ENDS[otherEnd(t.end)] || "";
-  const arrow = id === "red"
+  // Direction follows the (possibly flipped) pitch, not the team colour.
+  const faceLeft = formationFlipped ? id !== "red" : id === "red";
+  const arrow = faceLeft
     ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></svg>`
     : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>`;
-  field.innerHTML = pitchMarkup(id, t, { flip: formationFlipped }) +
-    `<p class="pitch-caption pitch-caption-${id}">${id === "red" ? arrow : ""}<span>Attacking toward the ${escapeHtml(toward.toLowerCase())}</span>${id === "red" ? "" : arrow}</p>`;
+  field.innerHTML = pitchMarkup(id, t, { flip: formationFlipped, instant: flipRender }) +
+    `<p class="pitch-caption pitch-caption-${faceLeft ? "left" : "right"}">${faceLeft ? arrow : ""}<span>Attacking toward the ${escapeHtml(toward.toLowerCase())}</span>${faceLeft ? "" : arrow}</p>`;
   guardLogos(info);
   const flipBtn = $("pitchFormationFlip");
   if (flipBtn) flipBtn.setAttribute("aria-pressed", String(formationFlipped));
@@ -359,6 +361,7 @@ function closeFormation() {
   overlay.classList.remove("open");
   playClose();
   setTimeout(() => {
+    if (overlay.classList.contains("open")) return; // reopened during the fade-out
     overlay.hidden = true;
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }, 220);
@@ -404,9 +407,8 @@ export function initFootball() {
     });
   });
 
-  const q = query(collection(db, "pitchMatches"), orderBy("createdAtMs", "desc"));
-  onSnapshot(q, (snap) => {
-    matches = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  onSnapshot(collection(db, "pitchMatches"), (snap) => {
+    matches = sortMatches(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     renderMatches();
   }, (err) => {
     console.error("[8CM] Failed to load pitch matches:", err);
@@ -432,7 +434,7 @@ export function initFootball() {
     if (flipBtn) flipBtn.addEventListener("click", () => {
       formationFlipped = !formationFlipped;
       playClick();
-      renderFormation(overlay.dataset.team);
+      renderFormation(overlay.dataset.team, true);
     });
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closeFormation(); });
     document.addEventListener("keydown", (e) => {

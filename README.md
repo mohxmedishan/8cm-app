@@ -97,7 +97,7 @@ list runs everywhere. To add a feature module: create `foo.js` exporting `initFo
 - **Formations (V17.6)** — no more presets, random, or free play. A monitor types any shape like `4-3-3` or `3-3-4` (2–4 numbers, summing to `OUTFIELD` = 10 outfield players) in the team editor; `parseFormation`/`formationSlots` in `football-data.js` validate it and assign CB/CDM/CAM/CF-style positions automatically by line. A flip button in the team editor and the formation view mirrors the field for a better look (display-only, doesn't touch which end a team actually defends).
 - `events.js`, `achievements.js`, `gallery.js`, `archive-materials.js`, `quick-links.js`, `tasks.js`, `dashboard.js`
 - `student-manage.js`, `teacher-manage.js`, `students.js` / `teachers.js` / `teachers-data.js` (Firestore-first, seed data as fallback)
-- `item-links.js` — the shared "attached links" editor/chips (up to 8 links per item)
+- `item-links.js` — the shared "attached links" editor/chips (any number of links per item)
 - `manage.js` — monitor panel shell (tabs, audit log view)
 
 **Timetable**

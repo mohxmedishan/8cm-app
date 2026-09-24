@@ -109,7 +109,7 @@ export function initTeachers() {
       const card = document.createElement("article");
       card.className = "teacher-card";
       card.style.setProperty("--teacher-accent", subjectAccent(t.subject));
-      card.style.animationDelay = `${Math.min(i, 12) * 0.02}s`;
+      card.style.animationDelay = `${Math.min(i, 12) * 0.01}s`;
       card.innerHTML = `
         <div class="teacher-avatar" aria-hidden="true">
           <span>${escapeHtml(initials(t))}</span>
