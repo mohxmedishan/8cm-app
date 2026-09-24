@@ -6,7 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 import { subscribeAuth } from "./auth.js";
-import { loadStudents, onStudents, invalidateStudentsCache } from "./students.js";
+import { loadStudents, onStudents, invalidateStudentsCache, rollText } from "./students.js";
 import { logAction } from "./audit.js";
 import { describeWriteError } from "./error-utils.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
@@ -66,7 +66,7 @@ function render() {
     const row = document.createElement("div");
     row.className = `manage-row${inactive ? " is-inactive" : ""}`;
     row.innerHTML = `
-      <span class="roll-badge">${escapeHtml(String(s.rollNumber || "?").padStart(2, "0"))}</span>
+      <span class="roll-badge${s.guest ? " is-guest" : ""}">${escapeHtml(s.rollNumber ? rollText(s) : "?")}</span>
       <div class="manage-row-body">
         <p class="task-subject">${escapeHtml(s.name)} ${inactive ? '<span class="inactive-tag">inactive</span>' : ''} ${s.guest ? '<span class="guest-tag">guest</span>' : ''} ${claimed ? '<span class="claimed-tag" title="Identity claimed by an account">claimed</span>' : ''}</p>
         <p class="task-detail">
@@ -99,7 +99,7 @@ function openForm(student) {
   form.islamic.value = student?.islamic || "";
   form.creative.value = student?.creative || "";
   form.transport.value = student?.transport || "";
-  form.rollNumber.value = student?.rollNumber || (currentList.reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1);
+  form.rollNumber.value = student?.rollNumber || (currentList.filter((s) => !s.guest).reduce((m, s) => Math.max(m, s.rollNumber || 0), 0) + 1);
   form.guest.checked = !!student?.guest;
   form.active.checked = student ? student.active !== false : true;
   setFormError(null);

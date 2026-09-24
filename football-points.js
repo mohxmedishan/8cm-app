@@ -45,7 +45,13 @@ let performances = null;     // null = loading, else every pitchPerformances doc
 let me = { user: null, monitor: false };
 
 const teamOf = (id) => teams[id] || resolveTeam(id, null);
-const lastMatch = () => (matches && matches.length ? matches[0] : null);
+// The match being shown: whichever the person picked in the strip above the
+// podium, else the newest one.
+let selectedMatchId = null;
+const lastMatch = () => {
+  if (!matches || !matches.length) return null;
+  return matches.find((m) => m.id === selectedMatchId) || matches[0];
+};
 
 // ------------------------------------------------
 // Small shared bits (mirrors football.js's crest/position chip so
@@ -139,29 +145,62 @@ function sideCard(kind, row) {
   </button>`;
 }
 
+const scoreOf = (m) => `${Number(m.redScore) || 0}–${Number(m.blueScore) || 0}`;
+
+// The result of one match, always shown — even before anyone has logged a stat.
+function scoreCard(m) {
+  const r = Number(m.redScore) || 0;
+  const b = Number(m.blueScore) || 0;
+  const verdict = r === b ? "Draw" : `${teamOf(r > b ? "red" : "blue").name} won`;
+  return `<article class="lm-score">
+    <div class="lm-side lm-side-red${r > b ? " is-win" : ""}">${crestMarkup("red")}<span class="lm-team">${escapeHtml(teamOf("red").name)}</span></div>
+    <div class="lm-result"><span class="lm-nums"><b class="${r > b ? "is-winner" : ""}">${r}</b><i>–</i><b class="${b > r ? "is-winner" : ""}">${b}</b></span><span class="lm-meta">${escapeHtml(formatMatchDate(m.date))} · ${escapeHtml(verdict)}</span></div>
+    <div class="lm-side lm-side-blue${b > r ? " is-win" : ""}">${crestMarkup("blue")}<span class="lm-team">${escapeHtml(teamOf("blue").name)}</span></div>
+    ${m.note ? `<p class="lm-note">${escapeHtml(m.note)}</p>` : ""}
+  </article>`;
+}
+
+// Pick which match to look at. Only drawn when there is more than one.
+function matchPicker(current) {
+  if (!matches || matches.length < 2) return "";
+  return `<div class="lm-picker" role="group" aria-label="Choose a match">
+    ${matches.slice(0, 8).map((m, i) => `<button type="button" class="lm-chip${m.id === current.id ? " is-active" : ""}" data-match="${escapeHtml(m.id)}" aria-pressed="${m.id === current.id}">
+      <span>${i === 0 ? "Latest" : escapeHtml(formatMatchDate(m.date))}</span><b>${scoreOf(m)}</b></button>`).join("")}
+  </div>`;
+}
+
 function renderLastMatch() {
   const box = $("pitchLastMatch");
   if (!box) return;
   const sub = $("pitchLastMatchSub");
-  if (matches === null || performances === null || !(teamsLoaded.red && teamsLoaded.blue)) {
+  // Only the matches and the teams are needed to show a result; stats fill in when they arrive.
+  if (matches === null || !(teamsLoaded.red && teamsLoaded.blue)) {
     box.innerHTML = `<div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading…</span></div>`;
     return;
   }
   const match = lastMatch();
   if (!match) {
-    box.innerHTML = `<p class="empty-body">No matches recorded yet. Once one's logged, this fills in with who had the best game.</p>`;
+    box.innerHTML = `<p class="empty-body">No matches recorded yet. Once one's logged, this fills in with the result and who had the best game.</p>`;
     return;
   }
   if (sub) sub.textContent = `${formatMatchDate(match.date)} · ${teamOf("red").name} vs ${teamOf("blue").name}. Tap a card for the full breakdown.`;
 
-  const key = matchKey(match);
-  const board = matchBoard(performances, key);
-  if (!board.all.length) {
-    box.innerHTML = `<p class="empty-body">No stats logged for this match yet. Once a monitor logs some, the top scorers, MVP and Clown show up here.</p>`;
+  const head = matchPicker(match) + scoreCard(match);
+  if (performances === null) {
+    box.innerHTML = head + `<div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading player stats…</span></div>`;
+    wirePicker(box);
     return;
   }
 
-  box.innerHTML = `
+  const key = matchKey(match);
+  const board = matchBoard(performances, key);
+  if (!board.all.length) {
+    box.innerHTML = head + `<p class="empty-body lm-empty">No player stats logged for this match yet. Once a monitor logs some, the top scorers, MVP and Clown show up here.</p>`;
+    wirePicker(box);
+    return;
+  }
+
+  box.innerHTML = head + `
     <div class="lastmatch-row">
       <div class="podium">
         ${podiumSlot(board.top[1], 2)}
@@ -174,8 +213,21 @@ function renderLastMatch() {
       </div>
     </div>`;
   guardLogos(box);
+  wirePicker(box);
   box.querySelectorAll("[data-pid]").forEach((el) => {
     el.addEventListener("click", () => openStatsView(el.dataset.pid, match));
+  });
+}
+
+function wirePicker(box) {
+  guardLogos(box);
+  box.querySelectorAll(".lm-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      selectedMatchId = chip.dataset.match;
+      playClick();
+      renderLastMatch();
+      if (me.monitor) renderPerformance();
+    });
   });
 }
 

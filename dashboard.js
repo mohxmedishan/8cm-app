@@ -1,4 +1,4 @@
-import { getStudentsSync, onStudents } from "./students.js";
+import { getStudentsSync, onStudents, rollText } from "./students.js";
 import { subscribeAuth } from "./auth.js";
 import { getLiveStatus } from "./timetable-data.js";
 import { onAssignments, getUpcomingForMe, dueBucket } from "./assignments.js";
@@ -63,7 +63,7 @@ function renderHeader() {
   const today = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   greeting.textContent = `${greetingWord()}, ${firstName(latestStudent.name)} — ${today}`;
   const house = escapeHtml(latestStudent.house);
-  stats.innerHTML = `<span class="profile-stat-pill">Roll #${escapeHtml(latestStudent.rollNumber)}</span><span class="profile-stat-pill house-${house}"><span class="house-dot ${house}"></span>${escapeHtml(houseLabel(latestStudent.house))}</span>`;
+  stats.innerHTML = `<span class="profile-stat-pill">${latestStudent.guest ? "Guest " : "Roll #"}${escapeHtml(rollText(latestStudent))}</span><span class="profile-stat-pill house-${house}"><span class="house-dot ${house}"></span>${escapeHtml(houseLabel(latestStudent.house))}</span>`;
 }
 
 export function initDashboard() {

@@ -12,6 +12,7 @@ export const changelog = [
     date: "2026-09-24",
     version: "17.6.0",
     items: [
+      "Last match performance now always shows the match itself — the score, teams, date and note — even before any player stats are logged, plus a strip to flip between recent matches. Guests keep their own roll numbers with a G prefix (G05), so they never clash with a regular student on the same number.",
       "Guests: a monitor can mark any student as a Guest (when adding or editing them in Manage). Guests get a Guest badge in the directory, house lists and profile, and Archives has a new Guest filter — All, Guests only, or No guests.",
       "Last match performance fixed: the latest match is now picked by its date (and old matches saved without a timestamp show up again), undated matches no longer share stats with each other, and changing a match's date carries its logged stats along.",
       "Attached links have no limit now — homework, announcements, events, resources and notices take as many links as you like (the old 8-link cap is gone).",

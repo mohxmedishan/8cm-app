@@ -5,7 +5,7 @@
 // Own profile: Change avatar, Switch student, Sign out.
 // ============================================
 import { subscribeAuth, signOutUser } from "./auth.js";
-import { onStudents } from "./students.js";
+import { onStudents, rollText } from "./students.js";
 import { onAchievements } from "./achievements.js";
 import { AVATARS, avatarUrl, avatarMarkup, setAvatarForUid, onAvatars, getAvatarForUid, loadAvatars, getCurrentUid } from "./avatars.js";
 import { playOpen, playClose, playSuccess, playError, playClick } from "./sound.js";
@@ -80,7 +80,7 @@ function renderProfileBody(student) {
   return `
     <div class="profile-header">
       <div class="profile-avatar-large">${avatarButton}</div>
-      <span class="roll-badge">${rollLabel(student.rollNumber)}</span>
+      <span class="roll-badge${student.guest ? " is-guest" : ""}">${student.guest ? "Guest " : ""}${rollText(student)}</span>
       <h3 class="profile-title">${escapeHtml(student.name)} ${badge}</h3>
       <div class="profile-pills">${pills}</div>
     </div>

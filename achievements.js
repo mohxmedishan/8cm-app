@@ -5,7 +5,7 @@ import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, order
 import { db } from "./firebase-config.js";
 import { describeWriteError } from "./error-utils.js";
 import { subscribeAuth } from "./auth.js";
-import { getStudentsSync, loadStudents, onStudents } from "./students.js";
+import { getStudentsSync, loadStudents, onStudents, rollText } from "./students.js";
 import { logAction } from "./audit.js";
 import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
 const $ = (id) => document.getElementById(id);
@@ -36,7 +36,7 @@ function renderPublic(){
   }).join("");
 }
 
-function populateStudentSelect(){ const select=$("achievementForm")?.studentId; if(!select)return; const current=select.value; select.innerHTML=""; [...latestStudents].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=`${s.rollNumber}. ${s.name}`;select.appendChild(o);}); if(current)select.value=current; }
+function populateStudentSelect(){ const select=$("achievementForm")?.studentId; if(!select)return; const current=select.value; select.innerHTML=""; [...latestStudents].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{const o=document.createElement("option");o.value=s.id;o.textContent=`${s.guest?rollText(s):s.rollNumber}. ${s.name}${s.guest?" (guest)":""}`;select.appendChild(o);}); if(current)select.value=current; }
 function renderManage(){
   const list=$("achievementManageList"); if(!list)return;
   if(!isCurrentMonitor){list.innerHTML=`<p class="task-empty">Only monitors can manage achievements.</p>`;return;}

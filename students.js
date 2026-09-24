@@ -97,6 +97,16 @@ active: true,
 })
 .sort((a, b) => a.rollNumber - b.rollNumber);
 
+// A guest can share a roll number with a regular student, so guests are
+// written with a G prefix ("G05") and sort after the regular with that number.
+export function rollText(s) {
+  const n = String((s && s.rollNumber) ?? "").padStart(2, "0");
+  return s && s.guest ? `G${n}` : n;
+}
+export function byRoll(a, b) {
+  return (a.rollNumber || 0) - (b.rollNumber || 0) || (a.guest ? 1 : 0) - (b.guest ? 1 : 0) || String(a.name).localeCompare(String(b.name));
+}
+
 // ------------------------------------------------
 // Live cache + pub/sub
 // ------------------------------------------------
@@ -172,7 +182,7 @@ const data = docSnap.data();
 if (data.active === false) return;
 list.push({ id: docSnap.id, ...data });
 });
-list.sort((a, b) => (a.rollNumber || 0) - (b.rollNumber || 0));
+list.sort(byRoll);
 return list;
 } catch (err) {
 console.error("[8CM] Falling back to local student list — Firestore read failed:", err);

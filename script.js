@@ -1,7 +1,7 @@
 // ============================================
 // 8CM — Site interactions (entry module)
 // ============================================
-import { onStudents } from "./students.js";
+import { onStudents, rollText, byRoll } from "./students.js";
 import { changelog } from "./changelog.js";
 import { playToggleOn, playToggleOff, playOpen, playClose, playExternal, playNav, playHover } from "./sound.js";
 import { onAchievements } from "./achievements.js";
@@ -197,7 +197,7 @@ function initStudentDirectory() {
           ${avatarHtml}
           <div class="student-card-name-block">
             <span class="student-name">${escapeHtml(s.name)}${isMonitor ? `<span class="monitor-badge">Monitor</span>` : ""}${s.guest ? `<span class="guest-badge">Guest</span>` : ""}</span>
-            <span class="student-card-roll">Roll ${rollLabel(s.rollNumber)}</span>
+            <span class="student-card-roll">${s.guest ? "Guest" : "Roll"} ${rollText(s)}</span>
           </div>
         </div>
         <div class="student-meta">
@@ -459,7 +459,7 @@ function renderHouseCardLists(list) {
     const members = list
       .filter((s) => s.house === house)
       .slice()
-      .sort((a, b) => (a.rollNumber || 0) - (b.rollNumber || 0));
+      .sort(byRoll);
 
     const countEl = body.querySelector(".house-count");
     if (countEl) countEl.textContent = `${members.length} ${members.length === 1 ? "member" : "members"}`;
@@ -488,7 +488,7 @@ function renderHouseCardLists(list) {
       body.appendChild(listEl);
     }
     listEl.innerHTML = members
-      .map((s) => `<li data-roll="${String(s.rollNumber || "").padStart(2, "0")}" data-student-id="${escapeHouseName(s.id)}" tabindex="0" role="button" aria-label="View profile for ${escapeHouseName(s.name)}${s.guest ? " (guest)" : ""}">${escapeHouseName(s.name)}${s.guest ? `<span class="guest-badge">Guest</span>` : ""}</li>`)
+      .map((s) => `<li data-roll="${rollText(s)}" data-student-id="${escapeHouseName(s.id)}" tabindex="0" role="button" aria-label="View profile for ${escapeHouseName(s.name)}${s.guest ? " (guest)" : ""}">${escapeHouseName(s.name)}${s.guest ? `<span class="guest-badge">Guest</span>` : ""}</li>`)
       .join("");
   });
 

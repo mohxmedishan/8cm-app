@@ -5,7 +5,7 @@
 // profile dropdown in the navbar to the logic in auth.js. Nothing in
 // here talks to Firebase directly — it only calls exported functions.
 // ============================================
-import { getStudentsSync, onStudents, loadStudents } from "./students.js";
+import { getStudentsSync, onStudents, loadStudents, rollText } from "./students.js";
 import {
   subscribeAuth,
   signInGoogle,
@@ -329,7 +329,7 @@ function populateClaimSelect() {
       .forEach((s) => {
         const opt = document.createElement("option");
         opt.value = s.id;
-        opt.textContent = `${s.rollNumber}. ${s.name}`;
+        opt.textContent = `${s.guest ? rollText(s) : s.rollNumber}. ${s.name}${s.guest ? " (guest)" : ""}`;
         select.appendChild(opt);
       });
   };
