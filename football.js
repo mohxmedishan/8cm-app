@@ -22,7 +22,7 @@ import { db } from "./firebase-config.js";
 import { playOpen, playClose, playClick } from "./sound.js";
 import {
   PITCH_ENDS, CLUBS, resolveTeam, escapeHtml, formatMatchDate,
-  positionGroup, pitchPlacements, orderedPlayers, isFreePlay,
+  positionGroup, pitchPlacements, orderedPlayers,
   PITCH_POSITIONS, otherEnd,
 } from "./football-data.js";
 
@@ -150,25 +150,34 @@ function playerRow(p, showSub) {
   </li>`;
 }
 
+const CHEVRON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
+
+// Cards remember open/closed across a re-render (a monitor saving the
+// team, a live stat coming in) so the list doesn't snap shut on you.
+const teamCardExpanded = { red: false, blue: false };
+
 function teamCard(id) {
   const t = teamOf(id);
   const players = orderedPlayers(t);
-  const shape = isFreePlay(t.formation) ? "Free play" : t.formation;
-  const showSub = !isFreePlay(t.formation);
+  const expanded = teamCardExpanded[id];
   return `
-    <article class="team-card team-card-${id}" data-team="${id}" tabindex="0" role="button"
-      aria-label="View ${escapeHtml(t.name)}'s formation">
-      <div class="team-card-head">
+    <article class="team-card team-card-${id}${expanded ? " is-expanded" : ""}" data-team="${id}">
+      <div class="team-card-head" data-act="open" tabindex="0" role="button" aria-label="View ${escapeHtml(t.name)}'s formation">
         ${crestMarkup(id, "lg")}
         <div>
           <h3>${escapeHtml(t.name)}</h3>
-          <p class="team-card-sub">${players.length} player${players.length === 1 ? "" : "s"} · ${escapeHtml(PITCH_ENDS[t.end] || "End not set")} · ${escapeHtml(shape)}</p>
+          <p class="team-card-sub">${players.length} player${players.length === 1 ? "" : "s"} · ${escapeHtml(PITCH_ENDS[t.end] || "End not set")} · ${escapeHtml(t.formation)}</p>
         </div>
+        <span class="team-card-cta">View formation →</span>
       </div>
-      <ul class="pitch-player-list">
-        ${players.length ? players.map((p) => playerRow(p, showSub)).join("") : `<li class="pitch-player-row pitch-player-row-empty">No players added yet.</li>`}
-      </ul>
-      <span class="team-card-cta">View formation →</span>
+      <button type="button" class="team-card-toggle" data-act="toggle" aria-expanded="${expanded}">
+        <span>${expanded ? "Hide players" : "Show players"}</span>${CHEVRON}
+      </button>
+      <div class="team-card-players" ${expanded ? "" : "hidden"}>
+        <ul class="pitch-player-list">
+          ${players.length ? players.map((p) => playerRow(p, true)).join("") : `<li class="pitch-player-row pitch-player-row-empty">No players added yet.</li>`}
+        </ul>
+      </div>
     </article>`;
 }
 
@@ -180,9 +189,16 @@ function renderTeams() {
   grid.innerHTML = teamCard("red") + teamCard("blue");
   guardLogos(grid);
   grid.querySelectorAll(".team-card").forEach((card) => {
-    card.addEventListener("click", () => openFormation(card.dataset.team));
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openFormation(card.dataset.team); }
+    const id = card.dataset.team;
+    card.querySelector('[data-act="open"]').addEventListener("click", () => openFormation(id));
+    card.querySelector('[data-act="open"]').addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openFormation(id); }
+    });
+    card.querySelector('[data-act="toggle"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      teamCardExpanded[id] = !teamCardExpanded[id];
+      playClick();
+      renderTeams();
     });
   });
 }
@@ -227,7 +243,7 @@ function shortName(p) {
  *  opts.ghosts — also draw the empty formation slots (editor preview)
  */
 export function pitchMarkup(id, team, opts = {}) {
-  const faceLeft = id === "red";
+  const faceLeft = opts.flip ? id !== "red" : id === "red";
   const dots = pitchPlacements(team, { faceLeft }).map(({ player, x, y }, i) => `
       <div class="pitch-dot${player.position === "GK" ? " pitch-dot--gk" : ""}" style="left:${x.toFixed(2)}%; top:${y.toFixed(2)}%; --i:${i}"
         title="${escapeHtml(player.name)} · ${escapeHtml(PITCH_POSITIONS[player.position] || player.position)}">
@@ -254,12 +270,9 @@ export function pitchMarkup(id, team, opts = {}) {
 // Red: info left, pitch right.  Blue: the opposite.
 // ------------------------------------------------
 function factsMarkup(t) {
-  const free = isFreePlay(t.formation);
-  const shape = free
-    ? `<span class="formation-shape formation-shape-word">Free play</span>`
-    : `<span class="formation-shape" aria-label="${escapeHtml(t.formation.replace(/-/g, " "))}">${
-        t.formation.split("-").map((n) => `<b>${escapeHtml(n)}</b>`).join(`<i aria-hidden="true">–</i>`)
-      }</span>`;
+  const shape = `<span class="formation-shape" aria-label="${escapeHtml(t.formation.replace(/-/g, " "))}">${
+    t.formation.split("-").map((n) => `<b>${escapeHtml(n)}</b>`).join(`<i aria-hidden="true">–</i>`)
+  }</span>`;
   return `
     <dl class="formation-facts">
       <div class="formation-fact">
@@ -268,14 +281,14 @@ function factsMarkup(t) {
       </div>
       <div class="formation-fact">
         <dt>Formation</dt>
-        <dd>${shape}${free ? `<span class="formation-fact-note">Players sit where their position says.</span>` : ""}</dd>
+        <dd>${shape}</dd>
       </div>
     </dl>`;
 }
 
 function listMarkup(t) {
   const players = orderedPlayers(t);
-  const showSub = !isFreePlay(t.formation);
+  const showSub = true;
   return `
     <h4 class="formation-list-title">${players.length ? `Players <span>${players.length}</span>` : "Players"}</h4>
     <ul class="formation-list">
@@ -288,6 +301,8 @@ function listMarkup(t) {
         : `<li class="formation-list-row formation-list-empty">No players added yet.</li>`}
     </ul>`;
 }
+
+let formationFlipped = false;
 
 function renderFormation(id) {
   const t = teamOf(id);
@@ -313,9 +328,11 @@ function renderFormation(id) {
   const arrow = id === "red"
     ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H5"/><path d="m11 6-6 6 6 6"/></svg>`
     : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>`;
-  field.innerHTML = pitchMarkup(id, t) +
+  field.innerHTML = pitchMarkup(id, t, { flip: formationFlipped }) +
     `<p class="pitch-caption pitch-caption-${id}">${id === "red" ? arrow : ""}<span>Attacking toward the ${escapeHtml(toward.toLowerCase())}</span>${id === "red" ? "" : arrow}</p>`;
   guardLogos(info);
+  const flipBtn = $("pitchFormationFlip");
+  if (flipBtn) flipBtn.setAttribute("aria-pressed", String(formationFlipped));
 }
 
 let lastFocus = null;
@@ -325,6 +342,7 @@ function openFormation(id) {
   if (!overlay) return;
   lastFocus = document.activeElement;
   overlay.dataset.team = id;
+  formationFlipped = false;
   renderFormation(id);
   overlay.hidden = false;
   playOpen();
@@ -410,6 +428,12 @@ export function initFootball() {
   if (overlay) {
     const closeBtn = $("pitchFormationClose");
     if (closeBtn) closeBtn.addEventListener("click", closeFormation);
+    const flipBtn = $("pitchFormationFlip");
+    if (flipBtn) flipBtn.addEventListener("click", () => {
+      formationFlipped = !formationFlipped;
+      playClick();
+      renderFormation(overlay.dataset.team);
+    });
     overlay.addEventListener("click", (e) => { if (e.target === overlay) closeFormation(); });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !overlay.hidden) closeFormation();

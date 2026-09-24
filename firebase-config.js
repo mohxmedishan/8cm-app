@@ -20,7 +20,9 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDOaFX6jYFLxfH_9zf0XhvwZfTFfxkjUyY",
@@ -33,7 +35,23 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// A persistent local cache means pages like Pitch's match history
+// paint instantly from what's already on the device on every visit
+// after the first, and sync in the background — instead of every
+// page load waiting on a fresh network round trip. Falls back to the
+// plain in-memory client if the browser can't support it (e.g. private
+// browsing in some browsers, or another tab holding the lock in an
+// older engine).
+export const db = (() => {
+  try {
+    return initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  } catch (err) {
+    console.error("[8CM] Persistent Firestore cache unavailable, falling back to in-memory:", err);
+    return getFirestore(app);
+  }
+})();
 
 // Loudly flag the template placeholders instead of letting every auth
 // call fail with an opaque "something went wrong" — this is what was

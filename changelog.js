@@ -9,6 +9,19 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-09-24",
+    version: "17.6.0",
+    items: [
+      "Pitch points reworked. The old Leaderboard section is now Last match performance: the top 3 from the most recent match on a podium, plus a dedicated MVP card and a Clowned card (for an own goal) beside it. Tap any card for that player's full stat breakdown. A full season leaderboard is planned for the Rankings page — this section is only ever the last match.",
+      "New scoring: goal +5, assist +2, hat-trick (3+ goals) an extra +5, five or more goals a further +10, save +3, MVP +10. Yellow/red cards and clean sheets are gone. An own goal no longer costs points — it just takes the match's Clowned spot.",
+      "Player performance (bottom of Pitch) is monitor-only now — the whole section, including its Performance tab up top, is invisible to everyone else. There's no more submit-and-wait-for-approval: a monitor taps a player, logs goals/assists/saves/MVP/own goal, and it counts the moment it's saved. Republish firestore.rules once for this to work — pitchPerformances is monitor-write-only now.",
+      "Teams now start minimized — tap \"Show players\" on a team card to expand its roster in place, tap again to collapse it. Tapping the crest or name still opens the full formation view.",
+      "Team formations are now typed, not picked. In Edit teams, a monitor types a shape like 4-3-3 or 3-3-4 (2 to 4 numbers, adding up to 10 outfield players) and positions — CB, CDM, CAM, CF and so on — fill in on their own. Free play, the formation presets and Random are gone. A flip button in both the team editor and the formation view mirrors the field left-to-right, for a better look while setting things up.",
+      "Match history (and every other page) should feel snappier on repeat visits — the site now keeps a local offline cache, so pages you've already loaded paint instantly instead of waiting on the network every time.",
+      "A little more breathing room above the Pitch page title, under its 4-item subnav.",
+    ],
+  },
+  {
     date: "2026-09-21",
     version: "17.5.0",
     items: [

@@ -92,56 +92,60 @@ const OLD_DEFAULT_NAMES = { red: "red", blue: "blue" };
 // ------------------------------------------------
 // Formations
 // ------------------------------------------------
-export const FREE_PLAY = "free";
-export const PRESET_FORMATIONS = ["2-3-1", "3-2-1", "2-1-2-1", "1-3-2", "2-2-2"];
-const OUTFIELD = 6; // every preset is 6 outfield players + a keeper
+// A monitor types any formation as "D-M-F" or "D-M-M-F" (2 to 4
+// numbers) — the classic outfield shape, GK not included. It has to
+// add up to OUTFIELD (10, i.e. 10 outfield players + 1 keeper = 11 a
+// side) or it's rejected. Positions are assigned automatically: the
+// first line is defence, the last is attack, and anything in between
+// is midfield (split into defensive/attacking mid once there's more
+// than one middle line) — so the monitor never has to say "this one's
+// a CDM", the formation says it for them.
+export const OUTFIELD = 10;
+export const MIN_LINES = 2;
+export const MAX_LINES = 4;
+export const MAX_PER_LINE = 6;
 
+/** "4-3-3" etc → [4,3,3], or null if it isn't a valid formation. */
 export function parseFormation(str) {
-  if (typeof str !== "string" || str === FREE_PLAY) return null;
-  const lines = str.split("-").map((n) => parseInt(n, 10));
-  if (lines.length < 2 || lines.length > 5) return null;
-  if (lines.some((n) => !Number.isInteger(n) || n < 1 || n > 5)) return null;
+  if (typeof str !== "string") return null;
+  const trimmed = str.trim();
+  if (!/^\d+(-\d+){1,3}$/.test(trimmed)) return null;
+  const lines = trimmed.split("-").map((n) => parseInt(n, 10));
+  if (lines.length < MIN_LINES || lines.length > MAX_LINES) return null;
+  if (lines.some((n) => !Number.isInteger(n) || n < 1 || n > MAX_PER_LINE)) return null;
+  if (lines.reduce((a, b) => a + b, 0) !== OUTFIELD) return null;
   return lines;
 }
 
-export function isFreePlay(formation) {
-  return !parseFormation(formation);
+export function isValidFormation(str) {
+  return !!parseFormation(str);
 }
 
-/** A random but sensible shape: 3–4 lines, 1–3 players a line, 6 outfield. */
-export function randomFormation(avoid) {
-  for (let tries = 0; tries < 60; tries++) {
-    const lineCount = Math.random() < 0.55 ? 3 : 4;
-    const lines = Array(lineCount).fill(1);
-    let left = OUTFIELD - lineCount;
-    while (left > 0) {
-      const i = Math.floor(Math.random() * lineCount);
-      if (lines[i] < 3) { lines[i] += 1; left -= 1; }
-    }
-    const str = lines.join("-");
-    if (str !== avoid && !PRESET_FORMATIONS.includes(str)) return str;
-  }
-  return "1-2-2-1";
-}
+export const DEFAULT_FORMATION = "4-3-3";
 
 // Default position codes for a line, by how many stand in it.
-const DEF_CODES = { 1: ["CB"], 2: ["CB", "CB"], 3: ["LB", "CB", "RB"], 4: ["LB", "CB", "CB", "RB"], 5: ["LB", "CB", "CB", "CB", "RB"] };
-const FWD_CODES = { 1: ["CF"], 2: ["LW", "RW"], 3: ["LW", "CF", "RW"], 4: ["LW", "CF", "CF", "RW"], 5: ["LW", "CF", "CF", "CF", "RW"] };
+const DEF_CODES = {
+  1: ["CB"], 2: ["CB", "CB"], 3: ["LB", "CB", "RB"],
+  4: ["LB", "CB", "CB", "RB"], 5: ["LB", "CB", "CB", "CB", "RB"], 6: ["LB", "CB", "CB", "CB", "CB", "RB"],
+};
+const FWD_CODES = {
+  1: ["CF"], 2: ["LW", "RW"], 3: ["LW", "CF", "RW"],
+  4: ["LW", "CF", "CF", "RW"], 5: ["LW", "CF", "CF", "CF", "RW"], 6: ["LW", "LW", "CF", "CF", "RW", "RW"],
+};
 
 function lineCodes(lines, i) {
   const n = lines[i];
-  if (i === 0) return DEF_CODES[n];
-  if (i === lines.length - 1) return FWD_CODES[n];
+  if (i === 0) return DEF_CODES[n] || Array(n).fill("CB");
+  if (i === lines.length - 1) return FWD_CODES[n] || Array(n).fill("CF");
   const midCount = lines.length - 2;
-  let code = "CM";
-  if (midCount >= 2) code = i === 1 ? "CDM" : "CAM";
+  const code = midCount >= 2 ? (i === 1 ? "CDM" : "CAM") : "CM";
   return Array(n).fill(code);
 }
 
 // Across the pitch (0 = the team's left, 1 = its right) for n players.
 function spread(n) {
   if (n <= 1) return [0.5];
-  const span = [0, 0, 0.4, 0.56, 0.72, 0.8][Math.min(n, 5)];
+  const span = [0, 0, 0.4, 0.56, 0.72, 0.8, 0.86][Math.min(n, 6)];
   return Array.from({ length: n }, (_, k) => 0.5 - span / 2 + (span * k) / (n - 1));
 }
 
@@ -174,73 +178,24 @@ export function defaultCodeForSlot(formation, slot) {
   return s ? s.code : "CM";
 }
 
-// ------------------------------------------------
-// Free play: place players by what they play
-// ------------------------------------------------
-const FREE_ROWS = [
-  { depth: 0.075, codes: ["GK"] },
-  { depth: 0.26,  codes: ["LB", "CB", "RB"] },
-  { depth: 0.43,  codes: ["CDM"] },
-  { depth: 0.57,  codes: ["CM"] },
-  { depth: 0.71,  codes: ["CAM"] },
-  { depth: 0.79,  codes: ["SS"] },
-  { depth: 0.89,  codes: ["LW", "CF", "RW"] },
-];
-const LATERAL = { LB: 0, LW: 0, RB: 2, RW: 2 };
-
-/** Map of player id → { depth, wide } for a set of players with no formation. */
-export function freePlacement(players) {
-  const out = new Map();
-  FREE_ROWS.forEach((row) => {
-    const inRow = players
-      .filter((p) => row.codes.includes(normalizePosition(p.position)))
-      .sort((a, b) => (LATERAL[normalizePosition(a.position)] ?? 1) - (LATERAL[normalizePosition(b.position)] ?? 1));
-    const across = spread(inRow.length);
-    inRow.forEach((p, i) => out.set(p.id, { depth: row.depth, wide: across[i] }));
-  });
-
-  // Rows that sit close together (say an attacking mid behind a second
-  // striker) would stack on top of each other down the middle of the pitch,
-  // so when two players collide, the deeper one steps to the side.
-  const placed = [...out.entries()].sort((a, b) => a[1].depth - b[1].depth);
-  placed.forEach(([id, spot], i) => {
-    for (let j = 0; j < i; j++) {
-      const other = placed[j][1];
-      if (spot.depth - other.depth < 0.13 && Math.abs(spot.wide - other.wide) < 0.16) {
-        spot.wide = spot.wide + (spot.wide > 0.66 ? -0.2 : 0.2);
-      }
-    }
-    out.set(id, spot);
-  });
-  return out;
-}
-
 /**
  * Everything the pitch needs: for each player drawn on it, where.
  * `x`/`y` are percentages of the landscape pitch. `faceLeft` is true
- * for the team that attacks toward the left (Red, whose goal is on
- * the right), which also flips left/right so a left-back is on the
- * player's own left, not the screen's.
+ * for the team attacking toward the left, which also flips left/right
+ * so a left-back is on the player's own left, not the screen's — Red
+ * normally attacks left (goal on the right) and Blue the opposite;
+ * the flip button in the field view swaps this for a look, without
+ * touching which end either team actually defends.
  */
 export function pitchPlacements(team, { faceLeft = false } = {}) {
   const players = (team.players || []).filter((p) => p && String(p.name || "").trim());
-  const formation = team.formation;
+  const slots = formationSlots(team.formation);
   const drawn = [];
-
-  if (isFreePlay(formation)) {
-    const spots = freePlacement(players);
-    players.forEach((p) => {
-      const s = spots.get(p.id);
-      if (s) drawn.push({ player: p, depth: s.depth, wide: s.wide });
-    });
-  } else {
-    const slots = formationSlots(formation);
-    players.forEach((p) => {
-      if (p.slot == null) return; // substitute
-      const s = slots.find((x) => x.slot === Number(p.slot));
-      if (s) drawn.push({ player: p, depth: s.depth, wide: s.wide });
-    });
-  }
+  players.forEach((p) => {
+    if (p.slot == null) return; // substitute
+    const s = slots.find((x) => x.slot === Number(p.slot));
+    if (s) drawn.push({ player: p, depth: s.depth, wide: s.wide });
+  });
 
   return drawn.map(({ player, depth, wide }) => ({
     player,
@@ -251,31 +206,24 @@ export function pitchPlacements(team, { faceLeft = false } = {}) {
   }));
 }
 
-/** Players in the order the info list shows them. */
+/** Players in the order the info list shows them: on the pitch by slot, then subs. */
 export function orderedPlayers(team) {
   const players = (team.players || []).filter((p) => p && String(p.name || "").trim());
-  const groupIndex = (p) => POSITION_GROUPS.findIndex((g) => g.key === positionGroup(p.position));
-  if (isFreePlay(team.formation)) {
-    return players
-      .map((p, i) => ({ p, i }))
-      .sort((a, b) => groupIndex(a.p) - groupIndex(b.p) || a.i - b.i)
-      .map((x) => x.p);
-  }
   const onPitch = players.filter((p) => p.slot != null).sort((a, b) => Number(a.slot) - Number(b.slot));
   const subs = players.filter((p) => p.slot == null);
   return [...onPitch, ...subs];
 }
 
 export function formationLabel(formation) {
-  return isFreePlay(formation) ? "Free play" : formation;
+  return isValidFormation(formation) ? formation : DEFAULT_FORMATION;
 }
 
 // ------------------------------------------------
 // Teams
 // ------------------------------------------------
 export const SEED_TEAMS = {
-  red:  { id: "red",  name: CLUBS.red.name,  end: "auditorium",   formation: FREE_PLAY, players: [] },
-  blue: { id: "blue", name: CLUBS.blue.name, end: "kindergarten", formation: FREE_PLAY, players: [] },
+  red:  { id: "red",  name: CLUBS.red.name,  end: "auditorium",   formation: DEFAULT_FORMATION, players: [] },
+  blue: { id: "blue", name: CLUBS.blue.name, end: "kindergarten", formation: DEFAULT_FORMATION, players: [] },
 };
 
 /** Firestore data (or nothing) → a complete team object. */
@@ -285,7 +233,7 @@ export function resolveTeam(id, data) {
   const saved = String(merged.name || "").trim();
   if (!saved || saved.toLowerCase() === OLD_DEFAULT_NAMES[id]) merged.name = seed.name;
   merged.end = PITCH_ENDS[merged.end] ? merged.end : seed.end;
-  merged.formation = parseFormation(merged.formation) ? merged.formation : FREE_PLAY;
+  merged.formation = isValidFormation(merged.formation) ? merged.formation : DEFAULT_FORMATION;
   merged.players = (Array.isArray(merged.players) ? merged.players : [])
     .filter((p) => p && typeof p === "object")
     .map((p) => ({
@@ -299,27 +247,28 @@ export function resolveTeam(id, data) {
 
 /**
  * Moving between formations: keep each player in their slot, and if
- * they were on that slot's default position, move them to the new one.
- * Hand-picked positions are left alone.
+ * they were on that slot's default position, move them to the new
+ * one. Hand-picked positions are left alone. A slot that no longer
+ * exists in the new formation becomes a substitute.
  */
 export function retargetFormation(players, fromFormation, toFormation) {
   if (!formationSlots(toFormation).length) return players.map((p) => ({ ...p }));
-  if (isFreePlay(fromFormation)) return assignSlots(players, toFormation);
-
+  const toSlots = new Set(formationSlots(toFormation).map((s) => s.slot));
   return players.map((p) => {
     if (p.slot == null) return { ...p };
+    if (!toSlots.has(Number(p.slot))) return { ...p, slot: null };
     const oldDefault = defaultCodeForSlot(fromFormation, p.slot);
     const newDefault = defaultCodeForSlot(toFormation, p.slot);
     return { ...p, position: normalizePosition(p.position) === oldDefault ? newDefault : p.position };
   });
 }
 
-/** From free play into a formation: put each player where they fit best. */
+/** Put unplaced players into empty slots of `formation`, best match first. */
 export function assignSlots(players, formation) {
   const slots = formationSlots(formation);
-  const taken = new Set();
-  const result = players.map((p) => ({ ...p, slot: null }));
-  const named = result.filter((p) => String(p.name || "").trim());
+  const taken = new Set(players.filter((p) => p.slot != null).map((p) => Number(p.slot)));
+  const result = players.map((p) => ({ ...p }));
+  const unplaced = result.filter((p) => p.slot == null && String(p.name || "").trim());
 
   // 1) keeper  2) same position  3) same group  4) any outfield spot left
   const passes = [
@@ -329,7 +278,7 @@ export function assignSlots(players, formation) {
     (p, s) => s.code !== "GK",
   ];
   passes.forEach((match) => {
-    named.forEach((p) => {
+    unplaced.forEach((p) => {
       if (p.slot != null) return;
       const s = slots.find((x) => !taken.has(x.slot) && match(p, x));
       if (s) { p.slot = s.slot; taken.add(s.slot); }
@@ -357,70 +306,46 @@ export function formatMatchDate(iso) {
 }
 
 // ============================================
-// Points system (leaderboard + Friday performance)
+// Points — one match at a time
 // ------------------------------------------------
-// Everything the Pitch leaderboard needs to turn a stat line into
-// points and points into a ranking. Pure functions: no DOM, no
-// Firebase. football-points.js draws it; the numbers live HERE, so
-// the scoring can be re-tuned in one place. Nothing is stored as a
-// "final" score: the leaderboard re-scores every approved stat line
-// each time it draws, so changing SCORING below re-ranks everyone
-// (the stored `points` field on a performance is only a snapshot
-// for the approval queue and for anyone reading the raw data).
+// Pure functions: no DOM, no Firebase. football-points.js draws with
+// these; the numbers live HERE so scoring can be re-tuned in one
+// place. Only monitors write a performance, so there's no pending /
+// approval step — a saved performance counts immediately.
 //
-// A performance is one player's Friday:
+// A performance is one player's match:
 //   pitchPerformances/{YYYY-MM-DD_playerId}
 //   { playerId, playerName, team, position, date, stats, points,
-//     status: "pending" | "approved", submittedBy, submittedByName,
-//     createdAtMs, approvedBy?, approvedByName?, approvedAtMs? }
-// stats = { goals, assists, saves, ownGoals, yellows,
-//           mvp, cleanSheet, red, result: "win" | "draw" | "loss" }
+//     loggedBy, loggedByName, createdAtMs, updatedAtMs }
+// stats = { goals, assists, saves, mvp, ownGoal }
 //
-// WHY THESE NUMBERS (so they can be argued with, not just trusted):
-//  - Everyone who plays gets a little (appearance), so a quiet
-//    match still counts and nobody sits on 0 forever.
-//  - A goal is worth more the harder it is to get from that
-//    position: forward 4, midfielder 5, defender 6, keeper 8. A
-//    striker's hat-trick still beats everything else in a match,
-//    which is fair — but defenders and keepers have their own ways
-//    to a big day (clean sheet, saves) so the board isn't only
-//    strikers.
-//  - A clean sheet is a team effort that the back line owns: keeper
-//    5, defenders 4, midfielders 1, forwards 0.
-//  - Saves are 1 each, capped at 8 a match so one busy keeper can't
-//    run away with the table.
-//  - MVP is +4: a real prize, but smaller than a hat-trick.
-//  - Team result (win 3 / draw 1) is small on purpose: it rewards
-//    playing for the team without letting the stronger side sweep
-//    the table on results alone.
-//  - Own goal −2, yellow −1, red −3. A match can never score below 0,
-//    so one bad Friday dents a player instead of wiping their season.
+// WHY THESE NUMBERS:
+//  - Goal 5, assist 2, save 3 — a goal is worth more than an assist
+//    or a save, but a busy keeper making several saves can still
+//    outscore a one-goal game.
+//  - Hat-trick (3+ goals) is a +5 bonus, and five or more goals is a
+//    further +10 on top of that — so a huge game is rewarded well
+//    beyond just goals × 5.
+//  - MVP is worth the most single thing (+10): it's the match's own
+//    call on who had the best game, stats aside.
+//  - An own goal doesn't cost points — bad enough without a penalty
+//    too — it just means that match's "Clowned 🤡" spot is taken.
 // ============================================
 export const SCORING = {
-  appearance: 2,
-  goal: { GK: 8, DEF: 6, MID: 5, FWD: 4 },
-  assist: 3,
-  hatTrick: 3,   // 3 or more goals in the match
-  bigHaul: 4,    // 5 or more goals, on top of the hat-trick bonus
-  save: 1,
-  saveCap: 8,
-  cleanSheet: { GK: 5, DEF: 4, MID: 1, FWD: 0 },
-  mvp: 4,
-  win: 3,
-  draw: 1,
-  ownGoal: -2,
-  yellow: -1,
-  red: -3,
+  goal: 5,
+  assist: 2,
+  hatTrick: 5,  // bonus on top, once goals >= 3
+  bigHaul: 10,  // further bonus on top, once goals >= 5
+  save: 3,
+  mvp: 10,
 };
 
 // The most a stepper on the form will go to (sanity, not scoring).
-export const STAT_LIMITS = { goals: 12, assists: 12, saves: 20, ownGoals: 5, yellows: 2 };
+export const STAT_LIMITS = { goals: 12, assists: 12, saves: 20 };
 
-export const RESULTS = ["win", "draw", "loss"];
-
-/** A blank stat line. `result` starts unset so nobody gets a win by default. */
+/** A blank stat line. */
 export function emptyStats() {
-  return { goals: 0, assists: 0, saves: 0, ownGoals: 0, yellows: 0, mvp: false, cleanSheet: false, red: false, result: "" };
+  return { goals: 0, assists: 0, saves: 0, mvp: false, ownGoal: false };
 }
 
 /** Anything (Firestore data, a half-filled form) → a clean, in-range stat line. */
@@ -432,109 +357,71 @@ export function normalizeStats(raw) {
   };
   return {
     goals: num("goals"), assists: num("assists"), saves: num("saves"),
-    ownGoals: num("ownGoals"), yellows: num("yellows"),
-    mvp: r.mvp === true, cleanSheet: r.cleanSheet === true, red: r.red === true,
-    result: RESULTS.includes(r.result) ? r.result : "",
+    mvp: r.mvp === true, ownGoal: r.ownGoal === true,
   };
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
 /**
- * Score one stat line for a player in `position`.
- * Returns { total, rows } where rows is the breakdown the form shows:
- * [{ label, detail, points }, …]. `total` is never below 0.
+ * Score one stat line. Returns { total, rows } where rows is the
+ * breakdown the form/card shows: [{ label, detail, points }, …].
  */
-export function scorePerformance(stats, position) {
+export function scorePerformance(stats) {
   const s = normalizeStats(stats);
-  const g = positionGroup(position);
   const rows = [];
   const add = (label, points, detail = "") => { if (points) rows.push({ label, points, detail }); };
 
-  add("Played", SCORING.appearance);
-  add("Goals", s.goals * SCORING.goal[g], s.goals ? `${s.goals} × ${SCORING.goal[g]}` : "");
+  add("Goals", s.goals * SCORING.goal, s.goals ? `${s.goals} × ${SCORING.goal}` : "");
   add("Assists", s.assists * SCORING.assist, s.assists ? `${s.assists} × ${SCORING.assist}` : "");
   if (s.goals >= 3) add("Hat-trick", SCORING.hatTrick);
   if (s.goals >= 5) add("Five-goal haul", SCORING.bigHaul);
-  const counted = Math.min(s.saves, SCORING.saveCap);
-  add("Saves", counted * SCORING.save, s.saves ? (s.saves > counted ? `${plural(counted, "counted save")} (max ${SCORING.saveCap})` : plural(s.saves, "save")) : "");
-  if (s.cleanSheet) add("Clean sheet", SCORING.cleanSheet[g] || 0);
+  add("Saves", s.saves * SCORING.save, s.saves ? `${s.saves} × ${SCORING.save}` : "");
   if (s.mvp) add("MVP", SCORING.mvp);
-  if (s.result === "win") add("Team won", SCORING.win);
-  else if (s.result === "draw") add("Team drew", SCORING.draw);
-  add("Own goals", s.ownGoals * SCORING.ownGoal, s.ownGoals ? `${s.ownGoals} × ${SCORING.ownGoal}` : "");
-  add("Yellow cards", s.yellows * SCORING.yellow, s.yellows ? `${s.yellows} × ${SCORING.yellow}` : "");
-  if (s.red) add("Red card", SCORING.red);
 
-  const sum = rows.reduce((t, r) => t + r.points, 0);
-  if (sum < 0) rows.push({ label: "Floor", points: -sum, detail: "a match can't score below 0" });
-  return { total: Math.max(0, sum), rows };
+  const total = rows.reduce((t, r) => t + r.points, 0);
+  return { total, rows };
 }
 
 /**
- * The leaderboard: every player on either team right now, plus anyone
- * who has an approved performance but has since left a team. Only
- * "approved" performances count. Sorted by points, then goals,
- * assists, MVPs, saves, then name — so a tie is settled by who did
- * more, never by who signed up first.
+ * One match's board: every performance logged for `date`, ranked by
+ * points (ties: goals, then assists, then saves, then name). Also
+ * picks out the match MVP and the match's "clown" (an own goal),
+ * each at most one — if two people are flagged, the higher scorer
+ * (then earlier submission) gets the spot.
  */
-export function buildLeaderboard(teamsById, performances) {
-  const byPlayer = new Map();
-  const blank = (id, name, team, position, current) => ({
-    id, name, team, position, current,
-    points: 0, goals: 0, assists: 0, saves: 0, mvps: 0, played: 0,
-  });
+export function matchBoard(performances, date) {
+  const rows = (performances || [])
+    .filter((p) => p && p.date === date)
+    .map((p) => {
+      const s = normalizeStats(p.stats);
+      const { total } = scorePerformance(s);
+      return {
+        id: p.playerId, name: p.playerName || "Player", team: p.team === "blue" ? "blue" : "red",
+        position: p.position, stats: s, points: total, createdAtMs: p.createdAtMs || 0,
+      };
+    })
+    .sort((a, b) =>
+      b.points - a.points || b.stats.goals - a.stats.goals ||
+      b.stats.assists - a.stats.assists || b.stats.saves - a.stats.saves ||
+      String(a.name).localeCompare(String(b.name)));
 
-  ["red", "blue"].forEach((teamId) => {
-    const team = teamsById && teamsById[teamId];
-    ((team && team.players) || []).forEach((p) => {
-      if (!p || !String(p.name || "").trim()) return;
-      byPlayer.set(p.id, blank(p.id, p.name, teamId, p.position, true));
-    });
-  });
+  const pick = (test) => rows
+    .filter((r) => test(r))
+    .sort((a, b) => b.points - a.points || a.createdAtMs - b.createdAtMs)[0] || null;
 
-  (performances || []).forEach((perf) => {
-    if (!perf || perf.status !== "approved") return;
-    let row = byPlayer.get(perf.playerId);
-    if (!row) {
-      row = blank(perf.playerId, perf.playerName || "Player", perf.team === "blue" ? "blue" : "red", perf.position, false);
-      byPlayer.set(perf.playerId, row);
-    }
-    const s = normalizeStats(perf.stats);
-    row.points += scorePerformance(s, perf.position).total;
-    row.goals += s.goals;
-    row.assists += s.assists;
-    row.saves += s.saves;
-    row.mvps += s.mvp ? 1 : 0;
-    row.played += 1;
-  });
-
-  return [...byPlayer.values()].sort((a, b) =>
-    b.points - a.points || b.goals - a.goals || b.assists - a.assists ||
-    b.mvps - a.mvps || b.saves - a.saves || String(a.name).localeCompare(String(b.name)));
+  return { top: rows.slice(0, 3), mvp: pick((r) => r.stats.mvp), clown: pick((r) => r.stats.ownGoal), all: rows };
 }
 
 // ------------------------------------------------
-// Fridays
+// Dates
 // ------------------------------------------------
 /** Local YYYY-MM-DD (not toISOString, which is UTC and can land on the wrong day). */
 export function isoDate(d = new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
-export function isFriday(d = new Date()) { return d.getDay() === 5; }
-/** 0 on a Friday, otherwise 1–6. */
-export function daysUntilFriday(d = new Date()) { return (5 - d.getDay() + 7) % 7; }
-/** The most recent Friday on or before `d`, as a Date. */
+/** The most recent Friday on or before `d`, as a Date — matches are always Friday PE. */
 export function lastFriday(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() - ((d.getDay() - 5 + 7) % 7));
 }
 
 export function performanceId(date, playerId) { return `${date}_${playerId}`; }
-
-/** "win" | "draw" | "loss" for `teamId` in a match doc { redScore, blueScore }. */
-export function resultFor(match, teamId) {
-  const mine = Number(teamId === "blue" ? match.blueScore : match.redScore) || 0;
-  const theirs = Number(teamId === "blue" ? match.redScore : match.blueScore) || 0;
-  return mine > theirs ? "win" : mine < theirs ? "loss" : "draw";
-}

@@ -30,9 +30,9 @@ import {
   playToggleOn, playToggleOff,
 } from "./sound.js";
 import {
-  PITCH_POSITIONS, POSITION_GROUPS, PITCH_ENDS, PRESET_FORMATIONS, FREE_PLAY, CLUBS,
-  escapeHtml, otherEnd, newPlayerId, parseFormation, isFreePlay, formationSlots,
-  defaultCodeForSlot, retargetFormation, randomFormation, normalizePosition,
+  PITCH_POSITIONS, POSITION_GROUPS, PITCH_ENDS, CLUBS, DEFAULT_FORMATION,
+  escapeHtml, otherEnd, newPlayerId, parseFormation, isValidFormation, formationSlots,
+  defaultCodeForSlot, retargetFormation, normalizePosition, OUTFIELD,
 } from "./football-data.js";
 import { getPitchState, setMatchEditMode, pitchMarkup } from "./football.js";
 
@@ -270,16 +270,17 @@ function cleanTeam(t) {
   const players = (t.players || [])
     .map((p) => ({ ...p, name: String(p.name || "").trim().slice(0, 30) }))
     .filter((p) => p.name);
-  const free = isFreePlay(t.formation);
+  const formation = isValidFormation(t.formation) ? t.formation : DEFAULT_FORMATION;
+  const validSlots = new Set(formationSlots(formation).map((sl) => sl.slot));
   return {
     name: String(t.name || "").trim().slice(0, 24) || CLUBS[t.id].name,
     end: t.end,
-    formation: free ? FREE_PLAY : t.formation,
+    formation,
     players: players.map((p) => ({
       id: p.id,
       name: p.name,
       position: normalizePosition(p.position),
-      slot: free || p.slot == null ? null : Number(p.slot),
+      slot: p.slot != null && validSlots.has(Number(p.slot)) ? Number(p.slot) : null,
     })),
   };
 }
@@ -294,7 +295,9 @@ function positionOptions(selected) {
   }</optgroup>`).join("");
 }
 
-const DICE = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="15.5" r="1.1" fill="currentColor" stroke="none"/></svg>`;
+const FLIP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h9a5 5 0 0 1 5 5v1"/><path d="M16 21l4-4-4-4"/><path d="M20 17h-9a5 5 0 0 1-5-5v-1"/></svg>`;
+
+let previewFlipped = false;
 
 function slotPlayer(team, slot) {
   return (team.players || []).find((p) => p.slot === slot) || null;
@@ -343,13 +346,6 @@ function extraRow(p) {
 function playersSection(t) {
   const total = (t.players || []).length;
   const full = total >= MAX_PLAYERS;
-  if (isFreePlay(t.formation)) {
-    const all = t.players || [];
-    return `
-      <p class="pe-label">Players <span class="pe-hint">Placed on the pitch by their position.</span></p>
-      <ul class="pe-rows" id="peRows">${all.map(extraRow).join("")}</ul>
-      <button type="button" class="btn btn-ghost btn-small pe-add" data-act="add"${full ? " disabled" : ""}>+ Add player</button>`;
-  }
   const subs = (t.players || []).filter((p) => p.slot == null);
   return `
     <p class="pe-label">Line-up <span class="pe-hint">Leave a spot empty if nobody is playing there.</span></p>
@@ -359,18 +355,22 @@ function playersSection(t) {
     <button type="button" class="btn btn-ghost btn-small pe-add" data-act="add-sub"${full ? " disabled" : ""}>+ Add substitute</button>`;
 }
 
-function chipsMarkup(t) {
-  const isPreset = PRESET_FORMATIONS.includes(t.formation);
-  const custom = !isFreePlay(t.formation) && !isPreset
-    ? `<button type="button" class="pill active pe-chip" data-formation="${escapeHtml(t.formation)}" aria-pressed="true">${escapeHtml(t.formation)}<em>random</em></button>` : "";
+// The monitor types "D-M-F" or "D-M-M-F" (2 to 4 numbers, GK not
+// included) and it's validated live against OUTFIELD (10) below.
+function formationFieldMarkup(t) {
+  const ok = isValidFormation(t.formation);
   return `
-    ${PRESET_FORMATIONS.map((f) => `<button type="button" class="pill pe-chip${t.formation === f ? " active" : ""}" data-formation="${f}" aria-pressed="${t.formation === f}">${f}</button>`).join("")}
-    ${custom}
-    <button type="button" class="pill pe-chip pe-chip-random" data-act="random" title="Pick a random formation">${DICE}<span>Random</span></button>
-    <button type="button" class="pill pe-chip${isFreePlay(t.formation) ? " active" : ""}" data-formation="${FREE_PLAY}" aria-pressed="${isFreePlay(t.formation)}">Free play</button>`;
+    <div class="pe-formation-field">
+      <input type="text" class="pe-formation-input" id="peFormationInput" inputmode="numeric"
+        autocomplete="off" maxlength="9" placeholder="e.g. 4-3-3" value="${escapeHtml(t.formation)}"
+        aria-label="Formation" aria-invalid="${ok ? "false" : "true"}">
+      <span class="pe-formation-status${ok ? " is-ok" : " is-bad"}">${ok ? "✓" : `Add up to ${OUTFIELD}`}</span>
+    </div>
+    <p class="pe-hint pe-formation-hint">2–4 numbers (defence first, attack last), keeper not counted, adding up to ${OUTFIELD}. Positions — CB, CDM, CAM, CF and so on — fill in on their own from the shape.</p>`;
 }
 
 function renderTeamBody() {
+  previewFlipped = false;
   const t = draft[activeTeam];
   $("peTabs").querySelectorAll(".pe-tab").forEach((b) => {
     const on = b.dataset.team === activeTeam;
@@ -388,8 +388,11 @@ function renderTeamBody() {
       </label>
     </div>
     <p class="pe-label">Formation</p>
-    <div class="pe-chips" role="group" aria-label="Formation">${chipsMarkup(t)}</div>
-    <div class="pe-preview" id="pePreview">${pitchMarkup(activeTeam, cleanTeam2(t), {})}</div>
+    ${formationFieldMarkup(t)}
+    <div class="pe-preview-head">
+      <button type="button" class="task-icon-btn pe-flip" id="peFlip" aria-pressed="false" aria-label="Flip the field view" title="Flip the field view">${FLIP_ICON}</button>
+    </div>
+    <div class="pe-preview" id="pePreview">${pitchMarkup(activeTeam, cleanTeam2(t), { flip: previewFlipped })}</div>
     <div class="pe-players" id="pePlayers">${playersSection(t)}</div>`;
   updateFooter();
 }
@@ -399,7 +402,7 @@ const cleanTeam2 = (t) => ({ ...t, ...cleanTeam(t) });
 
 function refreshPreview() {
   const box = $("pePreview");
-  if (box) box.innerHTML = pitchMarkup(activeTeam, cleanTeam2(draft[activeTeam]), {});
+  if (box) box.innerHTML = pitchMarkup(activeTeam, cleanTeam2(draft[activeTeam]), { flip: previewFlipped });
   updateFooter();
 }
 
@@ -493,6 +496,17 @@ function onBodyInput(e) {
     if (!p && !e.target.value.trim()) return;
     ctx.ensure().name = e.target.value;
     refreshPreview();
+    return;
+  }
+  if (e.target.id === "peFormationInput") {
+    const ok = isValidFormation(e.target.value);
+    e.target.setAttribute("aria-invalid", ok ? "false" : "true");
+    const status = $("peBody").querySelector(".pe-formation-status");
+    if (status) {
+      status.classList.toggle("is-ok", ok);
+      status.classList.toggle("is-bad", !ok);
+      status.textContent = ok ? "✓" : `Add up to ${OUTFIELD}`;
+    }
   }
 }
 
@@ -512,6 +526,12 @@ function onBodyChange(e) {
     if (!ctx) return;
     ctx.ensure().position = e.target.value;
     refreshPreview();
+    return;
+  }
+  if (e.target.id === "peFormationInput") {
+    const val = e.target.value.trim();
+    if (isValidFormation(val)) setFormation(val);
+    else e.target.value = t.formation; // snap back to the last valid shape
   }
 }
 
@@ -522,22 +542,26 @@ function setFormation(next) {
   t.players = retargetFormation(named, t.formation, next);
   t.formation = next;
   playClick();
+  const keepFlip = previewFlipped;
   renderTeamBody();
+  previewFlipped = keepFlip;
+  refreshPreview();
 }
 
 function onBodyClick(e) {
   const t = draft[activeTeam];
-  const chip = e.target.closest("[data-formation]");
-  if (chip) { setFormation(chip.dataset.formation); return; }
+  if (e.target.closest("#peFlip")) {
+    previewFlipped = !previewFlipped;
+    $("peFlip").setAttribute("aria-pressed", String(previewFlipped));
+    playClick();
+    refreshPreview();
+    return;
+  }
 
   const act = e.target.closest("[data-act]");
   if (!act) return;
   const kind = act.dataset.act;
 
-  if (kind === "random") {
-    setFormation(randomFormation(t.formation));
-    return;
-  }
   if (kind === "add" || kind === "add-sub") {
     if (t.players.length >= MAX_PLAYERS) return;
     t.players.push({ id: newPlayerId(), name: "", position: "CM", slot: null });
@@ -591,7 +615,7 @@ async function saveTeams() {
     });
     await Promise.all(writes);
     for (const { id, data } of saved) {
-      await logAction("updated", { resourceType: "pitchTeam", resourceId: id, summary: `Updated team: ${data.name} (${isFreePlay(data.formation) ? "free play" : data.formation}, ${data.players.length} players)` });
+      await logAction("updated", { resourceType: "pitchTeam", resourceId: id, summary: `Updated team: ${data.name} (${data.formation}, ${data.players.length} players)` });
     }
     playSuccess();
     original = { red: snapshotOf(draft.red), blue: snapshotOf(draft.blue) };

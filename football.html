@@ -138,8 +138,8 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
   <div class="section-inner hub-nav-inner">
     <a href="#top" class="hub-nav-link">Pitch</a>
     <a href="#teams" class="hub-nav-link">Teams</a>
-    <a href="#leaderboard" class="hub-nav-link">Leaderboard</a>
-    <a href="#performance" class="hub-nav-link">Performance</a>
+    <a href="#last-match" class="hub-nav-link">Last match</a>
+    <a href="#performance" class="hub-nav-link" id="pitchPerfNavLink" hidden>Performance</a>
   </div>
 </nav>
 
@@ -194,33 +194,35 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
     </div>
   </section>
 
-  <!-- ============ LEADERBOARD ============
-       Filled in by football-points.js: the gold / silver / bronze podium and
-       everyone else ranked underneath, from approved performances only. -->
-  <section class="hub-section" id="leaderboard">
+  <!-- ============ LAST MATCH PERFORMANCE ============
+       Filled in by football-points.js: top 3 for the most recent match, plus
+       dedicated MVP and Clowned (own goal) cards. The full season leaderboard
+       lives on the Rankings page, not here. -->
+  <section class="hub-section" id="last-match">
     <div class="section-inner">
       <div class="section-head-row">
         <div class="section-head">
-          <h2>Leaderboard</h2>
-          <p class="section-sub">Every Friday adds up. Goals, assists, saves, clean sheets, MVPs and the team result all earn points, and the top three take the podium.</p>
+          <h2>Last match performance</h2>
+          <p class="section-sub" id="pitchLastMatchSub">How the last match went — goals, assists, saves, MVP and who got clowned. Tap a card for the full breakdown.</p>
         </div>
       </div>
-      <div class="pitch-leaderboard" id="pitchLeaderboard" aria-live="polite">
-        <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading the leaderboard…</span></div>
+      <div class="pitch-lastmatch" id="pitchLastMatch" aria-live="polite">
+        <div class="task-loading"><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-dot"></span><span class="task-loading-label">Loading…</span></div>
       </div>
     </div>
   </section>
 
-  <!-- ============ PLAYER PERFORMANCE ============
-       Locked until Friday. On Friday it opens, lists the players who are on the
-       teams, and a tap turns a player into the stat form. Submissions wait for
-       a monitor. Filled in by football-points.js. -->
-  <section class="hub-section" id="performance">
+  <!-- ============ PLAYER PERFORMANCE (monitor-only) ============
+       Hidden entirely unless the signed-in account is a monitor — nobody
+       else can see or reach this section. A monitor taps a player from
+       either team and logs their match stats directly; it counts the
+       moment it's saved. Filled in by football-points.js. -->
+  <section class="hub-section" id="performance" hidden>
     <div class="section-inner">
       <div class="section-head-row">
         <div class="section-head">
           <h2>Player performance</h2>
-          <p class="section-sub">After Friday PE, log how each player did. A monitor checks it before it counts.</p>
+          <p class="section-sub">Monitor-only. Log each player's match stats — it updates the board above as soon as you save.</p>
         </div>
       </div>
       <div class="pitch-performance" id="pitchPerformance">
@@ -243,12 +245,34 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 <div class="modal-overlay" id="pitchFormationOverlay" role="dialog" aria-modal="true" aria-labelledby="pitchFormationTitle" hidden>
   <div class="modal-card formation-card" id="pitchFormationCard">
     <button class="modal-close" id="pitchFormationClose" aria-label="Close">✕</button>
+    <button type="button" class="task-icon-btn formation-flip" id="pitchFormationFlip" aria-pressed="false" aria-label="Flip the field view" title="Flip the field view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h9a5 5 0 0 1 5 5v1"/><path d="M16 21l4-4-4-4"/><path d="M20 17h-9a5 5 0 0 1-5-5v-1"/></svg></button>
     <div class="formation-layout" id="pitchFormationLayout">
       <div class="formation-info" id="pitchFormationInfo"></div>
       <div class="formation-field" id="pitchFormationField"></div>
     </div>
   </div>
 </div>
+
+<!-- ============ LAST MATCH: read-only stats modal ============
+     Opened by tapping a top-3 / MVP / Clown card. Filled by football-points.js. -->
+<div class="modal-overlay perf-overlay" id="perfViewOverlay" role="dialog" aria-modal="true" hidden>
+  <div class="modal-card perf-view-card" id="perfViewCard">
+    <button class="modal-close" id="perfViewClose" aria-label="Close">✕</button>
+    <div id="perfViewBody"></div>
+  </div>
+</div>
+
+<!-- ============ PLAYER PERFORMANCE: monitor editor ============
+     Opened by tapping a player in the monitor-only Performance section.
+     Filled by football-points.js. -->
+<div class="modal-overlay perf-overlay" id="perfEditOverlay" role="dialog" aria-modal="true" aria-labelledby="perfEditTitle" hidden>
+  <div class="modal-card perf-edit-card" id="perfEditCard">
+    <button class="modal-close" id="perfEditClose" aria-label="Close">✕</button>
+    <div id="perfEditBody"></div>
+  </div>
+</div>
+
+<div class="perf-toast" id="perfToast" role="status" aria-live="polite"></div>
 
 
 <div class="modal-overlay" id="authOverlay" hidden>
