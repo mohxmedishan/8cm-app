@@ -81,8 +81,8 @@ export function newMatchId() {
 // Clubs: the identity on top of the two fixed colours
 // ------------------------------------------------
 export const CLUBS = {
-  red:  { id: "red",  name: "Barça",  logo: "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/BARCA.png" },
-  blue: { id: "blue", name: "Madrid", logo: "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/RAM.png" },
+  red:  { id: "red",  name: "Barça",  logo: "assets/logos/BARCA.png" },
+  blue: { id: "blue", name: "Madrid", logo: "assets/logos/RAM.png" },
 };
 
 // The first version of the Pitch page called the teams "Red" and "Blue".

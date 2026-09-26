@@ -269,6 +269,15 @@ function buildAudio() {
   const seekTarget = resumeSeconds > 0 ? resumeSeconds : configuredStart;
   resumeSeconds = 0; // one-shot — only applies to the very next build
   const a = new Audio();
+  // Tracks are now hosted cross-origin (jsDelivr), not same-origin like
+  // before the assets split. Without this, attachGain()'s
+  // createMediaElementSource() below silently taints the audio graph
+  // on any browser that routes through it (iOS Safari, where the
+  // element's own .volume can't be set — see detectElementVolume) and
+  // the track plays back completely silent with no error thrown.
+  // jsDelivr sends the permissive CORS header this needs, so this is
+  // the only change required to keep that path working.
+  a.crossOrigin = "anonymous";
   a.src = BGM_CONFIG.audioDir + track.file;
   a.loop = loopEnabled;
   a.preload = "auto";
@@ -283,8 +292,21 @@ function buildAudio() {
         seeked = true;
       } catch {}
     };
+    // A same-origin file's metadata was available almost instantly, so
+    // loadedmetadata/canplay alone was enough to catch the moment
+    // a.duration became readable. A remote CDN resource can take
+    // noticeably longer (or, on a flaky connection, land its events in
+    // a different order), so the same one-time listeners could miss
+    // the window entirely and the track would silently fall back to
+    // startAt instead of resuming — this is the "continuation" bug.
+    // canplaythrough plus a couple of short-interval retries closes
+    // that gap without changing behavior for the common case, where
+    // applySeek still just runs once on the very first event that has
+    // a usable duration.
     a.addEventListener("loadedmetadata", applySeek);
     a.addEventListener("canplay", applySeek);
+    a.addEventListener("canplaythrough", applySeek);
+    [150, 400, 900].forEach((delay) => setTimeout(applySeek, delay));
   }
   return a;
 }
