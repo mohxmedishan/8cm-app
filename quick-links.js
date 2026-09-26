@@ -1,7 +1,7 @@
 // ============================================
 // 8CM — Quick links
 // ------------------------------------------------
-// Monitor-managed shortcuts shown in archives.html#quick-links.
+// Monitor-managed shortcuts shown in index.html#quick-links.
 // Logos are built into the site as inline SVGs. No uploads.
 // Defaults can also be edited/deleted through small Firestore overrides.
 // ============================================

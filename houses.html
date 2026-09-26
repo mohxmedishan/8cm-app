@@ -9,8 +9,8 @@ if(inSite){d.classList.add("is-arriving");return;}
 d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-preparing")},1500);})();</script>
 <link rel="expect" href="#main" blocking="render">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Houses — 8CM</title>
-<meta name="description" content="The four houses of 8CM — Winter, Autumn, Spring and Summer — and everyone in them.">
+<title>Houses & Directory — 8CM</title>
+<meta name="description" content="The four houses of 8CM, plus the full student and teacher directory — everyone in 8CM, all in one place.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/houses.html">
 <meta property="og:url" content="https://8cm.vercel.app/houses.html">
@@ -135,8 +135,10 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 
 <nav class="hub-nav" aria-label="Houses sections">
   <div class="section-inner hub-nav-inner">
-    <a href="#top" class="hub-nav-link">Houses</a>
-    <a href="#house-students" class="hub-nav-link">Students</a>
+    <a href="#top" class="hub-nav-link">Overview</a>
+    <a href="#house-students" class="hub-nav-link">By house</a>
+    <a href="#students" class="hub-nav-link">Students</a>
+    <a href="#teachers" class="hub-nav-link">Teachers</a>
   </div>
 </nav>
 
@@ -162,8 +164,8 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
       <div class="hero-text hero-text-right">
         <a href="index.html" class="back-to-dashboard">Dashboard →</a>
         <div class="section-head">
-          <h1 class="hub-title">The four houses</h1>
-          <p class="section-sub">Winter, Autumn, Spring and Summer. Every student in 8CM belongs to one.</p>
+          <h1 class="hub-title">Houses & directory</h1>
+          <p class="section-sub">Winter, Autumn, Spring and Summer — plus the full student and teacher directory. Everyone in 8CM belongs to a house, and everyone's listed below.</p>
         </div>
       </div>
     </div>
@@ -186,6 +188,58 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
         <article class="house-card" data-house="spring"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
         <article class="house-card" data-house="summer"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDENTS ============ -->
+  <section class="hub-section students" id="students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Students</h2>
+        <p class="section-sub">Search a name, or filter by house, transport, language, and guests.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
+        </div>
+        <div class="filter-row" id="filterRow">
+          <button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
+          <button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
+          <button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
+          <button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
+          <button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
+          <button class="filter-box" data-filter-key="guest" type="button"><span class="filter-box-label">Guest</span><span class="filter-box-value" data-value-for="guest">All</span></button>
+          <button class="filter-clear is-hidden" id="filterClear" type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="filterDropdownHost"></div>
+      </div>
+      <p class="result-count" id="resultCount">30 students</p>
+      <div class="student-grid" id="studentGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ TEACHERS ============ -->
+  <section class="hub-section" id="teachers">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Teachers</h2>
+        <p class="section-sub">Everyone teaching 8CM this year. Search by name or subject.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="teacherSearchInput" placeholder="Search a teacher or subject…" autocomplete="off">
+        </div>
+        <div class="filter-row" id="teacherFilterRow">
+          <button class="filter-box" data-filter-key="category" type="button">
+            <span class="filter-box-label">Subject</span>
+            <span class="filter-box-value" data-value-for="category">All</span>
+          </button>
+          <button class="filter-clear is-hidden" id="teacherFilterClear" type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="teacherFilterDropdownHost"></div>
+      </div>
+      <p class="result-count" id="teacherResultCount">— teachers</p>
+      <div class="teacher-grid" id="teacherGrid"></div>
     </div>
   </section>
 </main>

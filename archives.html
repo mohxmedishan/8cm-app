@@ -10,7 +10,7 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 <link rel="expect" href="#main" blocking="render">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Class Archives — 8CM</title>
-<meta name="description" content="Timetable, teachers, students, gallery, and archive materials for 8CM.">
+<meta name="description" content="Timetable, gallery, and archive materials for 8CM.">
 <meta name="theme-color" content="#16171a">
 <link rel="canonical" href="https://8cm.vercel.app/archives.html">
 <meta property="og:url" content="https://8cm.vercel.app/archives.html">
@@ -137,10 +137,7 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
   <div class="section-inner hub-nav-inner">
     <a href="#top" class="hub-nav-link">Archives</a>
     <a href="#timetable" class="hub-nav-link">Timetable</a>
-    <a href="#teachers" class="hub-nav-link">Teachers</a>
-    <a href="#students" class="hub-nav-link">Students</a>
     <a href="#gallery" class="hub-nav-link">Gallery</a>
-    <a href="#quick-links" class="hub-nav-link">Quick Links</a>
     <a href="#archive-materials" class="hub-nav-link">Materials</a>
   </div>
 </nav>
@@ -152,11 +149,11 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
         <a href="index.html" class="back-to-dashboard">← Dashboard</a>
         <div class="section-head">
           <h1 class="hub-title">Class Archives</h1>
-          <p class="section-sub">Timetable, teachers, students, and everything else that lives off the front page.</p>
+          <p class="section-sub">Timetable, gallery, and everything else that lives off the front page.</p>
         </div>
         <div class="hero-actions">
           <a href="#timetable" class="btn btn-primary">Open the timetable</a>
-          <a href="#students" class="btn btn-ghost">Find a student</a>
+          <a href="houses.html#students" class="btn btn-ghost">Find a student</a>
         </div>
       </div>
 
@@ -169,13 +166,13 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
           <p class="glance-date">Tap to jump</p>
         </div>
         <div class="glance-tiles glance-tiles-2x2">
-          <a href="#students" class="glance-tile" style="--tone: var(--accent)">
+          <a href="houses.html#students" class="glance-tile" style="--tone: var(--accent)">
             <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8M17.5 14.2A5 5 0 0 1 20.5 19"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
             <span class="glance-num" id="glanceStudents">–</span>
             <span class="glance-tile-label">Students</span>
             <span class="glance-tile-note">in the class</span>
           </a>
-          <a href="#teachers" class="glance-tile" style="--tone: var(--house-winter)">
+          <a href="houses.html#teachers" class="glance-tile" style="--tone: var(--house-winter)">
             <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l9-3.5 9 3.5-9 3.5-9-3.5z"/><path d="M7 9v5c0 1.4 2.2 2.8 5 2.8s5-1.4 5-2.8V9"/><path d="M21 7v6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
             <span class="glance-num" id="glanceTeachers">–</span>
             <span class="glance-tile-label">Teachers</span>
@@ -300,77 +297,12 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
     </div>
   </section>
 
-  <!-- ============ TEACHERS ============ -->
-  <section class="hub-section" id="teachers">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>Teachers</h2>
-        <p class="section-sub">Everyone teaching 8CM this year. Search by name or subject.</p>
-      </div>
-      <div class="controls">
-        <div class="search-wrap">
-          <input type="text" id="teacherSearchInput" placeholder="Search a teacher or subject…" autocomplete="off">
-        </div>
-        <div class="filter-row" id="teacherFilterRow">
-          <button class="filter-box" data-filter-key="category" type="button">
-            <span class="filter-box-label">Subject</span>
-            <span class="filter-box-value" data-value-for="category">All</span>
-          </button>
-          <button class="filter-clear is-hidden" id="teacherFilterClear" type="button">Clear</button>
-        </div>
-        <div class="filter-dropdown-host" id="teacherFilterDropdownHost"></div>
-      </div>
-      <p class="result-count" id="teacherResultCount">— teachers</p>
-      <div class="teacher-grid" id="teacherGrid"></div>
-    </div>
-  </section>
-
-  <!-- ============ STUDENTS ============ -->
-  <section class="hub-section students" id="students">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>Students</h2>
-        <p class="section-sub">Search a name, or filter by house, transport, language, and guests.</p>
-      </div>
-      <div class="controls">
-        <div class="search-wrap">
-          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
-        </div>
-        <div class="filter-row" id="filterRow">
-          <button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
-          <button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
-          <button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
-          <button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
-          <button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
-          <button class="filter-box" data-filter-key="guest" type="button"><span class="filter-box-label">Guest</span><span class="filter-box-value" data-value-for="guest">All</span></button>
-          <button class="filter-clear is-hidden" id="filterClear" type="button">Clear</button>
-        </div>
-        <div class="filter-dropdown-host" id="filterDropdownHost"></div>
-      </div>
-      <p class="result-count" id="resultCount">30 students</p>
-      <div class="student-grid" id="studentGrid"></div>
-    </div>
-  </section>
-
   <!-- ============ GALLERY ============ -->
   <section class="hub-section gallery" id="gallery">
     <div class="section-inner">
       <div class="section-head"><h2>Gallery</h2><p class="section-sub">Tap a photo to open it full size. Tap it again to zoom in.</p></div>
       <div class="gallery-grid" id="galleryGrid"></div>
       <p class="gallery-note">Photos go up once the class approves what's shareable.</p>
-    </div>
-  </section>
-
-  <!-- ============ QUICK LINKS ============
-       The WhatsApp link below is a web.whatsapp.com shortcut. To point it at
-       your group instead, replace the href with your chat.whatsapp.com invite. -->
-  <section class="hub-section" id="quick-links">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>Quick links</h2>
-        <p class="section-sub">One tap to the places 8CM actually lives.</p>
-      </div>
-      <div class="quick-links-grid" id="quickLinksGrid"></div>
     </div>
   </section>
 

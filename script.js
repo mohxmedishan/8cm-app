@@ -321,7 +321,7 @@ function initStudentDirectory() {
 
   Object.keys(filters).forEach(updateBoxLabel);
 
-  // Deep-link from the Houses chart (archives.html?house=winter#students).
+  // Deep-link from the Houses chart (houses.html?house=winter#students).
   // Apply the filter after the controls have been initialized, then remove the
   // query from the address bar so a later refresh does not unexpectedly reapply it.
   try {
@@ -382,7 +382,7 @@ function initHouseCards() {
         card.classList.add("is-pinged");
         return;
       }
-      window.location.href = `archives.html?house=${encodeURIComponent(house)}#students`;
+      window.location.href = `houses.html?house=${encodeURIComponent(house)}#students`;
     };
     bar.addEventListener("click", jump);
     bar.addEventListener("keydown", (e) => {
@@ -995,7 +995,7 @@ function initSettingsPolish() {
 // ============================================
 // Anchor re-jump after dynamic content loads
 // ------------------------------------------------
-// "Meet the class" → archives.html#students lands in the wrong place
+// "Meet the class" → houses.html#students lands in the wrong place
 // because the browser's native jump fires before the student grid /
 // house rosters / teacher cards have rendered. Those push the target
 // section down, so the original scroll position ends up pointing at
