@@ -20,13 +20,13 @@ const $ = (id) => document.getElementById(id);
 // title is captioned from its file name (titleFromUrl), so renaming or
 // swapping a file keeps the caption honest without touching any code.
 const SEED_GALLERY = [
-  { url: "assets/gallery/5cm-motion-gate.jpg", title: "5CM Field Trip · Motion Gate", album: "Trips" },
-  { url: "assets/gallery/6cm-warner-bros.jpg", title: "6CM Field Trip · Warner Bros", album: "Trips" },
-  { url: "assets/gallery/7cm-assembly-1.jpg", title: "7CM Assembly", album: "Assemblies" },
-  { url: "assets/gallery/7cm-assembly-2.jpg", title: "7CM Assembly · II", album: "Assemblies" },
-  { url: "assets/gallery/7cm-english-1.jpg", title: "7CM English", album: "Classes" },
-  { url: "assets/gallery/7cm-english-2.jpg", title: "7CM English · II", album: "Classes" },
-  { url: "assets/gallery/7cm-field-trip-garvit.jpg", title: "7CM Field Trip", album: "Trips" },
+  { url: "assets/5cm-motion-gate.jpg", title: "5CM Field Trip · Motion Gate", album: "Trips" },
+  { url: "assets/6cm-warner-bros.jpg", title: "6CM Field Trip · Warner Bros", album: "Trips" },
+  { url: "assets/7cm-assembly-1.jpg", title: "7CM Assembly", album: "Assemblies" },
+  { url: "assets/7cm-assembly-2.jpg", title: "7CM Assembly · II", album: "Assemblies" },
+  { url: "assets/7cm-english-1.jpg", title: "7CM English", album: "Classes" },
+  { url: "assets/7cm-english-2.jpg", title: "7CM English · II", album: "Classes" },
+  { url: "assets/7cm-field-trip-garvit.jpg", title: "7CM Field Trip", album: "Trips" },
 ];
 
 let cache = null;
@@ -40,7 +40,7 @@ const escapeAttr = (v) =>
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   })[c]);
 
-/** "assets/gallery/7cm-english-1.jpg" → "7cm english 1" (readable fallback caption). */
+/** "assets/7cm-english-1.jpg" → "7cm english 1" (readable fallback caption). */
 export function titleFromUrl(url) {
   let name = String(url || "").split(/[?#]/)[0].split("/").filter(Boolean).pop() || "";
   try { name = decodeURIComponent(name); } catch (_) {}
