@@ -240,6 +240,36 @@ function initReveal() {
   Promise.race([settled, new Promise((r) => setTimeout(r, 700))]).then(reveal);
 }
 
+// ---------- Same-page anchor jump, with a rescue re-jump ----------
+// A subnav click is usually just left to the browser (smooth scrolling +
+// scroll-margin-top already land it under the header) — but on a page
+// that's still filling in dynamic content (Today's homework list, the
+// student/teacher grids, house rosters…), anything that loads in ABOVE
+// the target between the click and the moment the smooth-scroll finishes
+// pushes the target down, so the one-shot browser jump lands short. A
+// reload doesn't hit this (the data is usually already warm by then),
+// which is why the miss looks like a first-click-only bug. Driving the
+// scroll ourselves and re-jumping once or twice — unless the person has
+// clearly taken over the scrolling — fixes it on a fresh page too.
+function jumpToId(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let touched = false;
+  const cancel = () => { touched = true; };
+  const events = ["wheel", "touchstart", "keydown", "pointerdown"];
+  events.forEach((type) => window.addEventListener(type, cancel, { passive: true }));
+  const go = () => {
+    if (touched) return;
+    el.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "start" });
+  };
+  go();
+  setTimeout(go, 350);
+  setTimeout(go, 900);
+  setTimeout(() => {
+    events.forEach((type) => window.removeEventListener(type, cancel, { passive: true }));
+  }, 950);
+}
+
 // ---------- 3 + 4. Page transitions and same-page clicks ----------
 function initPageTransitions(primary) {
   let leaving = false;
@@ -285,9 +315,14 @@ function initPageTransitions(primary) {
     if (!/^https?:$/.test(url.protocol) || url.origin !== location.origin) return; // external, mailto:, tel: …
 
     if (isSamePage(url)) {
-      // A real in-page anchor (#students) is left to the browser: smooth
-      // scrolling + scroll-margin-top already land it under the header.
-      if (url.hash && url.hash !== "#top") return;
+      // A real in-page anchor (#students): drive it ourselves so a
+      // rescue re-jump can catch dynamic content that shifts the
+      // target after the browser's first jump lands (see jumpToId above).
+      if (url.hash && url.hash !== "#top") {
+        e.preventDefault();
+        jumpToId(url.hash.slice(1));
+        return;
+      }
       // Same page, nothing more specific asked for → never reload.
       e.preventDefault();
       if (window.scrollY > 2) scrollToTop();

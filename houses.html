@@ -135,10 +135,10 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 
 <nav class="hub-nav" aria-label="Houses sections">
   <div class="section-inner hub-nav-inner">
-    <a href="#top" class="hub-nav-link">Overview</a>
-    <a href="#house-students" class="hub-nav-link">By house</a>
+    <a href="#top" class="hub-nav-link">Directory</a>
     <a href="#students" class="hub-nav-link">Students</a>
     <a href="#teachers" class="hub-nav-link">Teachers</a>
+    <a href="#house-students" class="hub-nav-link">By house</a>
   </div>
 </nav>
 
@@ -167,26 +167,6 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
           <h1 class="hub-title">Directory</h1>
           <p class="section-sub">Winter, Autumn, Spring and Summer — plus the full student and teacher directory. Everyone in 8CM belongs to a house, and everyone's listed below.</p>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ HOUSE ROSTERS ============ -->
-  <section class="hub-section houses" id="house-students">
-    <div class="section-inner">
-      <div class="section-head">
-        <h2>Who's in each house</h2>
-        <p class="section-sub">Tap a name to open their profile.</p>
-      </div>
-      <div class="house-grid">
-        <!-- house-count and the student list below it are filled in by
-             renderHouseCardLists() in script.js, from the real student
-             roster — never hardcoded, so a monitor moving someone
-             between houses updates this automatically. -->
-        <article class="house-card" data-house="winter"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="autumn"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="spring"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
-        <article class="house-card" data-house="summer"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
       </div>
     </div>
   </section>
@@ -240,6 +220,26 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
       </div>
       <p class="result-count" id="teacherResultCount">— teachers</p>
       <div class="teacher-grid" id="teacherGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ HOUSE ROSTERS ============ -->
+  <section class="hub-section houses" id="house-students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Who's in each house</h2>
+        <p class="section-sub">Tap a name to open their profile.</p>
+      </div>
+      <div class="house-grid">
+        <!-- house-count and the student list below it are filled in by
+             renderHouseCardLists() in script.js, from the real student
+             roster — never hardcoded, so a monitor moving someone
+             between houses updates this automatically. -->
+        <article class="house-card" data-house="winter"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="autumn"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="spring"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="summer"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
+      </div>
     </div>
   </section>
 </main>
