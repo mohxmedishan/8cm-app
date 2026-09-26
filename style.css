@@ -446,6 +446,14 @@ h1, h2, h3 {
   margin: 0 0 22px;
 }
 
+/* The by-house bar chart, relocated out of the Directory hero (which
+   now shows the "Directory snapshot" glance panel instead) and into
+   the "By house" section, next to the house cards it summarises. */
+.house-chart-card {
+  max-width: 460px;
+  margin: 0 0 32px;
+}
+
 .bar-row {
   display: grid;
   grid-template-columns: 62px 1fr 24px;

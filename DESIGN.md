@@ -1,4 +1,4 @@
-# 8CM — Design guide (V17.3)
+# 8CM — Design guide (V17.4)
 
 Read this before adding or changing any UI. The goal is that a new page or
 component looks like it was always part of the site. **Don't invent a new
@@ -158,6 +158,11 @@ first button full width, the rest share a row (`.hero-actions`).
   `.hero-mirrored`; it is re-ordered ≤860px).
 - Home title: `.hero-title` display font, 3 lines, `clamp(1.85rem, 8vw, 2.6rem)` on phones.
   Use `<br class="br-wide">` for breaks that should vanish on phones.
+- **Every hero visual is a `.glance-panel` now** (Home, Archives, Houses/Directory)
+  — there's no bare data-viz (bar chart, etc.) sitting directly in a hero anymore.
+  If a page needs to show a chart, it goes in its own section further down (see
+  the by-house bar chart below), and the hero gets a glance panel of shortcut
+  tiles instead.
 
 ### Glance panel — the hero visual (`glance-panels.js`)
 A `.glance-panel` (elevated card, radial sage tint, 18px padding / 14px phone)
@@ -188,6 +193,27 @@ loading state is `.is-loading` (shimmer) removed when data arrives; numbers use
 `setCount()` (animated, respects reduced motion). Icons are inline 24×24 SVG,
 `stroke: currentColor`, width 1.7, round caps/joins — no icon fonts, no emoji.
 Hover: lift 2px, border → tone, arrow nudges. Press: `scale(.985)`.
+
+A tile can be **static** instead of live (a structural fact that never
+changes, e.g. "4 houses") — give it `.is-static` so `initXGlance()` skips it
+when adding `.is-loading`, and hardcode its `.glance-num` straight in the HTML.
+Don't reach for `.is-static` for anything that's actually roster/content data;
+it's only for genuinely fixed facts.
+
+Three panels exist, each `#<name>Glance` with its own `initXGlance()` in
+`glance-panels.js`, all booted from the same `OPTIONAL_MODULES` list in
+`script.js` (each no-ops if its container isn't on the page):
+- **Home** (`#homeGlance`) — "This week" strip + homework / next-event /
+  latest-achievement tiles.
+- **Archives** (`#archivesGlance`) — "Archive snapshot": Subjects, Periods
+  (both read live off today's timetable in `timetable-data.js`), Gallery,
+  Materials.
+- **Houses / Directory** (`#housesGlance`) — "Directory snapshot": Students,
+  Teachers, Houses (`.is-static`, always 4), Guests (filtered from the live
+  student roster). The actual by-house headcount bar chart (`.bar-chart` /
+  `#housesChart`, still rendered by `renderHouseChart()` in `script.js`) moved
+  out of the hero and now sits in a `.house-chart-card` at the top of the
+  "By house" section, right above the house roster cards it summarises.
 
 ### Cards
 `background: var(--bg-elevated)`, `1px solid var(--border)`, radius 6px,

@@ -1092,6 +1092,7 @@ const OPTIONAL_MODULES = [
   ["manage page", "./manage.js", "initManagePage"],
   ["home glance", "./glance-panels.js", "initHomeGlance"],
   ["archives glance", "./glance-panels.js", "initArchivesGlance"],
+  ["houses glance", "./glance-panels.js", "initHousesGlance"],
   ["theme", "./theme.js", "initThemeUI"],
 ];
 

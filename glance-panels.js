@@ -10,8 +10,10 @@
 //             to jump to the item, or pick from a small list when there
 //             are several), a homework tile, a next-event countdown
 //             tile, and the latest achievement.
-//   Archives  "Archive snapshot" — students / teachers / photos /
+//   Archives  "Archive snapshot" — subjects / periods / photos /
 //             materials counts, each a shortcut to its section.
+//   Directory "Directory snapshot" — students / teachers / houses /
+//             guests counts, each a shortcut to its section.
 //
 // Markup lives in index.html / archives.html; styling in style.css
 // (V17.1 section, ".glance-*"). Each initializer no-ops if its
@@ -349,19 +351,22 @@ export function initArchivesGlance() {
 
   const count = (id) => (list) => setCount($(id), Array.isArray(list) ? list.length : 0);
 
-  import("./students.js")
+  // Subjects taught across the week, and how many periods are on
+  // today's grid — both read straight from the schedule in
+  // timetable-data.js, never typed in here.
+  import("./timetable-data.js")
     .then((m) => {
-      m.onLiveStudents(count("glanceStudents")); // live only — no seed number first
-      m.loadStudents().catch(() => {});
+      setCount($("glanceSubjects"), m.allSubjects().length);
+      const today = m.todayKey();
+      const periods = m.isSchoolDay(today)
+        ? m.getDaySchedule(today).filter((p) => p.category !== "break").length
+        : 0;
+      setCount($("glancePeriods"), periods);
     })
-    .catch(() => setWord($("glanceStudents"), "–", { empty: true }));
-
-  import("./teachers-data.js")
-    .then((m) => {
-      m.onTeachers(count("glanceTeachers"));
-      m.loadTeachers().catch(() => {});
-    })
-    .catch(() => setWord($("glanceTeachers"), "–", { empty: true }));
+    .catch(() => {
+      setWord($("glanceSubjects"), "–", { empty: true });
+      setWord($("glancePeriods"), "–", { empty: true });
+    });
 
   import("./gallery.js")
     .then((m) => m.onGallery(count("glanceGallery")))
@@ -370,4 +375,36 @@ export function initArchivesGlance() {
   import("./archive-materials.js")
     .then((m) => m.onArchiveMaterials(count("glanceMaterials")))
     .catch(() => setWord($("glanceMaterials"), "–", { empty: true }));
+}
+
+// ============================================
+// Directory (houses.html) — "Directory snapshot"
+// ============================================
+export function initHousesGlance() {
+  const panel = $("housesGlance");
+  if (!panel) return;
+  panel.querySelectorAll(".glance-tile:not(.is-static)").forEach((t) => t.classList.add("is-loading"));
+
+  const count = (id) => (list) => setCount($(id), Array.isArray(list) ? list.length : 0);
+
+  import("./students.js")
+    .then((m) => {
+      m.onLiveStudents((list) => {
+        const students = Array.isArray(list) ? list : [];
+        setCount($("glanceDirStudents"), students.length);
+        setCount($("glanceDirGuests"), students.filter((s) => s.guest).length);
+      });
+      m.loadStudents().catch(() => {});
+    })
+    .catch(() => {
+      setWord($("glanceDirStudents"), "–", { empty: true });
+      setWord($("glanceDirGuests"), "–", { empty: true });
+    });
+
+  import("./teachers-data.js")
+    .then((m) => {
+      m.onTeachers(count("glanceDirTeachers"));
+      m.loadTeachers().catch(() => {});
+    })
+    .catch(() => setWord($("glanceDirTeachers"), "–", { empty: true }));
 }

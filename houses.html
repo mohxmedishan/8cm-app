@@ -143,24 +143,47 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
 </nav>
 
 <main id="main">
-  <!-- Mirrored hero: the headcount graph sits on the left, the title,
-       description and Dashboard link on the right (the opposite of
-       Archives, whose text sits left). DOM order is visual-then-text;
-       .hero-mirrored flips the column widths. -->
+  <!-- Mirrored hero: the "Directory snapshot" glance panel sits on the
+       left, the title, description and Dashboard link on the right
+       (the opposite of Archives, whose text sits left). DOM order is
+       visual-then-text; .hero-mirrored flips the column widths.
+       The by-house headcount bar chart used to live here — it's now
+       down in the "By house" section, next to the house cards it
+       matches. See DESIGN.md → "Glance panel". -->
   <section class="page-hero hero hero-mirrored">
     <div class="section-inner hero-grid">
-      <div class="hero-visual">
-        <p class="hero-visual-label">Houses, by headcount</p>
-        <!-- Counts and bar widths are filled in by renderHouseChart()
-             in script.js from the real student roster — never typed
-             in here. -->
-        <div class="bar-chart is-loading" id="housesChart" aria-busy="true">
-          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
-          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+      <aside class="hero-visual glance-panel glance-houses" id="housesGlance" aria-label="Directory snapshot">
+        <div class="glance-head">
+          <p class="glance-kicker"><span class="glance-live" aria-hidden="true"></span>Directory snapshot</p>
+          <p class="glance-date">Tap to jump</p>
         </div>
-      </div>
+        <div class="glance-tiles glance-tiles-2x2">
+          <a href="#students" class="glance-tile" style="--tone: var(--accent)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8M17.5 14.2A5 5 0 0 1 20.5 19"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirStudents">–</span>
+            <span class="glance-tile-label">Students</span>
+            <span class="glance-tile-note">in the class</span>
+          </a>
+          <a href="#teachers" class="glance-tile" style="--tone: var(--house-winter)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l9-3.5 9 3.5-9 3.5-9-3.5z"/><path d="M7 9v5c0 1.4 2.2 2.8 5 2.8s5-1.4 5-2.8V9"/><path d="M21 7v6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirTeachers">–</span>
+            <span class="glance-tile-label">Teachers</span>
+            <span class="glance-tile-note">teaching 8CM</span>
+          </a>
+          <a href="#house-students" class="glance-tile is-static" style="--tone: var(--house-summer)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num">4</span>
+            <span class="glance-tile-label">Houses</span>
+            <span class="glance-tile-note">Winter, Autumn, Spring, Summer</span>
+          </a>
+          <a href="#students" class="glance-tile" style="--tone: var(--house-autumn)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M18 8v6M15 11h6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirGuests">–</span>
+            <span class="glance-tile-label">Guests</span>
+            <span class="glance-tile-note">joining the class</span>
+          </a>
+        </div>
+      </aside>
       <div class="hero-text hero-text-right">
         <a href="index.html" class="back-to-dashboard">Dashboard →</a>
         <div class="section-head">
@@ -229,6 +252,18 @@ d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-pre
       <div class="section-head">
         <h2>Who's in each house</h2>
         <p class="section-sub">Tap a name to open their profile.</p>
+      </div>
+      <div class="hero-visual house-chart-card">
+        <p class="hero-visual-label">Houses, by headcount</p>
+        <!-- Counts and bar widths are filled in by renderHouseChart()
+             in script.js from the real student roster — never typed
+             in here. -->
+        <div class="bar-chart is-loading" id="housesChart" aria-busy="true">
+          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+        </div>
       </div>
       <div class="house-grid">
         <!-- house-count and the student list below it are filled in by
