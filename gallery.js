@@ -19,14 +19,17 @@ const $ = (id) => document.getElementById(id);
 // on names, order and files are plain editable data. A photo saved with no
 // title is captioned from its file name (titleFromUrl), so renaming or
 // swapping a file keeps the caption honest without touching any code.
+// Filenames are unchanged from the old local assets/gallery/ path —
+// only the host moved, to the dedicated 8cm-assets repo via jsDelivr.
+const ASSETS_CDN = "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/";
 const SEED_GALLERY = [
-  { url: "assets/gallery/5cm-motion-gate.jpg", title: "5CM Field Trip · Motion Gate", album: "Trips" },
-  { url: "assets/gallery/6cm-warner-bros.jpg", title: "6CM Field Trip · Warner Bros", album: "Trips" },
-  { url: "assets/gallery/7cm-assembly-1.jpg", title: "7CM Assembly", album: "Assemblies" },
-  { url: "assets/gallery/7cm-assembly-2.jpg", title: "7CM Assembly · II", album: "Assemblies" },
-  { url: "assets/gallery/7cm-english-1.jpg", title: "7CM English", album: "Classes" },
-  { url: "assets/gallery/7cm-english-2.jpg", title: "7CM English · II", album: "Classes" },
-  { url: "assets/gallery/7cm-field-trip-garvit.jpg", title: "7CM Field Trip", album: "Trips" },
+  { url: ASSETS_CDN + "5cm-motion-gate.jpg", title: "5CM Field Trip · Motion Gate", album: "Trips" },
+  { url: ASSETS_CDN + "6cm-warner-bros.jpg", title: "6CM Field Trip · Warner Bros", album: "Trips" },
+  { url: ASSETS_CDN + "7cm-assembly-1.jpg", title: "7CM Assembly", album: "Assemblies" },
+  { url: ASSETS_CDN + "7cm-assembly-2.jpg", title: "7CM Assembly · II", album: "Assemblies" },
+  { url: ASSETS_CDN + "7cm-english-1.jpg", title: "7CM English", album: "Classes" },
+  { url: ASSETS_CDN + "7cm-english-2.jpg", title: "7CM English · II", album: "Classes" },
+  { url: ASSETS_CDN + "7cm-field-trip-garvit.jpg", title: "7CM Field Trip", album: "Trips" },
 ];
 
 let cache = null;

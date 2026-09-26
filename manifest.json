@@ -7,13 +7,13 @@
   "theme_color": "#16171a",
   "icons": [
     {
-      "src": "assets/cm-icon-192.png",
+      "src": "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/cm-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "assets/cm-icon-512.png",
+      "src": "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/cm-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

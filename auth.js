@@ -23,6 +23,8 @@ import {
   setDoc,
   deleteDoc,
   collection,
+  query,
+  where,
   runTransaction,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -308,6 +310,67 @@ function getCachedClaim(uid) {
   }
 }
 
+// ------------------------------------------------
+// Claim-mirror reconciliation (users/{uid} ← claims/{studentId})
+// ------------------------------------------------
+// claims/{studentId} is the authoritative record of who owns a
+// student identity; claimedStudentId/claimedStudentName on
+// users/{uid} are just a cached mirror of that fact, written once at
+// claim time (see claimTransaction). If the mirror is ever lost —
+// the users/{uid} doc gets deleted and recreated bare, a write
+// partially fails, a doc is hand-edited in the console — the account
+// still shows up as "unclaimed" even though its claims/{id} doc (and
+// therefore its actual ownership of that student) is untouched. Since
+// recreating users/{uid} doesn't touch claims/, and the local
+// claim-cache in localStorage is browser-specific and doesn't survive
+// a new device/browser, neither of those recovers the mirror on their
+// own. This runs on every sign-in (both Google and email/password —
+// they share the one onAuthStateChanged listener below) and repairs
+// the mirror straight from the source of truth whenever it's missing.
+async function findClaimForUid(uid) {
+  const snap = await getDocs(query(collection(db, "claims"), where("uid", "==", uid)));
+  if (snap.empty) return null;
+  if (snap.size > 1) {
+    // Shouldn't happen — firestore.rules only lets a claims/{id} doc's
+    // uid be set to request.auth.uid on create, and switchStudentIdentity
+    // always releases the old claim in the same transaction as claiming
+    // the new one — but if it ever does, don't guess: surface it instead
+    // of silently picking one and hiding a data problem.
+    console.error(`Data anomaly: uid ${uid} owns ${snap.size} claims/ docs`, snap.docs.map((d) => d.id));
+  }
+  const claimDoc = snap.docs[0];
+  return { studentId: claimDoc.id, studentName: claimDoc.data().studentName || "" };
+}
+
+/**
+ * If `profile` is missing its claimedStudentId, checks claims/ for a
+ * doc that already names this uid as owner and, if found, merges it
+ * back onto users/{uid} (and returns the repaired profile object).
+ * Returns null when there's nothing to reconcile (no orphaned claim)
+ * or the check itself fails (offline, transient permission error —
+ * logged, not thrown, so a lookup hiccup never blocks sign-in).
+ */
+async function reconcileClaimMirror(uid, profile) {
+  if (profile && profile.claimedStudentId) return null;
+  try {
+    const found = await findClaimForUid(uid);
+    if (!found) return null;
+    await setDoc(
+      profileRef(uid),
+      {
+        claimedStudentId: found.studentId,
+        claimedStudentName: found.studentName,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    return { ...(profile || {}), claimedStudentId: found.studentId, claimedStudentName: found.studentName };
+  } catch (err) {
+    console.error("Failed to reconcile claim mirror from claims/:", err);
+    return null;
+  }
+}
+
 // Creates a bare profile doc right after signup/first Google sign-in,
 // before identity claiming happens. Safe to call repeatedly.
 export async function ensureProfileDoc(user) {
@@ -514,9 +577,19 @@ function startFirebaseAuthListener() {
     }
 
     if (!profile || !profile.claimedStudentId) {
-      const cached = getCachedClaim(user.uid);
-      if (cached) {
-        profile = { ...(profile || {}), claimedStudentId: cached.id, claimedStudentName: cached.name };
+      // Authoritative check first: does claims/ already say this uid
+      // owns a student? If so, that beats anything else, because it
+      // means the mirror on users/{uid} is what's wrong, not the
+      // claim itself. Only fall back to the local same-browser cache
+      // when claims/ genuinely has nothing for this uid.
+      const reconciled = await reconcileClaimMirror(user.uid, profile);
+      if (reconciled) {
+        profile = reconciled;
+      } else {
+        const cached = getCachedClaim(user.uid);
+        if (cached) {
+          profile = { ...(profile || {}), claimedStudentId: cached.id, claimedStudentName: cached.name };
+        }
       }
     }
     if (profile && profile.claimedStudentId) {

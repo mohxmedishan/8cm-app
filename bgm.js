@@ -50,7 +50,11 @@
 // ================================================================
 
 const BGM_CONFIG = {
-  audioDir: "assets/audio/",
+  // Tracks used to live in this repo at assets/audio/; they've since
+  // been moved to the dedicated 8cm-assets repo and are now served
+  // through jsDelivr's CDN instead. Filenames are unchanged, so only
+  // the base URL needed to move.
+  audioDir: "https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/",
   tracks: [
     { file: "Taswell.mp3", title: "Taswell", startAt: 4.5 },
     { file: "AriaMath.mp3", title: "Aria Math", startAt: 0 },
