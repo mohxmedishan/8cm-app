@@ -33,9 +33,10 @@ import {
 import {
   PITCH_POSITIONS, POSITION_GROUPS, PITCH_ENDS, CLUBS, DEFAULT_FORMATION,
   escapeHtml, otherEnd, newPlayerId, parseFormation, isValidFormation, formationSlots,
-  defaultCodeForSlot, retargetFormation, normalizePosition, OUTFIELD, matchKey, performanceId,
+  defaultCodeForSlot, retargetFormation, normalizePosition, MIN_OUTFIELD, MAX_OUTFIELD, formationTotal, placeStudent, matchKey, performanceId,
 } from "./football-data.js";
 import { getPitchState, setMatchEditMode, pitchMarkup } from "./football.js";
+import { getStudentsSync, loadStudents } from "./students.js";
 
 const $ = (id) => document.getElementById(id);
 const MAX_PLAYERS = 16;
@@ -299,6 +300,7 @@ function cleanTeam(t) {
       name: p.name,
       position: normalizePosition(p.position),
       slot: p.slot != null && validSlots.has(Number(p.slot)) ? Number(p.slot) : null,
+      studentId: p.studentId || null,
     })),
   };
 }
@@ -316,6 +318,51 @@ function positionOptions(selected) {
 const FLIP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 4 7l4 4"/><path d="M4 7h9a5 5 0 0 1 5 5v1"/><path d="M16 21l4-4-4-4"/><path d="M20 17h-9a5 5 0 0 1-5-5v-1"/></svg>`;
 
 let previewFlipped = false;
+
+// ------------------------------------------------
+// Picking players from the class list
+// ------------------------------------------------
+// Each spot is a dropdown of the class roster, not a free-text box.
+// A student on one team doesn't appear in the other team's dropdowns,
+// and picking someone who is already in this line-up moves them to the
+// new spot (see placeStudent in football-data.js).
+function roster() {
+  return getStudentsSync().filter((s) => s && s.active !== false);
+}
+
+// Which student a player is: the saved link, or — for line-ups saved
+// before this existed — a name that matches the roster.
+function claimOf(p) {
+  if (!p || !String(p.name || "").trim()) return null;
+  if (p.studentId) return p.studentId;
+  const n = String(p.name).trim().toLowerCase();
+  const s = roster().find((x) => String(x.name).trim().toLowerCase() === n);
+  return s ? s.id : null;
+}
+
+function claimedByOtherTeam() {
+  const other = draft[activeTeam === "red" ? "blue" : "red"];
+  return new Set((other.players || []).map(claimOf).filter(Boolean));
+}
+
+function nameSelect(t, p, emptyLabel, aria) {
+  const mine = claimOf(p);
+  const hasName = !!(p && String(p.name || "").trim());
+  const taken = claimedByOtherTeam();
+  const placed = new Map();
+  (t.players || []).forEach((x) => { const k = claimOf(x); if (k) placed.set(k, x); });
+  const opts = roster()
+    .filter((s) => !taken.has(s.id) || s.id === mine)
+    .map((s) => {
+      const at = placed.get(s.id);
+      const note = at && at !== p ? ` — ${at.slot == null ? "Sub" : at.position}` : "";
+      const label = `${s.name}${s.guest ? " (Guest)" : ""}${note}`;
+      return `<option value="${escapeHtml(s.id)}"${s.id === mine ? " selected" : ""}>${escapeHtml(label)}</option>`;
+    }).join("");
+  const legacy = hasName && !mine ? `<option value="__legacy" selected>${escapeHtml(p.name)}</option>` : "";
+  return `<select class="pe-name" data-f="player" aria-label="${escapeHtml(aria)}">
+    <option value=""${hasName ? "" : " selected"}>${escapeHtml(emptyLabel)}</option>${legacy}${opts}</select>`;
+}
 
 function slotPlayer(team, slot) {
   return (team.players || []).find((p) => p.slot === slot) || null;
@@ -345,8 +392,7 @@ function playerRowsFormation(t) {
     }
     const p = slotPlayer(t, s.slot);
     html += `<li class="pe-row" data-slot="${s.slot}">
-      <input type="text" class="pe-name" data-f="name" maxlength="30" autocomplete="off" placeholder="Player name"
-        aria-label="${escapeHtml(s.code)} player name" value="${escapeHtml(p ? p.name : "")}">
+      ${nameSelect(t, p, "— Empty —", `${s.code} player`)}
       <select class="pe-pos" data-f="pos" aria-label="Position">${positionOptions(p ? p.position : s.code)}</select>
     </li>`;
   });
@@ -355,7 +401,7 @@ function playerRowsFormation(t) {
 
 function extraRow(p) {
   return `<li class="pe-row pe-row-extra" data-pid="${escapeHtml(p.id)}">
-    <input type="text" class="pe-name" data-f="name" maxlength="30" autocomplete="off" placeholder="Player name" aria-label="Player name" value="${escapeHtml(p.name)}">
+    ${nameSelect(draft[activeTeam], p, "— Choose player —", "Substitute")}
     <select class="pe-pos" data-f="pos" aria-label="Position">${positionOptions(p.position)}</select>
     <button type="button" class="task-icon-btn task-icon-btn-danger pe-remove" data-act="remove" aria-label="Remove player">✕</button>
   </li>`;
@@ -366,7 +412,7 @@ function playersSection(t) {
   const full = total >= MAX_PLAYERS;
   const subs = (t.players || []).filter((p) => p.slot == null);
   return `
-    <p class="pe-label">Line-up <span class="pe-hint">Leave a spot empty if nobody is playing there.</span></p>
+    <p class="pe-label">Line-up <span class="pe-hint">Pick from the class list. Leave a spot empty if nobody is playing there. Someone already on the other team won't show up; picking someone already in this line-up moves them here.</span></p>
     <ul class="pe-rows" id="peRows">${playerRowsFormation(t)}</ul>
     <p class="pe-label pe-label-subs">Substitutes</p>
     <ul class="pe-rows" id="peSubs">${subs.map(extraRow).join("")}</ul>
@@ -374,7 +420,11 @@ function playersSection(t) {
 }
 
 // The monitor types "D-M-F" or "D-M-M-F" (2 to 4 numbers, GK not
-// included) and it's validated live against OUTFIELD (10) below.
+// included) and it's validated live: any total from MIN_OUTFIELD to
+// MAX_OUTFIELD (2–10) is fine, so short-handed days work.
+const formationOkText = (f) => `✓ ${formationTotal(f)} + GK`;
+const formationBadText = () => `Add up to ${MIN_OUTFIELD}–${MAX_OUTFIELD}`;
+
 function formationFieldMarkup(t) {
   const ok = isValidFormation(t.formation);
   return `
@@ -382,9 +432,9 @@ function formationFieldMarkup(t) {
       <input type="text" class="pe-formation-input" id="peFormationInput" inputmode="numeric"
         autocomplete="off" maxlength="9" placeholder="e.g. 4-3-3" value="${escapeHtml(t.formation)}"
         aria-label="Formation" aria-invalid="${ok ? "false" : "true"}">
-      <span class="pe-formation-status${ok ? " is-ok" : " is-bad"}">${ok ? "✓" : `Add up to ${OUTFIELD}`}</span>
+      <span class="pe-formation-status${ok ? " is-ok" : " is-bad"}">${ok ? formationOkText(t.formation) : formationBadText()}</span>
     </div>
-    <p class="pe-hint pe-formation-hint">2–4 numbers (defence first, attack last), keeper not counted, adding up to ${OUTFIELD}. Positions — CB, CDM, CAM, CF and so on — fill in on their own from the shape.</p>`;
+    <p class="pe-hint pe-formation-hint">2–4 numbers (defence first, attack last), keeper not counted, adding up to anywhere from ${MIN_OUTFIELD} to ${MAX_OUTFIELD} — so a short-handed day is just a smaller shape, like 3-2-1 or 2-2. Positions — CB, CDM, CAM, CF and so on — fill in on their own from the shape.</p>`;
 }
 
 function renderTeamBody() {
@@ -507,15 +557,6 @@ function onBodyInput(e) {
     updateFooter();
     return;
   }
-  if (f === "name") {
-    const ctx = rowContext(e.target);
-    if (!ctx) return;
-    const p = ctx.get();
-    if (!p && !e.target.value.trim()) return;
-    ctx.ensure().name = e.target.value;
-    refreshPreview();
-    return;
-  }
   if (e.target.id === "peFormationInput") {
     const ok = isValidFormation(e.target.value);
     e.target.setAttribute("aria-invalid", ok ? "false" : "true");
@@ -523,7 +564,7 @@ function onBodyInput(e) {
     if (status) {
       status.classList.toggle("is-ok", ok);
       status.classList.toggle("is-bad", !ok);
-      status.textContent = ok ? "✓" : `Add up to ${OUTFIELD}`;
+      status.textContent = ok ? formationOkText(e.target.value) : formationBadText();
     }
   }
 }
@@ -539,6 +580,10 @@ function onBodyChange(e) {
     refreshPreview();
     return;
   }
+  if (f === "player") {
+    choosePlayer(e.target);
+    return;
+  }
   if (f === "pos") {
     const ctx = rowContext(e.target);
     if (!ctx) return;
@@ -551,6 +596,30 @@ function onBodyChange(e) {
     if (isValidFormation(val)) setFormation(val);
     else e.target.value = t.formation; // snap back to the last valid shape
   }
+}
+
+function choosePlayer(el) {
+  const t = draft[activeTeam];
+  const row = el.closest(".pe-row");
+  if (!row) return;
+  const value = el.value;
+  const target = row.dataset.slot !== undefined ? { slot: Number(row.dataset.slot) } : { pid: row.dataset.pid };
+  const here = target.slot != null ? slotPlayer(t, target.slot) : t.players.find((x) => x.id === target.pid);
+
+  if (value === "__legacy") return; // the old typed name, unchanged
+  if (!value) {
+    if (here) t.players = t.players.filter((x) => x !== here);
+  } else {
+    const student = roster().find((s) => s.id === value);
+    if (!student || claimedByOtherTeam().has(student.id)) {
+      $("pePlayers").innerHTML = playersSection(t); // taken or gone: put the list back
+      return;
+    }
+    t.players = placeStudent(t.players, t.formation, target, student, claimOf);
+  }
+  playClick();
+  $("pePlayers").innerHTML = playersSection(t);
+  refreshPreview();
 }
 
 function setFormation(next) {
@@ -609,6 +678,10 @@ function openTeamDialog() {
   setTeamError(null);
   renderTeamBody();
   openOverlay(overlay, overlay.querySelector(".pe-tab.is-active"));
+  // The roster may still be on its built-in list; refresh the dropdowns when the live one lands.
+  loadStudents().then(() => {
+    if (draft && !teamOverlay.hidden && $("pePlayers")) $("pePlayers").innerHTML = playersSection(draft[activeTeam]);
+  }).catch(() => {});
 }
 
 function requestCloseTeams() {

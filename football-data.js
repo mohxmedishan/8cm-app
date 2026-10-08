@@ -94,13 +94,17 @@ const OLD_DEFAULT_NAMES = { red: "red", blue: "blue" };
 // ------------------------------------------------
 // A monitor types any formation as "D-M-F" or "D-M-M-F" (2 to 4
 // numbers) — the classic outfield shape, GK not included. It has to
-// add up to OUTFIELD (10, i.e. 10 outfield players + 1 keeper = 11 a
-// side) or it's rejected. Positions are assigned automatically: the
+// add up to anything from MIN_OUTFIELD to MAX_OUTFIELD (2–10 outfield
+// players; 10 + 1 keeper = a full 11 a side) — some Fridays the teams
+// are short, so a 3-2-1 or a 2-2 is just as valid as a 4-3-3. Anything
+// outside that range is rejected. Positions are assigned automatically: the
 // first line is defence, the last is attack, and anything in between
 // is midfield (split into defensive/attacking mid once there's more
 // than one middle line) — so the monitor never has to say "this one's
 // a CDM", the formation says it for them.
-export const OUTFIELD = 10;
+export const MIN_OUTFIELD = 2;
+export const MAX_OUTFIELD = 10;
+export const OUTFIELD = MAX_OUTFIELD; // kept so older imports keep working
 export const MIN_LINES = 2;
 export const MAX_LINES = 4;
 export const MAX_PER_LINE = 6;
@@ -113,8 +117,15 @@ export function parseFormation(str) {
   const lines = trimmed.split("-").map((n) => parseInt(n, 10));
   if (lines.length < MIN_LINES || lines.length > MAX_LINES) return null;
   if (lines.some((n) => !Number.isInteger(n) || n < 1 || n > MAX_PER_LINE)) return null;
-  if (lines.reduce((a, b) => a + b, 0) !== OUTFIELD) return null;
+  const total = lines.reduce((a, b) => a + b, 0);
+  if (total < MIN_OUTFIELD || total > MAX_OUTFIELD) return null;
   return lines;
+}
+
+/** Outfield players in a formation (keeper not counted); 0 if invalid. */
+export function formationTotal(str) {
+  const lines = parseFormation(str);
+  return lines ? lines.reduce((a, b) => a + b, 0) : 0;
 }
 
 export function isValidFormation(str) {
@@ -241,6 +252,7 @@ export function resolveTeam(id, data) {
       name: String(p.name || ""),
       position: normalizePosition(p.position),
       slot: p.slot == null || p.slot === "" ? null : Number(p.slot),
+      studentId: p.studentId || null,
     }));
   return merged;
 }
@@ -261,6 +273,61 @@ export function retargetFormation(players, fromFormation, toFormation) {
     const newDefault = defaultCodeForSlot(toFormation, p.slot);
     return { ...p, position: normalizePosition(p.position) === oldDefault ? newDefault : p.position };
   });
+}
+
+/**
+ * A monitor picks a class member for a spot in one team's line-up.
+ *   target  { slot: n }  a place on the pitch (0 = keeper), or
+ *           { pid: id }  a substitute row
+ *   student { id, name }
+ *   claimOf (player) → the student id that player is, or null
+ * Returns a new players array; the original is left alone.
+ *
+ * If that student is already somewhere else in this team they MOVE to
+ * the spot (they are never listed twice), and whoever was standing in
+ * the spot swaps into the place they left — so nobody is lost.
+ * Otherwise the student replaces whoever was in the spot.
+ */
+export function placeStudent(players, formation, target, student, claimOf) {
+  const list = players.map((p) => ({ ...p }));
+  const named = (p) => !!String(p.name || "").trim();
+  const toSlot = target.slot != null ? Number(target.slot) : null;
+  const here = toSlot != null
+    ? list.find((p) => p.slot != null && Number(p.slot) === toSlot)
+    : list.find((p) => p.id === target.pid);
+  const slotOf = (p) => (p.slot == null ? null : Number(p.slot));
+
+  // Position follows the spot, unless a monitor picked it by hand.
+  const reposition = (p, from, to) => {
+    if (to == null) return p.position;
+    const next = defaultCodeForSlot(formation, to);
+    if (from == null) return normalizePosition(p.position) === "CM" ? next : p.position;
+    return normalizePosition(p.position) === defaultCodeForSlot(formation, from) ? next : p.position;
+  };
+
+  const existing = list.find((p) => p !== here && named(p) && claimOf(p) === student.id);
+  if (existing) {
+    const from = slotOf(existing);
+    existing.position = reposition(existing, from, toSlot);
+    existing.slot = toSlot;
+    if (here && named(here)) {
+      here.position = reposition(here, slotOf(here), from);
+      here.slot = from;
+      return list;
+    }
+    return here ? list.filter((p) => p !== here) : list;
+  }
+
+  const fresh = {
+    id: student.id,
+    studentId: student.id,
+    name: student.name,
+    position: here ? here.position : (toSlot != null ? defaultCodeForSlot(formation, toSlot) : "CM"),
+    slot: toSlot,
+  };
+  if (here) return list.map((p) => (p === here ? fresh : p));
+  list.push(fresh);
+  return list;
 }
 
 /** Put unplaced players into empty slots of `formation`, best match first. */
@@ -317,7 +384,7 @@ export function formatMatchDate(iso) {
 //   pitchPerformances/{YYYY-MM-DD_playerId}
 //   { playerId, playerName, team, position, date, stats, points,
 //     loggedBy, loggedByName, createdAtMs, updatedAtMs }
-// stats = { goals, assists, saves, mvp, ownGoal }
+// stats = { goals, assists, saves, mvp, ownGoal, clown }
 //
 // WHY THESE NUMBERS:
 //  - Goal 5, assist 2, save 3 — a goal is worth more than an assist
@@ -329,7 +396,9 @@ export function formatMatchDate(iso) {
 //  - MVP is worth the most single thing (+10): it's the match's own
 //    call on who had the best game, stats aside.
 //  - An own goal doesn't cost points — bad enough without a penalty
-//    too — it just means that match's "Clowned 🤡" spot is taken.
+//    too — and neither does being a clown. "Clown" is its own flag,
+//    separate from an own goal (you can clown without scoring one);
+//    it's what takes that match's "Clowned 🤡" spot.
 // ============================================
 export const SCORING = {
   goal: 5,
@@ -345,7 +414,7 @@ export const STAT_LIMITS = { goals: 12, assists: 12, saves: 20 };
 
 /** A blank stat line. */
 export function emptyStats() {
-  return { goals: 0, assists: 0, saves: 0, mvp: false, ownGoal: false };
+  return { goals: 0, assists: 0, saves: 0, mvp: false, ownGoal: false, clown: false };
 }
 
 /** Anything (Firestore data, a half-filled form) → a clean, in-range stat line. */
@@ -358,6 +427,8 @@ export function normalizeStats(raw) {
   return {
     goals: num("goals"), assists: num("assists"), saves: num("saves"),
     mvp: r.mvp === true, ownGoal: r.ownGoal === true,
+    // Older records have no clown flag — an own goal there was the clown.
+    clown: r.clown === undefined ? r.ownGoal === true : r.clown === true,
   };
 }
 
@@ -384,7 +455,7 @@ export function scorePerformance(stats) {
 /**
  * One match's board: every performance logged for `date`, ranked by
  * points (ties: goals, then assists, then saves, then name). Also
- * picks out the match MVP and the match's "clown" (an own goal),
+ * picks out the match MVP and the match's "clown",
  * each at most one — if two people are flagged, the higher scorer
  * (then earlier submission) gets the spot.
  */
@@ -408,7 +479,7 @@ export function matchBoard(performances, date) {
     .filter((r) => test(r))
     .sort((a, b) => b.points - a.points || a.createdAtMs - b.createdAtMs)[0] || null;
 
-  return { top: rows.slice(0, 3), mvp: pick((r) => r.stats.mvp), clown: pick((r) => r.stats.ownGoal), all: rows };
+  return { top: rows.slice(0, 3), mvp: pick((r) => r.stats.mvp), clown: pick((r) => r.stats.clown), all: rows };
 }
 
 // ------------------------------------------------

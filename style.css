@@ -6966,7 +6966,7 @@ html.is-arriving .hub-nav { animation: page-settle 0.13s ease-out; }
 
 
 /* ============================================
-   Last match performance (V17.6) — top 3 + MVP + Clown
+   Last match performance (V17.6, modal redesigned V18) — top 3 + MVP + Clown
    ------------------------------------------------
    Drawn by football-points.js into #pitchLastMatch. Public: everyone
    sees this. Only the most recent match's stats, never a season
@@ -7174,7 +7174,7 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
 .perf-player:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .perf-player-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .perf-player-empty { font-size: 0.86rem; color: var(--text-faint); padding: 6px 2px; }
-.perf-badge { flex-shrink: 0; font-size: 0.7rem; font-weight: 600; padding: 3px 9px; border-radius: 100px; color: var(--text-faint); border: 1px solid var(--border); }
+.perf-badge { flex-shrink: 0; font-variant-numeric: tabular-nums; font-size: 0.7rem; font-weight: 600; padding: 3px 9px; border-radius: 100px; color: var(--text-faint); border: 1px solid var(--border); }
 .perf-badge.is-logged { color: var(--accent-strong); border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: var(--accent-soft); }
 
 /* ---------- dialogs: read-only stats view + monitor editor ---------- */
@@ -7225,7 +7225,7 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
 .perf-stepper button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .perf-stepper output { min-width: 28px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 
-.perf-toggles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.perf-toggles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .perf-toggle {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   min-height: 56px; padding: 8px 6px;
@@ -7243,7 +7243,7 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
 .perf-toggle:active { transform: scale(0.97); }
 .perf-toggle[aria-pressed="true"] .perf-toggle-hint { color: inherit; opacity: 0.8; }
 #perfMvp[aria-pressed="true"] { background: color-mix(in srgb, #e3b448 16%, transparent); border-color: #e3b448; color: #e3b448; }
-#perfOwnGoal[aria-pressed="true"] { background: color-mix(in srgb, var(--house-summer) 16%, transparent); border-color: var(--house-summer); color: var(--house-summer); }
+#perfOwnGoal[aria-pressed="true"], #perfClown[aria-pressed="true"] { background: color-mix(in srgb, var(--house-summer) 16%, transparent); border-color: var(--house-summer); color: var(--house-summer); }
 .perf-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .perf-break { display: flex; flex-direction: column; margin-bottom: 14px; padding: 4px 12px; background: var(--bg-elevated-2); border-radius: var(--radius-m); border: 1px solid var(--border-soft); }
@@ -7407,22 +7407,51 @@ button.podium-slot { border: none; background: none; padding: 0; font: inherit; 
 .lm-score:hover { border-color: var(--accent); }
 .lm-score:active { transform: scale(0.995); }
 .lm-score:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.match-break-head { justify-content: center; }
-.match-break-head > div { text-align: center; }
-.match-break-score { display: flex; align-items: baseline; justify-content: center; gap: 12px; margin: 4px 0 18px; font-family: var(--font-display); font-size: 2rem; font-weight: 700; }
-.match-break-score span { color: var(--text-faint); }
-.match-break-list { display: flex; flex-direction: column; gap: 7px; }
-.match-break-player {
-  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px;
-  border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--bg-elevated-2);
-  color: var(--text); font: inherit; text-align: left; cursor: pointer;
+.match-break-top { text-align: center; padding: 0 28px; margin-bottom: 16px; }
+.match-break-top h3 { margin: 0 0 4px; font-size: 1.1rem; }
+.match-break-date { margin: 0; font-size: 0.78rem; color: var(--text-faint); }
+.match-break-board {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px;
+  padding: 14px 12px; margin-bottom: 18px;
+  background: var(--bg-elevated-2); border: 1px solid var(--border-soft); border-radius: var(--radius-m);
 }
+.match-break-team { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
+.match-break-team > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); }
+.match-break-team.is-win > span { color: var(--text); }
+.match-break-score { display: flex; align-items: baseline; justify-content: center; gap: 10px; font-family: var(--font-display); font-size: 2.2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.match-break-score b { color: var(--text-muted); }
+.match-break-score b.is-winner { color: var(--accent-strong); }
+.match-break-score span { color: var(--text-faint); font-weight: 400; }
+.match-break-label { margin: 0 0 8px 2px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); }
+.match-break-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: clamp(180px, calc(100dvh - 340px), 400px);
+  overflow-y: auto; overscroll-behavior: contain;
+  margin-right: -6px; padding-right: 6px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.match-break-list::-webkit-scrollbar { width: 6px; }
+.match-break-list::-webkit-scrollbar-track { background: transparent; }
+.match-break-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
+.match-break-list::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+.match-break-player {
+  position: relative; flex-shrink: 0;
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px 9px 14px;
+  border: 1px solid var(--border-soft); border-radius: var(--radius-m); background: var(--bg-elevated-2);
+  color: var(--text); font: inherit; text-align: left; cursor: pointer; overflow: hidden;
+  transition: border-color 0.1s var(--ease), background 0.1s var(--ease);
+}
+.match-break-player::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--border); }
+.match-break-player-red::before { background: var(--team-red); }
+.match-break-player-blue::before { background: var(--team-blue); }
 .match-break-player:hover { border-color: var(--accent); }
+.match-break-player:active { background: var(--bg-elevated); }
 .match-break-player:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .match-break-player-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.match-break-player-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-break-player-name { font-weight: 600; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .match-break-player-meta { font-size: 0.72rem; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.match-break-player > b { flex-shrink: 0; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+.match-break-player > b { flex-shrink: 0; display: flex; align-items: baseline; gap: 3px; font-family: var(--font-display); font-size: 1.05rem; color: var(--accent-strong); font-variant-numeric: tabular-nums; }
+.match-break-player > b small { font-family: inherit; font-size: 0.65rem; font-weight: 500; color: var(--text-faint); letter-spacing: 0.04em; }
 .lm-side { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .lm-side-blue { justify-content: flex-end; flex-direction: row-reverse; text-align: right; }
 .lm-team { font-family: var(--font-display); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }

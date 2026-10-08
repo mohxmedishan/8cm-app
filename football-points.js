@@ -141,7 +141,7 @@ function sideCard(kind, row) {
     <div class="side-card-avatar side-card-avatar-${row.team}">${initials(row.name)}</div>
     <p class="side-card-name">${escapeHtml(row.name)}</p>
     <span class="side-card-meta">${crestMarkup(row.team)}${posChip(row.position)}</span>
-    ${kind === "mvp" ? `<span class="side-card-points"><b>${row.points}</b><i>pts</i></span>` : `<span class="side-card-tag">Own goal</span>`}
+    ${kind === "mvp" ? `<span class="side-card-points"><b>${row.points}</b><i>pts</i></span>` : `<span class="side-card-tag">${row.stats.ownGoal ? "Own goal" : "Clowned"}</span>`}
   </button>`;
 }
 
@@ -187,28 +187,30 @@ function openMatchBreakdown(match) {
           row.stats.assists ? `${row.stats.assists} A` : "",
           row.stats.saves ? `${row.stats.saves} S` : "",
           row.stats.mvp ? "★ MVP" : "",
-          row.stats.ownGoal ? "🤡 Own goal" : "",
+          row.stats.ownGoal ? "Own goal" : "",
+          row.stats.clown ? "🤡 Clown" : "",
         ].filter(Boolean).join(" · ");
-        return `<button type="button" class="match-break-player" data-pid="${escapeHtml(row.id)}">
+        return `<button type="button" class="match-break-player match-break-player-${row.team === "blue" ? "blue" : "red"}" data-pid="${escapeHtml(row.id)}">
           <span class="match-break-player-main">
             <span class="match-break-player-name">${escapeHtml(row.name)}</span>
             <span class="match-break-player-meta">${escapeHtml(teamOf(row.team).name)} · ${escapeHtml(row.position || "CM")}${stats ? ` · ${escapeHtml(stats)}` : ""}</span>
           </span>
-          <b>${row.points} pts</b>
+          <b>${row.points}<small>pts</small></b>
         </button>`;
       }).join("")
     : `<p class="perf-break-empty">No player stats have been logged for this match yet.</p>`;
 
   body.innerHTML = `
-    <div class="perf-edit-head match-break-head">
-      ${crestMarkup("red", "lg")}
-      <div>
-        <h3>Match breakdown</h3>
-        <p class="perf-edit-sub"><span>${escapeHtml(formatMatchDate(match.date))} · ${escapeHtml(verdict)}</span></p>
-      </div>
-      ${crestMarkup("blue", "lg")}
+    <div class="match-break-top">
+      <h3>Match breakdown</h3>
+      <p class="match-break-date">${escapeHtml(formatMatchDate(match.date))} · ${escapeHtml(verdict)}</p>
     </div>
-    <div class="match-break-score"><b>${r}</b><span>–</span><b>${b}</b></div>
+    <div class="match-break-board">
+      <div class="match-break-team${r > b ? " is-win" : ""}">${crestMarkup("red", "lg")}<span>${escapeHtml(teamOf("red").name)}</span></div>
+      <div class="match-break-score"><b class="${r > b ? "is-winner" : ""}">${r}</b><span>–</span><b class="${b > r ? "is-winner" : ""}">${b}</b></div>
+      <div class="match-break-team${b > r ? " is-win" : ""}">${crestMarkup("blue", "lg")}<span>${escapeHtml(teamOf("blue").name)}</span></div>
+    </div>
+    ${board.all.length ? `<p class="match-break-label">Players · tap for stats</p>` : ""}
     <div class="match-break-list">${playerRows}</div>`;
 
   lastFocus = document.activeElement;
@@ -331,7 +333,7 @@ function openStatsView(playerId, match) {
       </div>
       <div class="perf-total"><b>${total}</b><i>pts</i></div>
     </div>
-    ${s.mvp || s.ownGoal ? `<div class="perf-view-badges">${s.mvp ? `<span class="perf-flag perf-flag-mvp">★ MVP</span>` : ""}${s.ownGoal ? `<span class="perf-flag perf-flag-clown">🤡 Clowned</span>` : ""}</div>` : ""}
+    ${s.mvp || s.ownGoal || s.clown ? `<div class="perf-view-badges">${s.mvp ? `<span class="perf-flag perf-flag-mvp">★ MVP</span>` : ""}${s.clown ? `<span class="perf-flag perf-flag-clown">🤡 Clowned</span>` : ""}${s.ownGoal ? `<span class="perf-flag">Own goal</span>` : ""}</div>` : ""}
     <div class="perf-break">${breakdownRows(rows)}</div>`;
   lastFocus = document.activeElement;
   overlay.hidden = false;
@@ -364,7 +366,7 @@ function playerRow(p, team, date) {
   return `<button type="button" class="perf-player" data-pid="${escapeHtml(p.id)}" data-team="${escapeHtml(team)}">
     ${posChip(p.position)}
     <span class="perf-player-name">${escapeHtml(p.name)}</span>
-    ${perf ? `<span class="perf-badge is-logged">${pts} pts</span>` : `<span class="perf-badge">Not logged</span>`}
+    <span class="perf-badge${perf ? " is-logged" : ""}">${perf ? pts : 0} pts</span>
   </button>`;
 }
 
@@ -402,7 +404,7 @@ function renderPerformance() {
 }
 
 // ------------------------------------------------
-// Editor — steppers for goals/assists/saves, toggles for MVP/own goal
+// Editor — steppers for goals/assists/saves, toggles for MVP/own goal/clown
 // ------------------------------------------------
 let ed = null; // { playerId, playerName, team, position, date (match key), label, stats, existing }
 
@@ -446,6 +448,8 @@ function paintEditor() {
   if (mvpBtn) mvpBtn.setAttribute("aria-pressed", String(ed.stats.mvp));
   const ogBtn = $("perfOwnGoal");
   if (ogBtn) ogBtn.setAttribute("aria-pressed", String(ed.stats.ownGoal));
+  const clownBtn = $("perfClown");
+  if (clownBtn) clownBtn.setAttribute("aria-pressed", String(ed.stats.clown));
 }
 
 function editorMarkup() {
@@ -469,7 +473,10 @@ function editorMarkup() {
         <span class="perf-toggle-label">MVP</span><span class="perf-toggle-hint">+${SCORING.mvp}</span>
       </button>
       <button type="button" class="perf-toggle" id="perfOwnGoal" data-toggle="ownGoal" aria-pressed="${ed.stats.ownGoal}">
-        <span class="perf-toggle-label">🤡 Own goal</span><span class="perf-toggle-hint">no points — takes the Clown spot</span>
+        <span class="perf-toggle-label">Own goal</span><span class="perf-toggle-hint">no points · also clowns</span>
+      </button>
+      <button type="button" class="perf-toggle" id="perfClown" data-toggle="clown" aria-pressed="${ed.stats.clown}">
+        <span class="perf-toggle-label">🤡 Clown</span><span class="perf-toggle-hint">no points · Clown spot</span>
       </button>
     </div>
     <div class="perf-break" id="perfBreak">${breakdownRows(scorePerformance(ed.stats).rows)}</div>
@@ -587,6 +594,9 @@ function onEditorClick(e) {
   if (toggle) {
     const key = toggle.dataset.toggle;
     ed.stats[key] = !ed.stats[key];
+    // An own goal is always a clown moment; switching it on turns Clown on too
+    // (Clown can still be flipped off, or used alone for a non-own-goal clown).
+    if (key === "ownGoal" && ed.stats.ownGoal) ed.stats.clown = true;
     ed.stats[key] ? playToggleOn() : playToggleOff();
     paintEditor();
     return;

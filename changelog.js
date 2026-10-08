@@ -9,6 +9,23 @@
 // ============================================
 export const changelog = [
   {
+    date: "2026-10-08",
+    version: "18.0.0",
+    items: [
+      "Match breakdown (tap the last-match score card) got a proper redesign: the window now fits its content instead of stretching top to bottom, only the player list scrolls (with a slim scrollbar), and the header is a clean scoreboard with both crests, team names and the score — the winner highlighted. Each player row has a red or blue stripe for their team and a cleaner points readout.",
+      "Clown is its own toggle now. In the performance editor, Own goal and Clown are separate switches — a player can be the match's Clown without scoring an own goal. Switching Own goal on turns Clown on too (you can still switch it off). The Clowned card and breakdown show a Clown badge, plus an Own goal note when there was one. Older logged own goals still count as the Clown.",
+      "Player performance list: every player now shows a single points badge instead of a mix of \"0 pts\" and \"Not logged\". Logged players are highlighted; players not logged yet show a plain, dimmed 0 pts.",
+    ],
+  },
+  {
+    date: "2026-10-08",
+    version: "17.6.1",
+    items: [
+      "Picking players for the Pitch is now a dropdown of the class list instead of typing names. Once someone is on a team they disappear from the other team's dropdowns, so nobody can be on both. Pick someone who's already in the same team's line-up and they move to the new spot (the person who was there swaps into the spot they left) instead of being listed twice.",
+      "Pitch formations now fit any team size. A formation no longer has to add up to exactly 10 — type anything from 2 to 10 outfield players (like 3-2-1 or 2-2 on a short-handed Friday) and the pitch, positions and line-up list adjust to match.",
+    ],
+  },
+  {
     date: "2026-09-24",
     version: "17.6.0",
     items: [
