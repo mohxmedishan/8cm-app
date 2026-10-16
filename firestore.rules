@@ -25,7 +25,7 @@ service cloud.firestore {
     // reason. Comparing lower-cased on both sides matches the client and
     // removes the gap.
     function isMonitorEmail() {
-      return isSignedIn() && request.auth.token.email.lower() in [
+      return isSignedIn() && request.auth.token.email != null && request.auth.token.email.lower() in [
         'mohamedishankunnummal@gmail.com',
         'shahbazshamsudheen713596@gmail.com'
       ];
@@ -69,13 +69,24 @@ service cloud.firestore {
     // its owner — i.e. it came from the atomic claim transaction in
     // auth.js, not a direct profile edit. Two variants because
     // `resource` doesn't exist yet on create.
+    // Claims must point to a real, active roster entry and use its exact
+    // display name. This prevents arbitrary IDs/names being claimed, but
+    // it is not identity verification: a public roster alone cannot prove
+    // that the account belongs to that student. See the security notes.
+    function isValidRosterClaim(studentId, studentName) {
+      return studentId is string && studentName is string &&
+        exists(/databases/$(database)/documents/students/$(studentId)) &&
+        get(/databases/$(database)/documents/students/$(studentId)).data.name == studentName &&
+        (!('active' in get(/databases/$(database)/documents/students/$(studentId)).data) ||
+          get(/databases/$(database)/documents/students/$(studentId)).data.active != false);
+    }
+
     function claimedIdOnCreateIsValid() {
       return !('claimedStudentId' in request.resource.data) &&
              !('claimedStudentName' in request.resource.data) ||
         ('claimedStudentId' in request.resource.data &&
          'claimedStudentName' in request.resource.data &&
-         request.resource.data.claimedStudentId is string &&
-         request.resource.data.claimedStudentName is string &&
+         isValidRosterClaim(request.resource.data.claimedStudentId, request.resource.data.claimedStudentName) &&
          exists(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)) &&
          get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid &&
          get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.studentName == request.resource.data.claimedStudentName);
@@ -83,10 +94,13 @@ service cloud.firestore {
 
     function claimedIdOnUpdateIsValid() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimedStudentId', 'claimedStudentName']) ||
+        // Reconciliation may clear a stale mirror after the authoritative
+        // claim was released. Both fields must be cleared together.
+        (request.resource.data.claimedStudentId == null &&
+         request.resource.data.claimedStudentName == null) ||
         ('claimedStudentId' in request.resource.data &&
          'claimedStudentName' in request.resource.data &&
-         request.resource.data.claimedStudentId is string &&
-         request.resource.data.claimedStudentName is string &&
+         isValidRosterClaim(request.resource.data.claimedStudentId, request.resource.data.claimedStudentName) &&
          exists(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)) &&
          get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid &&
          get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.studentName == request.resource.data.claimedStudentName);
@@ -94,7 +108,7 @@ service cloud.firestore {
 
     function allowedSelfProfileChanges() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'email', 'displayName', 'createdAt', 'claimedStudentId',
+        'email', 'displayName', 'claimedStudentId',
         'claimedStudentName', 'updatedAt', 'theme', 'monitorSeenAt'
       ]);
     }
@@ -195,9 +209,16 @@ service cloud.firestore {
 
       allow create: if isSignedIn() &&
         request.resource.data.uid == request.auth.uid &&
-        request.resource.data.keys().hasOnly(['uid', 'studentName', 'claimedAt']);
+        request.resource.data.keys().hasOnly(['uid', 'studentName', 'claimedAt']) &&
+        isValidRosterClaim(studentId, request.resource.data.studentName);
 
-      allow update: if isMonitor();
+      // A current owner may refresh the name/timestamp for their own claim,
+      // but cannot transfer it to another UID or mutate arbitrary fields.
+      allow update: if isMonitor() ||
+        (isSignedIn() && resource.data.uid == request.auth.uid &&
+         request.resource.data.uid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentName', 'claimedAt']) &&
+         isValidRosterClaim(studentId, request.resource.data.studentName));
 
       allow delete: if isMonitor() ||
         (isSignedIn() && resource.data.uid == request.auth.uid);

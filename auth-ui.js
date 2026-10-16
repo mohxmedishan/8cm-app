@@ -24,7 +24,7 @@ import { syncThemeFromProfile } from "./theme.js";
 import { avatarMarkup, onAvatars, getAvatarForUid } from "./avatars.js";
 
 let mode = "signin"; // "signin" | "signup" | "reset"
-let latestState = { user: null, profile: null, monitor: false };
+let latestState = { user: null, profile: null, monitor: false, identityStatus: "loading" };
 // "initial" = mandatory first-time pick, no way out but signing out.
 // "switch" = the optional, cancelable "Switch student" action from
 // the profile dropdown on an account that's already claimed.
@@ -37,18 +37,6 @@ const escapeHtml = (v) =>
   })[c]);
 
 
-const AUTH_CACHE_KEY = "8cm:lastAuth";
-function readCachedAuth() {
-  try { const r = localStorage.getItem(AUTH_CACHE_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
-}
-function writeCachedAuth(state) {
-  try {
-    if (!state) localStorage.removeItem(AUTH_CACHE_KEY);
-    else localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(state));
-  } catch {}
-}
-
-// ------------------------------------------------
 // Sign in / up / reset modal
 // ------------------------------------------------
 function showAuthModal(startMode) {
@@ -156,20 +144,20 @@ function hideLoading() {
 // a dropped listener can never hang the UI forever.
 function waitForAuthUser(uid, timeoutMs = 6000) {
   return new Promise((resolve) => {
-    if (latestState.user && latestState.user.uid === uid) {
+    if (latestState.user && latestState.user.uid === uid && latestState.identityStatus !== "loading") {
       resolve(latestState);
       return;
     }
     const interval = setInterval(() => {
-      if (latestState.user && latestState.user.uid === uid) {
+      if (latestState.user && latestState.user.uid === uid && latestState.identityStatus !== "loading") {
         finish();
       }
     }, 50);
-    const timer = setTimeout(finish, timeoutMs);
-    function finish() {
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    function finish(matched = true) {
       clearInterval(interval);
       clearTimeout(timer);
-      resolve(latestState);
+      resolve(matched ? latestState : null);
     }
   });
 }
@@ -299,7 +287,12 @@ async function finishAfterAuth(user) {
   try {
     setLoadingStatus("Setting up your profile…");
     await ensureProfileDoc(user);
-    await waitForAuthUser(user.uid);
+    const settledState = await waitForAuthUser(user.uid);
+    if (!settledState || settledState.identityStatus === "loading" || settledState.identityStatus === "error") {
+      const err = new Error("Timed out waiting for the profile to finish syncing.");
+      err.code = "auth/profile-sync-timeout";
+      throw err;
+    }
     hideLoading();
     playSuccess();
     hideAuthModal();
@@ -524,9 +517,19 @@ export function initAuthUI() {
   // account during the mandatory first-time claim. Hidden in "switch"
   // mode, where claimCancelBtn/claimClose below do the equivalent job
   // without signing anyone out.
-  $("claimWrongAccountBtn").addEventListener("click", () => {
-    signOutUser();
-    closeClaimModal();
+  $("claimWrongAccountBtn").addEventListener("click", async () => {
+    const btn = $("claimWrongAccountBtn");
+    btn.disabled = true;
+    try {
+      await signOutUser();
+      closeClaimModal();
+    } catch (err) {
+      console.error("Sign-out failed:", err);
+      $("claimError").hidden = false;
+      $("claimError").textContent = "Couldn't sign out. Check your connection and try again.";
+    } finally {
+      btn.disabled = false;
+    }
   });
   $("claimCancelBtn").addEventListener("click", closeClaimModal);
   $("claimClose").addEventListener("click", closeClaimModal);
@@ -538,23 +541,9 @@ export function initAuthUI() {
       closeClaimModal();
     }
   });
-  const cached = readCachedAuth();
-  if (cached) {
-    latestState = { user: cached.user, profile: cached.profile, monitor: cached.monitor };
-    renderAuthSlot();
-  }
-
   subscribeAuth((state) => {
     latestState = state;
-    if (state.user) {
-      writeCachedAuth({
-        user: { uid: state.user.uid, email: state.user.email, displayName: state.user.displayName },
-        profile: state.profile,
-        monitor: state.monitor,
-      });
-    } else {
-      writeCachedAuth(null);
-    }
+
     renderAuthSlot();
     syncThemeFromProfile(state.user ? state.user.uid : null, state.profile);
 
@@ -576,8 +565,14 @@ export function initAuthUI() {
       }).catch((err) => console.error("Monitor marker setup failed:", err));
     }
 
-    if (state.user && (!state.profile || !state.profile.claimedStudentId)) {
+    if (state.user && state.identityStatus === "ready" && (!state.profile || !state.profile.claimedStudentId)) {
       openClaimModal("initial");
+    } else if (state.user && state.identityStatus === "error") {
+      const error = $("authError");
+      if (error) {
+        error.hidden = false;
+        error.textContent = "You're signed in, but we couldn't verify your student profile. Check your connection and reload before claiming a name.";
+      }
     } else if (claimMode === "initial" && !$("claimOverlay").hidden) {
       closeClaimModal();
     }

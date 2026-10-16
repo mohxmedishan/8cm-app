@@ -272,42 +272,6 @@ async function getProfileWithRetry(uid, attempts = 3, baseDelayMs = 200) {
 }
 
 // ------------------------------------------------
-// Local claim cache
-// ------------------------------------------------
-// A same-browser, per-uid memory of the last claimedStudentId this
-// account successfully claimed. subscribeAuth below treats this as
-// the deciding factor for "has this account already onboarded" any
-// time Firestore doesn't hand back a claim on its own (a slow read,
-// a permission-propagation stall right after sign-in, a dropped
-// retry) — that gap used to mean the picker got shown again on a
-// perfectly normal re-sign-in. A real Firestore claim always takes
-// priority when it's present; this only fills in when it's missing.
-// This is a UI convenience cache only — it is never treated as proof
-// of a claim by anything that grants access to data. The claims/{id}
-// collection in Firestore is the only source of truth for that.
-function claimCacheKey(uid) {
-  return `8cm:claimedStudent:${uid}`;
-}
-
-function cacheClaim(uid, studentId, studentName) {
-  try {
-    localStorage.setItem(claimCacheKey(uid), JSON.stringify({ id: studentId, name: studentName }));
-  } catch (err) {
-    // Private browsing / storage disabled — the cache is a nice-to-have
-    // fallback, not something the app depends on to function.
-  }
-}
-
-function getCachedClaim(uid) {
-  try {
-    const raw = localStorage.getItem(claimCacheKey(uid));
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    return null;
-  }
-}
-
-// ------------------------------------------------
 // Claim-mirror reconciliation (users/{uid} ← claims/{studentId})
 // ------------------------------------------------
 // claims/{studentId} is the authoritative record of who owns a
@@ -328,58 +292,72 @@ async function findClaimForUid(uid) {
   const snap = await getDocs(query(collection(db, "claims"), where("uid", "==", uid)));
   if (snap.empty) return null;
   if (snap.size > 1) {
-    // Shouldn't happen — firestore.rules only lets a claims/{id} doc's
-    // uid be set to request.auth.uid on create, and switchStudentIdentity
-    // always releases the old claim in the same transaction as claiming
-    // the new one — but if it ever does, don't guess: surface it instead
-    // of silently picking one and hiding a data problem.
-    console.error(`Data anomaly: uid ${uid} owns ${snap.size} claims/ docs`, snap.docs.map((d) => d.id));
+    const ids = snap.docs.map((d) => d.id);
+    const err = new Error(`Account ${uid} owns multiple student claims: ${ids.join(", ")}`);
+    err.code = "identity/multiple-claims";
+    throw err;
   }
   const claimDoc = snap.docs[0];
   return { studentId: claimDoc.id, studentName: claimDoc.data().studentName || "" };
 }
 
 /**
- * If `profile` is missing its claimedStudentId, checks claims/ for a
- * doc that already names this uid as owner and, if found, merges it
- * back onto users/{uid} (and returns the repaired profile object).
- * Returns null when there's nothing to reconcile (no orphaned claim)
- * or the check itself fails (offline, transient permission error —
- * logged, not thrown, so a lookup hiccup never blocks sign-in).
+ * Reconciles the profile mirror against claims/, the authoritative source.
+ * Repairs missing or stale mirrors, clears a mirror after a released claim,
+ * and returns an explicit error state when the authoritative check fails.
+ * An unavailable read must never be treated as proof that no claim exists.
  */
 async function reconcileClaimMirror(uid, profile) {
-  if (profile && profile.claimedStudentId) return null;
   try {
     const found = await findClaimForUid(uid);
-    if (!found) return null;
-    await setDoc(
-      profileRef(uid),
-      {
+    if (!found) {
+      // The claims collection is authoritative. A stale profile mirror
+      // must not keep an account linked after its claim has been released.
+      if (profile?.claimedStudentId || profile?.claimedStudentName) {
+        await setDoc(profileRef(uid), {
+          claimedStudentId: null,
+          claimedStudentName: null,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+        return { status: "ready", profile: { ...(profile || {}), claimedStudentId: null, claimedStudentName: null } };
+      }
+      return { status: "ready", profile };
+    }
+
+    if (profile?.claimedStudentId !== found.studentId || profile?.claimedStudentName !== found.studentName) {
+      await setDoc(profileRef(uid), {
         claimedStudentId: found.studentId,
         claimedStudentName: found.studentName,
         updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
-    return { ...(profile || {}), claimedStudentId: found.studentId, claimedStudentName: found.studentName };
+      }, { merge: true });
+    }
+    return {
+      status: "ready",
+      profile: { ...(profile || {}), claimedStudentId: found.studentId, claimedStudentName: found.studentName },
+    };
   } catch (err) {
-    console.error("Failed to reconcile claim mirror from claims/:", err);
-    return null;
+    console.error("Failed to reconcile authoritative student claim:", err);
+    return { status: "error", profile, error: err };
   }
 }
 
 // Creates a bare profile doc right after signup/first Google sign-in,
 // before identity claiming happens. Safe to call repeatedly.
 export async function ensureProfileDoc(user) {
-  await setDoc(
-    profileRef(user.uid),
-    {
-      email: user.email || "",
-      displayName: user.displayName || "",
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const ref = profileRef(user.uid);
+  const existing = await getDoc(ref);
+  const profileFields = {
+    email: user.email || "",
+    displayName: user.displayName || "",
+    updatedAt: serverTimestamp(),
+  };
+  if (existing.exists()) {
+    // Do not reset createdAt on every login; it represents account/profile
+    // creation time, not the most recent sign-in.
+    await setDoc(ref, profileFields, { merge: true });
+  } else {
+    await setDoc(ref, { ...profileFields, createdAt: serverTimestamp() }, { merge: true });
+  }
 }
 
 // ------------------------------------------------
@@ -520,10 +498,11 @@ export async function saveThemePreference(uid, theme) {
 // Fix: keep ONE shared state object and ONE underlying Firebase
 // listener, and broadcast every update — including an in-place claim
 // patch — to every subscriber at once.
-let sharedAuthState = { user: null, profile: null, monitor: false };
+let sharedAuthState = { user: null, profile: null, monitor: false, identityStatus: "loading" };
 let authStateReady = false;
 const authListeners = new Set();
 let firebaseListenerStarted = false;
+let authEventGeneration = 0;
 
 function broadcastAuthState() {
   authListeners.forEach((callback) => {
@@ -543,6 +522,7 @@ function startFirebaseAuthListener() {
   let nullTimer = null;
 
   onAuthStateChanged(auth, async (user) => {
+    const generation = ++authEventGeneration;
     if (nullTimer) { clearTimeout(nullTimer); nullTimer = null; }
 
     if (!user && initial) {
@@ -550,7 +530,7 @@ function startFirebaseAuthListener() {
       nullTimer = setTimeout(() => {
         nullTimer = null;
         if (!auth.currentUser) {
-          sharedAuthState = { user: null, profile: null, monitor: false };
+          sharedAuthState = { user: null, profile: null, monitor: false, identityStatus: "ready" };
           authStateReady = true;
           broadcastAuthState();
         }
@@ -560,41 +540,36 @@ function startFirebaseAuthListener() {
     initial = false;
 
     if (!user) {
-      sharedAuthState = { user: null, profile: null, monitor: false };
+      sharedAuthState = { user: null, profile: null, monitor: false, identityStatus: "ready" };
       authStateReady = true;
       broadcastAuthState();
       return;
     }
 
+    sharedAuthState = { user, profile: null, monitor: false, identityStatus: "loading" };
+    authStateReady = true;
+    broadcastAuthState();
+
     let profile = null;
+    let profileReadFailed = false;
     try {
       profile = await getProfileWithRetry(user.uid);
     } catch (err) {
+      profileReadFailed = true;
       console.error("Failed to load profile after retries:", err);
     }
 
-    if (!profile || !profile.claimedStudentId) {
-      // Authoritative check first: does claims/ already say this uid
-      // owns a student? If so, that beats anything else, because it
-      // means the mirror on users/{uid} is what's wrong, not the
-      // claim itself. Only fall back to the local same-browser cache
-      // when claims/ genuinely has nothing for this uid.
+    let identityStatus = profileReadFailed ? "error" : "ready";
+    if (!profileReadFailed) {
       const reconciled = await reconcileClaimMirror(user.uid, profile);
-      if (reconciled) {
-        profile = reconciled;
-      } else {
-        const cached = getCachedClaim(user.uid);
-        if (cached) {
-          profile = { ...(profile || {}), claimedStudentId: cached.id, claimedStudentName: cached.name };
-        }
-      }
-    }
-    if (profile && profile.claimedStudentId) {
-      cacheClaim(user.uid, profile.claimedStudentId, profile.claimedStudentName);
+      if (generation !== authEventGeneration) return;
+      profile = reconciled.profile;
+      identityStatus = reconciled.status;
     }
 
     const monitor = await computeIsMonitor(user);
-    sharedAuthState = { user, profile, monitor };
+    if (generation !== authEventGeneration) return;
+    sharedAuthState = { user, profile, monitor, identityStatus };
     authStateReady = true;
     broadcastAuthState();
   });
