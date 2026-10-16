@@ -40,16 +40,10 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/monitors/$(request.auth.uid));
     }
 
-    // The ONLY definition of "monitor" anywhere in this project.
-    // Deliberately there is NO admin/monitor boolean field on
-    // users/{uid} — a field like that is exactly what let a student
-    // grant themselves access by editing their own profile doc. Role
-    // lives here, and only here.
-    function isMonitorFlag() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('monitor', false) == true;
-    }
+    // Monitor authority comes only from the bootstrap email allowlist,
+    // a monitors/{uid} role document, or a monitorInvites/{email} invite.
+    // Never trust a role boolean stored in users/{uid}: users can update
+    // their own profile and profile data is not an authorization source.
 
     // Monitor invites: lets an existing monitor grant the role to a
     // Gmail address BEFORE that person has ever signed in — at that
@@ -67,7 +61,7 @@ service cloud.firestore {
     }
 
     function isMonitor() {
-      return isMonitorEmail() || isMonitorDoc() || isMonitorFlag() || isInvitedMonitorEmail();
+      return isMonitorEmail() || isMonitorDoc() || isInvitedMonitorEmail();
     }
 
     // A claimedStudentId written onto a user's own profile is only
@@ -76,15 +70,33 @@ service cloud.firestore {
     // auth.js, not a direct profile edit. Two variants because
     // `resource` doesn't exist yet on create.
     function claimedIdOnCreateIsValid() {
-      return !('claimedStudentId' in request.resource.data) ||
-        (request.resource.data.claimedStudentId is string &&
-         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid);
+      return !('claimedStudentId' in request.resource.data) &&
+             !('claimedStudentName' in request.resource.data) ||
+        ('claimedStudentId' in request.resource.data &&
+         'claimedStudentName' in request.resource.data &&
+         request.resource.data.claimedStudentId is string &&
+         request.resource.data.claimedStudentName is string &&
+         exists(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)) &&
+         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid &&
+         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.studentName == request.resource.data.claimedStudentName);
     }
 
     function claimedIdOnUpdateIsValid() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimedStudentId']) ||
-        (request.resource.data.claimedStudentId is string &&
-         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['claimedStudentId', 'claimedStudentName']) ||
+        ('claimedStudentId' in request.resource.data &&
+         'claimedStudentName' in request.resource.data &&
+         request.resource.data.claimedStudentId is string &&
+         request.resource.data.claimedStudentName is string &&
+         exists(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)) &&
+         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.uid == request.auth.uid &&
+         get(/databases/$(database)/documents/claims/$(request.resource.data.claimedStudentId)).data.studentName == request.resource.data.claimedStudentName);
+    }
+
+    function allowedSelfProfileChanges() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'email', 'displayName', 'createdAt', 'claimedStudentId',
+        'claimedStudentName', 'updatedAt', 'theme', 'monitorSeenAt'
+      ]);
     }
 
     // ================================================================
@@ -124,13 +136,16 @@ service cloud.firestore {
       allow read: if isSignedIn() && (request.auth.uid == uid || isMonitor());
 
       allow create: if isSignedIn() && request.auth.uid == uid &&
-        claimedIdOnCreateIsValid() &&
-        (isMonitor() || !('monitor' in request.resource.data) || request.resource.data.monitor != true);
+        request.resource.data.keys().hasOnly([
+          'email', 'displayName', 'createdAt', 'claimedStudentId',
+          'claimedStudentName', 'updatedAt', 'theme', 'monitorSeenAt'
+        ]) &&
+        claimedIdOnCreateIsValid();
 
-      allow update: if isSignedIn() && (
-        isMonitor() ||
-        (request.auth.uid == uid && claimedIdOnUpdateIsValid())
-      );
+      allow update: if isMonitor() ||
+        (isSignedIn() && request.auth.uid == uid &&
+         allowedSelfProfileChanges() &&
+         claimedIdOnUpdateIsValid());
 
       allow delete: if false;
     }
@@ -212,8 +227,19 @@ service cloud.firestore {
     match /assignmentStatus/{statusId} {
       allow read: if isMonitor() ||
         (isSignedIn() && resource.data.uid == request.auth.uid);
-      allow create, update: if isSignedIn() &&
-        request.resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.assignmentId is string &&
+        statusId == request.auth.uid + '_' + request.resource.data.assignmentId &&
+        request.resource.data.keys().hasOnly(['uid', 'assignmentId', 'status', 'updatedAt']) &&
+        request.resource.data.status in ['pending', 'completed'];
+      allow update: if isSignedIn() &&
+        resource.data.uid == request.auth.uid &&
+        request.resource.data.uid == request.auth.uid &&
+        resource.data.assignmentId == request.resource.data.assignmentId &&
+        statusId == request.auth.uid + '_' + resource.data.assignmentId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) &&
+        request.resource.data.status in ['pending', 'completed'];
       allow delete: if isMonitor() ||
         (isSignedIn() && resource.data.uid == request.auth.uid);
     }

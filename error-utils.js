@@ -23,8 +23,8 @@ export function describeWriteError(err, verb = "save") {
     return (
       `Couldn't ${verb} that — Firestore says this account isn't a monitor. ` +
       `Sign out and back in (role can take a moment to refresh), and if it still ` +
-      `fails, double-check this account is in the monitors collection or has ` +
-      `monitor: true on its users/{uid} profile doc.`
+      `fails, double-check this account is in the monitors collection, is in the ` +
+      `monitor email allowlist, or has a matching monitor invitation.`
     );
   }
   if (code === "unavailable" || code === "deadline-exceeded") {

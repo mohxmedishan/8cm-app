@@ -78,8 +78,8 @@ function renderGate({ user, monitor }) {
     // who believes they should be a monitor, the account shown below
     // needs one of: its email in MONITOR_EMAILS (auth.js) AND the
     // matching isMonitorEmail() list in firestore.rules, a doc at
-    // monitors/{their uid}, or monitor: true on users/{their uid} —
-    // and that change needs to exist in the *live* Firestore project,
+    // monitors/{their uid}, or an invite at monitorInvites/{their lower-cased email} —
+    // and that grant needs to exist in the *live* Firestore project,
     // not just this repo.
     gate.innerHTML = `<p>This page is for monitors only. You're signed in as ${escapeHtml(user.email || "an account")} (uid: ${escapeHtml(user.uid)}), which isn't currently recognized as a monitor.</p>`;
     return;

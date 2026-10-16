@@ -142,9 +142,6 @@ export async function computeIsMonitor(user) {
   try {
     const snap = await getDoc(monitorRef(user.uid));
     if (snap.exists()) return true;
-    // Also honor a monitor: true flag on the user's own profile doc.
-    const profile = await getDoc(doc(db, "users", user.uid));
-    if (profile.exists() && profile.data().monitor === true) return true;
     // Also honor a standing invite for this account's email — see
     // inviteMonitor() above and isInvitedMonitorEmail() in
     // firestore.rules, which is the actual authority; this just lets

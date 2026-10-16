@@ -258,7 +258,7 @@ async function handleSubmit(e) {
       setFormError(err.message);
     } else if (code === "permission-denied") {
       setFormError(
-        "Firestore rejected the write. Either firestore.rules hasn't been deployed to this project yet, or this account isn't recognized as a monitor server-side (rules check the email allowlist + monitors/{uid} + users/{uid}.monitor + monitorInvites/{email} — not the client-side check). Redeploy the rules and try again."
+        "Firestore rejected the write. Either firestore.rules hasn't been deployed to this project yet, or this account isn't recognized as a monitor server-side (rules check the email allowlist + monitors/{uid} + monitorInvites/{email} — not the client-side check). Redeploy the rules and try again."
       );
     } else {
       setFormError(

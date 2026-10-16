@@ -141,8 +141,7 @@ There are two roles: student and monitor. A signed-in user **is a monitor** when
 `isMonitor()` rule says so, via any of:
 1. their email is in the hardcoded allowlist (`MONITOR_EMAILS` in `auth.js` **and** the list in `isMonitorEmail()` in `firestore.rules` — keep both in sync),
 2. a doc exists at `monitors/{uid}`,
-3. `users/{uid}.monitor == true` (`get('monitor', false)` — a missing field must never error),
-4. **an invite exists at `monitorInvites/{their lower-cased email}`** (the normal way to add someone — Monitors tab → add Gmail). It takes effect the moment that person signs in with that address.
+3. **an invite exists at `monitorInvites/{their lower-cased email}`** (the normal way to add someone — Monitors tab → add Gmail). It takes effect the moment that person signs in with that address.
 
 `auth.js#computeIsMonitor` mirrors this on the client so the UI can react; it is only a UI hint.
 

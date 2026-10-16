@@ -5,7 +5,7 @@ Read this before deploying.
 
 ## The bug that made this urgent
 
-The old `firestore.rules` let any signed-in user update their own `users/{uid}`
+Historical note: the earlier `firestore.rules` let any signed-in user update their own `users/{uid}`
 doc with no restriction on which fields changed:
 
 ```
@@ -28,23 +28,21 @@ grant that already happened.
 
 ## What changed
 
-- **`firestore.rules`** — full rewrite. There is no longer an `admin`/`monitor`
-  field on `users/{uid}` at all — that's the actual fix, not just tightening
-  the old check. Monitor status now lives in exactly one place: a doc at
-  `monitors/{uid}`, or a hardcoded email allowlist for bootstrapping. Also
+- **`firestore.rules`** — monitor authority must come only from the bootstrap
+  email allowlist, `monitors/{uid}`, or `monitorInvites/{email}`. Profile role flags
+  are not trusted. Self-service profile writes are limited to known profile fields,
+  and claim mirrors must match a claim owned by the same UID. Also
   added: a `claims/{studentId}` collection that makes identity-claiming
   atomic at the database level (see below), and rules for every collection
   in the target architecture (`assignments`, `announcements`, `events`,
   `notifications`, `gallery`, `activityLogs`, etc.) so later phases can build
   directly on secure rules instead of needing another rules pass.
-- **`auth.js`** — `claimStudentIdentity` / `switchStudentIdentity` now run
-  inside a single Firestore transaction that creates/deletes
-  `claims/{studentId}` and updates `users/{uid}` together. Previously the
-  "is this student already taken" check and the write that claimed it were
-  two separate client calls with a race window between them; two people
-  claiming at nearly the same instant could both win. Now only one write can
-  ever succeed per student, enforced server-side by the rules (a second
-  `create` against an existing `claims/{id}` doc is rejected).
+- **`auth.js`** — `claimStudentIdentity` / `switchStudentIdentity` use a Firestore
+  transaction to manage the authoritative `claims/{studentId}` records. The
+  `users/{uid}` profile mirror is written after the claim transaction commits,
+  because the profile rules validate it against the committed claim document.
+  A second account cannot overwrite an existing claim through the student
+  create path; claim updates are monitor-only.
 - **"admin" → "monitor"** renamed throughout `auth.js`, `auth-ui.js`,
   `tasks.js`, `index.html`, `style.css` (state field, CSS classes, UI copy).
   No user-facing behavior changes here beyond the label.
@@ -100,3 +98,12 @@ every page that touches `students` to be async is real UI-layer work
 it hastily alongside the rules rewrite risked breaking the picker. Firestore
 is now the source of truth for monitors editing data; wiring the read side
 everywhere is next.
+
+
+## Current security review (2026-10-16)
+
+The uploaded V18 source still contained a legacy `isMonitorFlag()` rule path and a matching client-side `computeIsMonitor()` profile check, despite the historical notes above. The current patch removes both paths, restricts self-service profile writes to an explicit allowlist of fields, validates both claim mirror fields together, and tightens ownership checks for `assignmentStatus` updates.
+
+The rules have not been deployed to Firebase by this patch. The Firebase CLI and an existing emulator test setup were not present in the uploaded project, so emulator-based authorization tests still need to be run before deployment. Existing profile documents may retain a stale `monitor` field, but that field must no longer grant authority. Do not remove production data as part of this code patch.
+
+The current claim design prevents a second account from taking an identity that is already claimed. It does **not** prove the real-world identity of a person claiming an otherwise unclaimed roster entry; the current product has no trusted verification token or approval step for that. Solving that fully requires a separate identity-verification workflow and should not be falsely represented as solved by Firestore rules alone.
