@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script>(function(){var d=document.documentElement,inSite=false;
+// Page-to-page inside the site, in a browser with cross-page view transitions: the previous page is still on screen and dissolves into this one, so there is nothing to hold back. Fresh loads and reloads still wait for fonts (html.is-preparing, see style.css).
+try{inSite=("CSSViewTransitionRule" in window)&&!!document.referrer&&new URL(document.referrer).origin===location.origin&&performance.getEntriesByType("navigation")[0].type==="navigate";}catch(e){}
+if(inSite){d.classList.add("is-arriving");return;}
+d.classList.add("is-preparing");setTimeout(function(){d.classList.remove("is-preparing")},1500);})();</script>
+<link rel="expect" href="#main" blocking="render">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Directory — 8CM</title>
+<meta name="description" content="The four houses of 8CM, plus the full student and teacher directory — everyone in 8CM, all in one place.">
+<meta name="theme-color" content="#16171a">
+<link rel="canonical" href="https://8cm.vercel.app/houses.html">
+<meta property="og:url" content="https://8cm.vercel.app/houses.html">
+<meta property="og:site_name" content="8CM">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="8CM.">
+<script>
+(function () {
+  try {
+    var m = localStorage.getItem('8cm-theme-mode');
+    var mode = (m === 'light' || m === 'dark') ? m : 'dark';
+    document.documentElement.setAttribute('data-theme', mode);
+    var resolved = localStorage.getItem('8cm-theme-accent-resolved-' + mode);
+    var raw = localStorage.getItem('8cm-theme-accent');
+    var accent = resolved || raw;
+    if (accent) document.documentElement.style.setProperty('--accent', accent);
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  // Warm the cache for the background-music module and whichever
+  // track is currently selected, before any other script on this
+  // page runs. bgm.js already resumes playback the instant the page
+  // is ready (see its v14.3 notes) rather than waiting for a click,
+  // but on a plain multi-page site the browser still has to re-fetch
+  // the module and the audio file fresh on every navigation unless
+  // something has already asked for them. Doing that here, as early
+  // as possible, is what actually shrinks the audible gap — it can't
+  // be eliminated outright (the previous page's <audio> element is
+  // genuinely torn down on navigation), but the new page can have
+  // both ready to go the moment it's ready to play instead of
+  // starting the fetches from scratch.
+  try {
+    var modLink = document.createElement('link');
+    modLink.rel = 'modulepreload';
+    modLink.href = 'bgm.js';
+    document.head.appendChild(modLink);
+
+    if (localStorage.getItem('8cm:bgm:playing') === '1') {
+      var file = localStorage.getItem('8cm:bgm:track');
+      if (file) {
+        var audioLink = document.createElement('link');
+        audioLink.rel = 'preload';
+        audioLink.as = 'audio';
+        audioLink.href = 'https://cdn.jsdelivr.net/gh/mohxmedishan/8cm-assets@main/' + file;
+        document.head.appendChild(audioLink);
+      }
+    }
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" sizes="192x192" href="assets/cm-icon-192.png">
+<link rel="manifest" href="manifest.json">
+</head>
+<body data-page="houses">
+
+<div class="splash" id="splash" aria-hidden="true">
+  <div class="splash-content">
+    <img src="assets/cm-logo.png" alt="" class="splash-logo">
+    <p class="splash-tagline">Thirty desks, four houses, everything 8CM needs in one place.</p>
+  </div>
+</div>
+<script>
+(function(){
+  // The splash is a first-open moment, not a per-page tax: it shows once
+  // per browser tab session. Every later page change skips it so the
+  // site reads as one continuous app (see main-nav.js for the fades).
+  var s=document.getElementById("splash");
+  if(!s)return;
+  try{
+    if(sessionStorage.getItem("8cm:splash-seen")==="1"){s.remove();return;}
+    sessionStorage.setItem("8cm:splash-seen","1");
+  }catch(e){}
+  function hideSplash(){
+    if(!s||s.dataset.failsafeHidden==="1")return;
+    s.dataset.failsafeHidden="1";
+    s.classList.add("hide");
+    window.setTimeout(function(){if(s.parentNode)s.remove();},550);
+  }
+  window.setTimeout(hideSplash,3000);
+  if(document.readyState==="complete")window.setTimeout(hideSplash,700);
+  else window.addEventListener("load",function(){window.setTimeout(hideSplash,700)},{once:true});
+})();
+</script>
+<div class="grain"></div>
+
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand" aria-label="Back to home"><img src="assets/cm-logo.png" alt="8CM"></a>
+    <nav class="nav-links primary-nav" id="navLinks" aria-label="Main">
+      <!-- Five destinations that LOOP: the current page always sits in the centre
+           slot with two neighbours either side, so every page is one step from every
+           other (Rankings → Football, Football → Rankings). The links are written in
+           that per-page order here, so the first paint is already right and Tab
+           follows what you see. See DESIGN.md → Main navigation. -->
+      <div class="primary-nav-track">
+        <a href="rankings.html" class="nav-link primary-nav-link" data-page="rankings">Rankings</a>
+        <a href="football.html" class="nav-link primary-nav-link" data-page="football">Pitch</a>
+        <a href="houses.html" class="nav-link primary-nav-link" data-page="houses">Directory</a>
+        <a href="index.html" class="nav-link primary-nav-link" data-page="home">Home</a>
+        <a href="archives.html" class="nav-link primary-nav-link" data-page="archives">Archives</a>
+      </div>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="settingsBtn" type="button" aria-label="Settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="9" cy="6" r="2" fill="currentColor"/><line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="15" cy="12" r="2" fill="currentColor"/><line x1="4" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="18" r="2" fill="currentColor"/></svg>
+      </button>
+      <div class="nav-auth" id="authSlot"></div>
+      <button class="burger" id="burger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+<script src="nav-boot.js"></script>
+
+<nav class="hub-nav" aria-label="Houses sections">
+  <div class="section-inner hub-nav-inner">
+    <a href="#top" class="hub-nav-link">Directory</a>
+    <a href="#students" class="hub-nav-link">Students</a>
+    <a href="#teachers" class="hub-nav-link">Teachers</a>
+    <a href="#house-students" class="hub-nav-link">By house</a>
+  </div>
+</nav>
+
+<main id="main">
+  <!-- Mirrored hero: the "Directory snapshot" glance panel sits on the
+       left, the title, description and Dashboard link on the right
+       (the opposite of Archives, whose text sits left). DOM order is
+       visual-then-text; .hero-mirrored flips the column widths.
+       The by-house headcount bar chart used to live here — it's now
+       down in the "By house" section, next to the house cards it
+       matches. See DESIGN.md → "Glance panel". -->
+  <section class="page-hero hero hero-mirrored">
+    <div class="section-inner hero-grid">
+      <aside class="hero-visual glance-panel glance-houses" id="housesGlance" aria-label="Directory snapshot">
+        <div class="glance-head">
+          <p class="glance-kicker"><span class="glance-live" aria-hidden="true"></span>Directory snapshot</p>
+          <p class="glance-date">Tap to jump</p>
+        </div>
+        <div class="glance-tiles glance-tiles-2x2">
+          <a href="#students" class="glance-tile" style="--tone: var(--accent)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.6a3 3 0 0 1 0 5.8M17.5 14.2A5 5 0 0 1 20.5 19"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirStudents">–</span>
+            <span class="glance-tile-label">Students</span>
+            <span class="glance-tile-note">in the class</span>
+          </a>
+          <a href="#teachers" class="glance-tile" style="--tone: var(--house-winter)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5l9-3.5 9 3.5-9 3.5-9-3.5z"/><path d="M7 9v5c0 1.4 2.2 2.8 5 2.8s5-1.4 5-2.8V9"/><path d="M21 7v6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirTeachers">–</span>
+            <span class="glance-tile-label">Teachers</span>
+            <span class="glance-tile-note">teaching 8CM</span>
+          </a>
+          <a href="#house-students" class="glance-tile is-static" style="--tone: var(--house-summer)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num">4</span>
+            <span class="glance-tile-label">Houses</span>
+            <span class="glance-tile-note">Winter, Autumn, Spring, Summer</span>
+          </a>
+          <a href="#students" class="glance-tile" style="--tone: var(--house-autumn)">
+            <span class="glance-tile-top"><span class="glance-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M18 8v6M15 11h6"/></svg></span><svg class="glance-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></span>
+            <span class="glance-num" id="glanceDirGuests">–</span>
+            <span class="glance-tile-label">Guests</span>
+            <span class="glance-tile-note">joining the class</span>
+          </a>
+        </div>
+      </aside>
+      <div class="hero-text hero-text-right">
+        <a href="index.html" class="back-to-dashboard">Dashboard →</a>
+        <div class="section-head">
+          <h1 class="hub-title">Directory</h1>
+          <p class="section-sub">Winter, Autumn, Spring and Summer — plus the full student and teacher directory. Everyone in 8CM belongs to a house, and everyone's listed below.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDENTS ============ -->
+  <section class="hub-section students" id="students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Students</h2>
+        <p class="section-sub">Search a name, or filter by house, transport, language, and guests.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="Search a name…" autocomplete="off">
+        </div>
+        <div class="filter-row" id="filterRow">
+          <button class="filter-box" data-filter-key="house" type="button"><span class="filter-box-label">House</span><span class="filter-box-value" data-value-for="house">All</span></button>
+          <button class="filter-box" data-filter-key="language" type="button"><span class="filter-box-label">Language</span><span class="filter-box-value" data-value-for="language">All</span></button>
+          <button class="filter-box" data-filter-key="transport" type="button"><span class="filter-box-label">Transport</span><span class="filter-box-value" data-value-for="transport">All</span></button>
+          <button class="filter-box" data-filter-key="islamic" type="button"><span class="filter-box-label">Islamic / Value</span><span class="filter-box-value" data-value-for="islamic">All</span></button>
+          <button class="filter-box" data-filter-key="creative" type="button"><span class="filter-box-label">Creative</span><span class="filter-box-value" data-value-for="creative">All</span></button>
+          <button class="filter-box" data-filter-key="guest" type="button"><span class="filter-box-label">Guest</span><span class="filter-box-value" data-value-for="guest">All</span></button>
+          <button class="filter-clear is-hidden" id="filterClear" type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="filterDropdownHost"></div>
+      </div>
+      <p class="result-count" id="resultCount">30 students</p>
+      <div class="student-grid" id="studentGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ TEACHERS ============ -->
+  <section class="hub-section" id="teachers">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Teachers</h2>
+        <p class="section-sub">Everyone teaching 8CM this year. Search by name or subject.</p>
+      </div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="teacherSearchInput" placeholder="Search a teacher or subject…" autocomplete="off">
+        </div>
+        <div class="filter-row" id="teacherFilterRow">
+          <button class="filter-box" data-filter-key="category" type="button">
+            <span class="filter-box-label">Subject</span>
+            <span class="filter-box-value" data-value-for="category">All</span>
+          </button>
+          <button class="filter-clear is-hidden" id="teacherFilterClear" type="button">Clear</button>
+        </div>
+        <div class="filter-dropdown-host" id="teacherFilterDropdownHost"></div>
+      </div>
+      <p class="result-count" id="teacherResultCount">— teachers</p>
+      <div class="teacher-grid" id="teacherGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ HOUSE ROSTERS ============ -->
+  <section class="hub-section houses" id="house-students">
+    <div class="section-inner">
+      <div class="section-head">
+        <h2>Who's in each house</h2>
+        <p class="section-sub">Tap a name to open their profile.</p>
+      </div>
+      <div class="hero-visual house-chart-card">
+        <p class="hero-visual-label">Houses, by headcount</p>
+        <!-- Counts and bar widths are filled in by renderHouseChart()
+             in script.js from the real student roster — never typed
+             in here. -->
+        <div class="bar-chart is-loading" id="housesChart" aria-busy="true">
+          <div class="bar-row" data-house="winter" tabindex="0" role="button" aria-label="Winter house"><span class="bar-name">Winter</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="autumn" tabindex="0" role="button" aria-label="Autumn house"><span class="bar-name">Autumn</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="spring" tabindex="0" role="button" aria-label="Spring house"><span class="bar-name">Spring</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+          <div class="bar-row" data-house="summer" tabindex="0" role="button" aria-label="Summer house"><span class="bar-name">Summer</span><div class="bar-track"><div class="bar-fill" data-value="0" data-max="1"></div></div><span class="bar-count">—</span></div>
+        </div>
+      </div>
+      <div class="house-grid">
+        <!-- house-count and the student list below it are filled in by
+             renderHouseCardLists() in script.js, from the real student
+             roster — never hardcoded, so a monitor moving someone
+             between houses updates this automatically. -->
+        <article class="house-card" data-house="winter"><div class="house-bar"></div><div class="house-card-body"><h3>Winter</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="autumn"><div class="house-bar"></div><div class="house-card-body"><h3>Autumn</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="spring"><div class="house-bar"></div><div class="house-card-body"><h3>Spring</h3><p class="house-count">— students</p></div></article>
+        <article class="house-card" data-house="summer"><div class="house-bar"></div><div class="house-card-body"><h3>Summer</h3><p class="house-count">— students</p></div></article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="section-inner footer-inner">
+    <p>8CM · Abu Dhabi Indian School, Al Wathba, Branch 1</p>
+    <p class="footer-sub">Built by 8CM. Still being built for 8CM.</p>
+  </div>
+</footer>
+
+<div class="modal-overlay" id="authOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="authClose" aria-label="Close">✕</button>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-mode="signin" type="button">Sign in</button>
+      <button class="auth-tab" data-mode="signup" type="button">Create account</button>
+    </div>
+    <p class="config-banner" id="configBanner" hidden>⚠️ This site isn't connected to a real Firebase project yet.</p>
+    <button class="btn-google" id="googleSignInBtn" type="button">
+      <svg class="google-icon" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.97 10.72A5.4 5.4 0 0 1 3.69 9c0-.6.1-1.18.28-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      <span>Continue with Google</span>
+    </button>
+    <div class="auth-divider"><span>or</span></div>
+    <form id="authForm" class="auth-form" novalidate>
+      <label class="field"><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
+      <label class="field" data-field="password"><span>Password</span><div class="password-wrap"><input type="password" name="password" autocomplete="current-password"><button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
+      <label class="field" data-field="confirmPassword" hidden><span>Confirm password</span><div class="password-wrap"><input type="password" name="confirmPassword" autocomplete="new-password"><button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show password" aria-pressed="false"><svg class="eye-icon eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5.5 0-9.6 3.6-11 7 1.4 3.4 5.5 7 11 7s9.6-3.6 11-7c-1.4-3.4-5.5-7-11-7zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg><svg class="eye-icon eye-closed" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M2 4.3 3.3 3l18 18-1.3 1.3-3.1-3.1c-1.5.6-3.1.9-4.9.9-5.5 0-9.6-3.6-11-7 .7-1.7 1.9-3.3 3.5-4.6L2 4.3zm5.2 5.2 1.6 1.6a2.5 2.5 0 0 0 3.4 3.4l1.6 1.6a4.5 4.5 0 0 1-6.6-6.6zM12 5c5.5 0 9.6 3.6 11 7-.6 1.4-1.5 2.7-2.7 3.8l-1.4-1.4A9.7 9.7 0 0 0 21 12c-1.4-3-4.9-5.5-9-5.5-.9 0-1.8.1-2.6.4L7.9 5.4C9.2 5.1 10.6 5 12 5zm-2.1 2.9 1.6 1.6a2.5 2.5 0 0 1 2.9 2.9l1.6 1.6a4.5 4.5 0 0 0-6.1-6.1z"/></svg></button></div></label>
+      <p class="auth-error" id="authError" hidden></p>
+      <p class="auth-note" id="authResetNote" hidden></p>
+      <button type="submit" class="btn btn-primary" id="authSubmitBtn"><span class="btn-label">Sign in</span></button>
+      <button type="button" class="link-btn" id="forgotPasswordBtn">Forgot password?</button>
+    </form>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay" hidden>
+  <div class="loading-card"><span class="loading-spinner" aria-hidden="true"></span><p class="loading-status" id="loadingStatus">Signing in…</p></div>
+</div>
+
+<div class="modal-overlay" id="claimOverlay" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="claimClose" aria-label="Close" hidden>✕</button>
+    <h3 id="claimModalTitle">Which one are you?</h3>
+    <p class="modal-sub" id="claimModalSub">Pick your name from the directory to finish setting up your account.</p>
+    <button type="button" class="link-btn claim-wrong-account" id="claimWrongAccountBtn">Not you? Sign out</button>
+    <label class="field"><span>Your name</span><select id="claimSelect"></select></label>
+    <p class="auth-error" id="claimError" hidden></p>
+    <div class="modal-actions">
+      <button type="button" class="link-btn" id="claimCancelBtn" hidden>Cancel</button>
+      <button class="btn btn-primary" id="claimConfirmBtn" type="button">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="settingsOverlay" hidden>
+<div class="modal-card settings-card">
+<button aria-label="Close" class="modal-close" id="settingsClose">✕</button>
+<div class="settings-columns">
+<div class="settings-col settings-col-appearance">
+<h3>Appearance</h3>
+<p class="modal-sub">Pick an accent color, or set your own. Saved to this device, and to your account if you're signed in.</p>
+<div aria-label="Color mode" class="theme-mode-row" role="tablist">
+<button class="theme-mode-btn" data-mode="dark" role="tab" type="button">Dark</button>
+<button class="theme-mode-btn" data-mode="light" role="tab" type="button">Light</button>
+</div>
+<div class="theme-swatches" id="themeSwatches"></div>
+<label class="field theme-custom-field"><span>Custom color</span><input id="themeCustomInput" type="color" value="#6b9a8f"/></label>
+<button class="link-btn" id="themeResetBtn" type="button">Reset to default</button>
+</div>
+<div class="settings-col settings-col-sound">
+<div class="theme-audio-block"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal-overlay" id="profileOverlay" hidden>
+  <div class="modal-card profile-card">
+    <button class="modal-close" id="profileClose" aria-label="Close">✕</button>
+    <div id="profileBody"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="avatarPickerOverlay" hidden>
+  <div class="modal-card avatar-picker-card">
+    <button class="modal-close" id="avatarPickerClose" aria-label="Close">✕</button>
+    <h3>Choose your avatar</h3>
+    <p class="modal-sub">Your avatar is tied to your account, not to the student you've claimed. Switching students keeps your avatar.</p>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
+  </div>
+</div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>
+
