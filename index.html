@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Home — 8CM</title>
+<meta name="description" content="The home of 8CM — Abu Dhabi Indian School, Al Wathba.">
+<meta name="theme-color" content="#16171a">
+<!-- Theme boot: runs before first paint so there is no flash. Copy to every page. -->
+<script>
+(function(){try{var m=localStorage.getItem("8cm-theme-mode");
+if(m!=="light"&&m!=="dark")m=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
+document.documentElement.setAttribute("data-theme",m);}catch(e){}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shell.css">
+<link rel="stylesheet" href="home.css">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/cm-icon-192.png">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ===== SHARED HEADER — identical on every page ===== -->
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href="index.html" aria-label="8CM home">8CM<span>.</span></a>
+
+    <nav class="nav" id="siteNav" aria-label="Main">
+      <ul class="nav-list">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="timetable.html">Timetable</a></li>
+        <li><a href="events.html">Events</a></li>
+        <li><a href="houses.html">Directory</a></li>
+        <li><a href="football.html">Pitch</a></li>
+        <li class="more-item">
+          <details class="more">
+            <summary>More</summary>
+            <ul class="more-menu">
+              <li><a href="archives.html">Archives</a></li>
+              <li><a href="achievements.html">Achievements</a></li>
+              <li><a href="rankings.html">Rankings</a></li>
+              <li><a href="gallery.html">Gallery</a></li>
+              <li><a href="resources.html">Resources</a></li>
+              <li><a href="about.html">About</a></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </nav>
+
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch to light mode">
+      <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <button class="menu-btn" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="siteNav">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ===== PAGE CONTENT ===== -->
+<main id="main" class="wrap">
+
+  <!-- HERO: intro text + live "right now" panel -->
+  <section class="hero">
+    <div class="hero-text">
+      <p class="kicker">Abu Dhabi Indian School · Al Wathba, Branch 1 · Grade 8</p>
+      <h1>Thirty desks, four houses, one classroom that’s ours.</h1>
+      <p class="lede">8CM is loud, sharp, a little chaotic, and has more inside jokes than any timetable has room for. This is where that gets documented.</p>
+      <p class="actions">
+        <a class="btn" href="houses.html#students">Meet the class</a>
+        <a class="btn btn-ghost" href="houses.html">See the houses</a>
+        <a class="btn btn-ghost" href="timetable.html">See the timetable</a>
+      </p>
+    </div>
+
+    <aside class="glance card" aria-label="Right now">
+      <div class="glance-head">
+        <p class="kicker">Today</p>
+        <p class="glance-date" id="glanceDate"></p>
+      </div>
+      <div class="glance-tiles">
+        <a class="tile" href="#homework">
+          <span class="tile-label">Homework due</span>
+          <span class="tile-num" id="glanceHomework">–</span>
+          <span class="tile-note" id="glanceHomeworkNote">Checking…</span>
+        </a>
+        <a class="tile" href="#announcements">
+          <span class="tile-label">Announcements</span>
+          <span class="tile-num" id="glanceNotices">–</span>
+          <span class="tile-note" id="glanceNoticesNote">Checking…</span>
+        </a>
+      </div>
+      <a class="period" href="timetable.html" aria-live="polite">
+        <span class="tile-label">Right now</span>
+        <strong class="period-title" id="periodTitle">Checking…</strong>
+        <span class="tile-note" id="periodNote"></span>
+      </a>
+    </aside>
+  </section>
+
+  <!-- DASHBOARD: main column (homework, then announcements + resources) and a vertical quick-links rail -->
+  <section class="dash" id="today" aria-label="Today">
+    <div class="dash-main">
+      <div class="card panel" id="homework">
+        <h2>Homework</h2>
+        <div class="list" id="homeworkList"></div>
+      </div>
+
+      <div class="dash-pair">
+        <div class="card panel" id="announcements">
+          <h2>Announcements</h2>
+          <div class="list" id="noticeList"></div>
+        </div>
+        <div class="card panel" id="resources">
+          <h2>Resources</h2>
+          <div class="list" id="resourceList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No heading on purpose: logo + name only. Static markup, no JS. -->
+    <nav class="quick" aria-label="Quick links">
+      <a class="quick-link" href="https://web.whatsapp.com" target="_blank" rel="noopener noreferrer">
+        <img src="assets/WA-logo.png" alt="" width="40" height="40" loading="lazy"><span>WhatsApp</span>
+      </a>
+      <a class="quick-link" href="https://classroom.google.com" target="_blank" rel="noopener noreferrer">
+        <img src="assets/GC-logo.png" alt="" width="40" height="40" loading="lazy"><span>Google Classroom</span>
+      </a>
+      <a class="quick-link" href="https://ict.adiswathba.com/ADIS1/" target="_blank" rel="noopener noreferrer">
+        <img src="assets/DC-logo.png" alt="" width="40" height="40" loading="lazy"><span>Digital Campus</span>
+      </a>
+    </nav>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">8CM · Abu Dhabi Indian School, Al Wathba</div>
+</footer>
+
+<script src="shell.js"></script>
+<script type="module" src="home.js"></script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+/* Timetable (used by timetable.html and archives.html). Days run across, periods run down,
+   so five columns fit a phone without sideways scrolling. No animation or transitions. */
+
+/* One colour per subject: hue, saturation and a small lightness nudge per subject; the base
+   lightness flips with the theme. Hues were chosen so every pair stays visibly different. */
+:root { --tt-l: 62%; }
+:root[data-theme="light"] { --tt-l: 36%; }
+[class*="s-"] { --s: 50%; --dl: 0%; --c: hsl(var(--h) var(--s) calc(var(--tt-l) + var(--dl))); }
+.s-math   { --h: 168; }
+.s-phys   { --h: 25;  --s: 70%; --dl: -5%; }
+.s-chem   { --h: 2;   --s: 70%; }
+.s-bio    { --h: 41;  --s: 70%; }
+.s-cs     { --h: 113; --s: 70%; }
+.s-ai     { --h: 72;  --dl: -5%; }
+.s-mscs1  { --h: 148; --s: 70%; --dl: -5%; }
+.s-mscs2  { --h: 270; }
+.s-eng    { --h: 192; --s: 60%; --dl: 5%; }
+.s-arabic { --h: 252; --s: 70%; }
+.s-l2     { --h: 219; }
+.s-sst    { --h: 299; --s: 70%; --dl: 5%; }
+.s-ive    { --h: 323; --s: 60%; --dl: -5%; }
+.s-arts   { --h: 343; --s: 60%; --dl: 5%; }
+.s-lib    { --h: 36;  --s: 14%; }
+.s-pe     { --h: 215; --s: 18%; }
+
+.tt-wrap { margin-top: 8px; }
+
+/* Status: day indicator and current-period indicator side by side */
+.tt-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.tt-chip { display: grid; gap: 2px; padding: 12px 14px; min-width: 0; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); }
+.tt-chip[data-kind="class"] { border-color: var(--accent); }
+.tt-chip-label { font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.tt-chip strong { font: 600 1.1rem/1.3 var(--font-display); }
+.tt-chip-note { color: var(--text-muted); font-size: .88rem; overflow-wrap: anywhere; }
+
+/* Grid */
+.tt-grid {
+  display: grid; gap: 4px;
+  grid-template-columns: 4rem repeat(5, minmax(0, 1fr));
+  grid-auto-rows: minmax(54px, auto);
+}
+.tt-dayhead { display: grid; place-items: center; padding: 8px 4px; font-weight: 600; border-bottom: 2px solid var(--border); }
+.tt-dayhead .short { display: none; }
+.tt-dayhead.is-today { border-bottom-color: var(--accent); color: var(--accent-strong); }
+
+.tt-time { display: grid; align-content: center; gap: 0; padding-right: 6px; text-align: right; font-size: .8rem; color: var(--text-muted); line-height: 1.25; }
+.tt-time b { color: var(--text); font-size: .9rem; }
+.tt-time .fri { font-size: .7rem; }
+
+.tt-cell {
+  display: grid; align-content: center; justify-items: start; gap: 1px; min-width: 0;
+  padding: 6px 8px 6px 10px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--c) 20%, var(--bg-elevated));
+  border-left: 4px solid var(--c);
+}
+.tt-cell .subj { font-weight: 600; overflow-wrap: anywhere; }
+.tt-cell .full { font-size: .78rem; line-height: 1.2; color: color-mix(in srgb, var(--text) 85%, var(--bg-elevated)); overflow-wrap: anywhere; }
+
+.tt-break, .tt-tail {
+  display: grid; place-items: center; text-align: center; min-width: 0;
+  border: 1px dashed var(--border); border-radius: var(--radius);
+  color: var(--text-muted); font-size: .85rem;
+}
+.tt-break { min-height: 34px; grid-auto-rows: auto; }
+.tt-time.is-break { align-content: center; }
+.tt-tail b { color: var(--text); }
+.tt-tail { align-content: center; }
+
+/* Today's column gets a faint wash; the current period gets a solid outline + tag */
+.tt-cell.is-today { box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
+.tt-tail.is-today { border-color: var(--accent); }
+.tt-cell.is-now, .tt-break.is-now { outline: 3px solid var(--text); outline-offset: 1px; position: relative; }
+.tt-cell.is-now::after, .tt-break.is-now::after {
+  content: "NOW"; position: absolute; top: -9px; right: 6px; padding: 1px 6px;
+  background: var(--text); color: var(--bg); border-radius: 999px; font: 700 .62rem/1.4 var(--font-body); letter-spacing: .06em;
+}
+
+/* Legend */
+.tt-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; list-style: none; margin: 20px 0 0; padding: 0; font-size: .88rem; }
+.tt-legend li { display: flex; align-items: center; gap: 6px; }
+.swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--c); flex: none; }
+.muted { color: var(--text-muted); }
+
+/* Teachers (timetable.html only) */
+.teachers { margin-top: 48px; }
+.teacher-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.teacher-card { display: grid; gap: 6px; padding: 12px 14px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0; align-content: start; }
+.teacher-row { display: grid; }
+.teacher-subject { font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; color: var(--text-muted); }
+.teacher-name { font-weight: 500; overflow-wrap: anywhere; }
+
+/* Phones */
+@media (max-width: 720px) {
+  .tt-status { grid-template-columns: minmax(0, 1fr); }
+  .tt-grid { grid-template-columns: 2.9rem repeat(5, minmax(0, 1fr)); gap: 3px; grid-auto-rows: minmax(50px, auto); }
+  .tt-dayhead .long, .tt-cell .full { display: none; }
+  .tt-dayhead .short { display: block; }
+  .tt-cell { padding: 4px 4px 4px 6px; border-left-width: 3px; }
+  .tt-cell .subj { font-size: .78rem; }
+  .tt-time { padding-right: 4px; font-size: .68rem; }
+  .tt-time b { font-size: .78rem; }
+  .tt-time .fri { display: none; }
+  .tt-tail { font-size: .7rem; }
+}
+
+.tt-note { margin: 12px 0 0; font-size: .88rem; }
