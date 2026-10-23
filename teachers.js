@@ -3,7 +3,7 @@
 // 8CM — Teachers directory (grid + search)
 // ============================================
 import { getTeachersSync, onTeachers, loadTeachers } from "./teachers-data.js";
-import { playClick } from "./sound.js";
+import { playClick } from "./readonly.js";
 
 const $ = (id) => document.getElementById(id);
 

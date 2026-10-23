@@ -40,10 +40,10 @@ import {
   writeBatch,
   doc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { db } from "./firebase.js";
 import { describeWriteError } from "./error-utils.js";
-import { logAction } from "./audit.js";
-import { playToggleOn, playToggleOff, playSuccess, playError } from "./sound.js";
+import { logAction } from "./readonly.js";
+import { playToggleOn, playToggleOff, playSuccess, playError } from "./readonly.js";
 
 // Homework used to store low / medium / high. Anything "high" counts as
 // important; everything else counts as normal. Reading only — old

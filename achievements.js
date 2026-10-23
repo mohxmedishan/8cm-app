@@ -2,12 +2,12 @@
 // 8CM — Achievements
 // ============================================
 import { collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { db } from "./firebase.js";
 import { describeWriteError } from "./error-utils.js";
-import { subscribeAuth } from "./auth.js";
+import { subscribeAuth } from "./readonly.js";
 import { getStudentsSync, loadStudents, onStudents, rollText } from "./students.js";
-import { logAction } from "./audit.js";
-import { playOpen, playClose, playSuccess, playError, playDelete } from "./sound.js";
+import { logAction } from "./readonly.js";
+import { playOpen, playClose, playSuccess, playError, playDelete } from "./readonly.js";
 const $ = (id) => document.getElementById(id);
 let cache = [], isCurrentMonitor = false, editingId = null, latestStudents = [];
 const listeners = new Set();

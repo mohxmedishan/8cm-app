@@ -58,7 +58,7 @@ export async function loadTeachers({ forceRefresh = false } = {}) {
 
   inflight = (async () => {
     try {
-      const { db } = await import("./firebase-config.js");
+      const { db } = await import("./firebase.js");
       const { collection, getDocs } = await import(
         "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
       );

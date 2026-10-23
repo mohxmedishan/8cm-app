@@ -18,8 +18,8 @@
 import {
   collection, doc, onSnapshot,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { playOpen, playClose, playClick } from "./sound.js";
+import { db } from "./firebase.js";
+import { playOpen, playClose, playClick } from "./readonly.js";
 import {
   PITCH_ENDS, CLUBS, resolveTeam, escapeHtml, formatMatchDate,
   positionGroup, pitchPlacements, orderedPlayers,

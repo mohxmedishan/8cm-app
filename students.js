@@ -167,7 +167,7 @@ if (inflightLoad) return inflightLoad;
 
 inflightLoad = (async () => {
 try {
-const { db } = await import("./firebase-config.js");
+const { db } = await import("./firebase.js");
 const { collection, getDocs } = await import(
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 );
@@ -213,7 +213,7 @@ return loadStudents({ forceRefresh: true });
 // One-time idempotent migration (unchanged from P0)
 // ------------------------------------------------
 export async function migrateStudentsToFirestore() {
-const { db } = await import("./firebase-config.js");
+const { db } = await import("./firebase.js");
 const { doc, getDoc, writeBatch } = await import(
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 );

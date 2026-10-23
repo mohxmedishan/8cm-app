@@ -26,12 +26,12 @@ import {
   orderBy,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { db } from "./firebase.js";
 import { describeWriteError } from "./error-utils.js";
-import { subscribeAuth } from "./auth.js";
-import { logAction } from "./audit.js";
+import { subscribeAuth } from "./readonly.js";
+import { logAction } from "./readonly.js";
 import { allSubjects } from "./timetable-data.js";
-import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./sound.js";
+import { playOpen, playClose, playSuccess, playError, playDelete, playToggleOn, playToggleOff } from "./readonly.js";
 import { setLinkStack, readLinkStack, linkChipsHtml } from "./item-links.js";
 import { createArranger, normalizePriority } from "./arrange.js";
 
